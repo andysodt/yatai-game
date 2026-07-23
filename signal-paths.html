@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Paths</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #030508;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Georgia', serif;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  max-width: 100vw;
+  max-height: 90vh;
+}
+.caption {
+  margin-top: 18px;
+  text-align: center;
+  color: rgba(200, 190, 230, 0.55);
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.title {
+  color: rgba(220, 210, 255, 0.75);
+  font-size: 19px;
+  letter-spacing: 5px;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="caption">
+  <div class="title">Signal Paths</div>
+  An original work after Elizabeth Jameson
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const W = 820, H = 680;
+canvas.width = W;
+canvas.height = H;
+
+// ── PALETTE ──────────────────────────────
+const PAL = {
+  bg:       '#030508',
+  nodeBase: '#1a0535',
+  nodeMid:  '#5a189a',
+  nodeHot:  '#9b5de5',
+  edgeDim:  'rgba(120, 60, 200, 0.18)',
+  edgeLit:  'rgba(160, 100, 255, 0.45)',
+  signal:   ['#f5e642', '#ffffff', '#00e5ff', '#b5f5ec', '#ff9f1c'],
+  lesionHot:'#ff4800',
+  lesionDim:'rgba(255,80,0,0.35)',
+  myelinA:  'rgba(200, 170, 255, 0.12)',
+  myelinB:  'rgba(120, 220, 255, 0.10)',
+  glowA:    'rgba(100, 40, 200, 0.08)',
+  glowB:    'rgba(0, 180, 255, 0.06)',
+};
+
+// ── BRAIN SHAPE (polar egg) ─────────────
+const CX = W * 0.50, CY = H * 0.47;
+const BRX = W * 0.36, BRY = H * 0.40;
+
+function inBrain(x, y) {
+  const dx = (x - CX) / (BRX * 1.05);
+  const dy = (y - CY) / (BRY * 1.10);
+  // Slightly irregular oval
+  const angle = Math.atan2(dy, dx);
+  const rScale = 1 + 0.06 * Math.sin(3 * angle) + 0.04 * Math.sin(7 * angle);
+  return (dx * dx + dy * dy) < (rScale * rScale);
+}
+
+// ── LESION ZONES ─────────────────────────
+const LESIONS = [
+  { x: CX - BRX * 0.30, y: CY - BRY * 0.20, r: 48 },
+  { x: CX + BRX * 0.35, y: CY + BRY * 0.28, r: 38 },
+  { x: CX - BRX * 0.05, y: CY + BRY * 0.50, r: 32 },
+];
+
+function lesionFactor(x, y) {
+  let maxF = 0;
+  for (const l of LESIONS) {
+    const d = Math.hypot(x - l.x, y - l.y);
+    if (d < l.r) maxF = Math.max(maxF, 1 - d / l.r);
+  }
+  return maxF;
+}
+
+// ── NODES ────────────────────────────────
+const NODES = [];
+const NODE_N = 110;
+
+// Place nodes randomly inside brain shape
+let tries = 0;
+while (NODES.length < NODE_N && tries < 6000) {
+  tries++;
+  const x = CX + (Math.random() - 0.5) * BRX * 2.1;
+  const y = CY + (Math.random() - 0.5) * BRY * 2.1;
+  if (inBrain(x, y)) {
+    const lf = lesionFactor(x, y);
+    NODES.push({
+      x, y,
+      r: 1.8 + Math.random() * 2.2,
+      lesion: lf,
+      phase: Math.random() * Math.PI * 2,
+      brightness: 0.3 + Math.random() * 0.7,
+    });
+  }
+}
+
+// ── EDGES ────────────────────────────────
+const EDGES = [];
+const MAX_DIST = 115;
+
+for (let i = 0; i < NODES.length; i++) {
+  for (let j = i + 1; j < NODES.length; j++) {
+    const d = Math.hypot(NODES[i].x - NODES[j].x, NODES[i].y - NODES[j].y);
+    if (d < MAX_DIST && Math.random() < 0.38) {
+      const lf = Math.max(NODES[i].lesion, NODES[j].lesion);
+      EDGES.push({ a: i, b: j, dist: d, lesion: lf });
+    }
+  }
+}
+
+// ── SIGNALS ──────────────────────────────
+const SIGNALS = [];
+const MAX_SIGS = 35;
+
+function spawnSignal() {
+  if (SIGNALS.length >= MAX_SIGS) return;
+  // Pick a random edge with no lesion
+  const healthy = EDGES.filter(e => e.lesion < 0.4);
+  if (!healthy.length) return;
+  const edge = healthy[Math.floor(Math.random() * healthy.length)];
+  const rev = Math.random() < 0.5;
+  SIGNALS.push({
+    edge,
+    t: 0,
+    speed: 0.008 + Math.random() * 0.018,
+    rev,
+    color: PAL.signal[Math.floor(Math.random() * PAL.signal.length)],
+    size: 2.5 + Math.random() * 2,
+    trail: [],
+  });
+}
+
+// Seed signals
+for (let i = 0; i < 22; i++) spawnSignal();
+
+// ── FRAME STATE ───────────────────────────
+let frame = 0;
+
+// ── DRAW HELPERS ─────────────────────────
+function drawBrainOutline(t) {
+  ctx.save();
+  const steps = 180;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const rScale = 1 + 0.06 * Math.sin(3 * a) + 0.04 * Math.sin(7 * a)
+                     + 0.015 * Math.sin(t * 0.4 + a * 2);
+    const x = CX + Math.cos(a) * BRX * rScale;
+    const y = CY + Math.sin(a) * BRY * rScale;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+
+  // Subtle fill
+  const gf = ctx.createRadialGradient(CX, CY - BRY * 0.1, 10, CX, CY, BRX * 1.2);
+  gf.addColorStop(0, 'rgba(60, 10, 100, 0.18)');
+  gf.addColorStop(0.6, 'rgba(20, 5, 50, 0.12)');
+  gf.addColorStop(1, 'rgba(5, 2, 15, 0)');
+  ctx.fillStyle = gf;
+  ctx.fill();
+
+  // Outer glow
+  ctx.strokeStyle = `rgba(130, 60, 220, ${0.22 + 0.07 * Math.sin(t * 0.5)})`;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawLesions(t) {
+  for (const l of LESIONS) {
+    const pulse = 0.6 + 0.4 * Math.sin(t * 0.8 + l.x);
+    const g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * 1.4);
+    g.addColorStop(0, `rgba(255, 70, 0, ${0.22 * pulse})`);
+    g.addColorStop(0.5, `rgba(200, 40, 0, ${0.10 * pulse})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(l.x, l.y, l.r * 1.4, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+}
+
+function drawEdges(t) {
+  for (const e of EDGES) {
+    const na = NODES[e.a], nb = NODES[e.b];
+    const lf = e.lesion;
+    const alpha = lf > 0.5
+      ? (0.08 + 0.04 * Math.sin(t * 2 + e.a)) * (1 - lf)
+      : 0.14 + 0.04 * Math.sin(t * 0.7 + e.b * 0.3);
+
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+
+    if (lf > 0.3) {
+      // Lesion: draw as fragmented dashes
+      ctx.setLineDash([3, 6 + lf * 8]);
+      ctx.strokeStyle = `rgba(255, 120, 30, ${alpha * 0.9})`;
+    } else {
+      ctx.setLineDash([]);
+      ctx.strokeStyle = `rgba(140, 70, 230, ${alpha})`;
+    }
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawNodes(t) {
+  for (const n of NODES) {
+    const pulse = 0.6 + 0.4 * Math.sin(t * 0.9 + n.phase);
+    const lf = n.lesion;
+    const bright = n.brightness * pulse;
+
+    if (lf > 0.3) {
+      // Damaged node
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
+      g.addColorStop(0, `rgba(255, 100, 20, ${0.7 * bright * (1 - lf * 0.5)})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 0.8, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,120,40,${0.6 * bright})`;
+      ctx.fill();
+    } else {
+      // Healthy node glow
+      const hue = 260 + 40 * Math.sin(n.phase);
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 5);
+      g.addColorStop(0, `hsla(${hue}, 80%, 80%, ${0.55 * bright})`);
+      g.addColorStop(0.4, `hsla(${hue}, 70%, 50%, ${0.18 * bright})`);
+      g.addColorStop(1, 'hsla(0,0%,0%,0)');
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 5, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = `hsla(${hue}, 90%, 90%, ${0.85 * bright})`;
+      ctx.fill();
+    }
+  }
+}
+
+function drawSignals(t) {
+  for (let i = SIGNALS.length - 1; i >= 0; i--) {
+    const s = SIGNALS[i];
+    s.t += s.speed;
+
+    if (s.t >= 1) {
+      SIGNALS.splice(i, 1);
+      spawnSignal();
+      continue;
+    }
+
+    const na = NODES[s.edge.a], nb = NODES[s.edge.b];
+    const tt = s.rev ? 1 - s.t : s.t;
+    const x = na.x + (nb.x - na.x) * tt;
+    const y = na.y + (nb.y - na.y) * tt;
+
+    const lf = lesionFactor(x, y);
+
+    // Slow down or flicker in lesion zones
+    if (lf > 0.5) {
+      s.speed *= 0.94;
+      if (Math.random() < lf * 0.4) continue;
+    }
+
+    // Trail
+    s.trail.push({ x, y });
+    if (s.trail.length > 10) s.trail.shift();
+
+    // Draw trail
+    if (s.trail.length > 1) {
+      for (let j = 1; j < s.trail.length; j++) {
+        const alpha = (j / s.trail.length) * (lf > 0.4 ? 0.3 : 0.7);
+        ctx.beginPath();
+        ctx.moveTo(s.trail[j-1].x, s.trail[j-1].y);
+        ctx.lineTo(s.trail[j].x, s.trail[j].y);
+        ctx.strokeStyle = s.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba').replace('#', 'rgb').replace('rgb(','rgba(');
+        // Simpler: just use a parsed color approach
+        ctx.strokeStyle = hexToRgba(s.color, alpha);
+        ctx.lineWidth = s.size * (j / s.trail.length);
+        ctx.stroke();
+      }
+    }
+
+    // Draw head
+    const headAlpha = lf > 0.5 ? 0.3 + 0.3 * Math.random() : 1;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, s.size * 3);
+    g.addColorStop(0, hexToRgba(s.color, headAlpha));
+    g.addColorStop(1, hexToRgba(s.color, 0));
+    ctx.beginPath(); ctx.arc(x, y, s.size * 3, 0, Math.PI*2);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, s.size * 0.8, 0, Math.PI*2);
+    ctx.fillStyle = hexToRgba(s.color, headAlpha);
+    ctx.fill();
+  }
+}
+
+// Parse hex/named to rgba
+const _colorCache = {};
+function hexToRgba(hex, a) {
+  const key = hex;
+  if (!_colorCache[key]) {
+    const r = document.createElement('div');
+    r.style.color = hex;
+    document.body.appendChild(r);
+    const c = getComputedStyle(r).color;
+    document.body.removeChild(r);
+    const m = c.match(/\d+/g);
+    _colorCache[key] = m ? [+m[0], +m[1], +m[2]] : [255,255,255];
+  }
+  const [r,g,b] = _colorCache[key];
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// Warm background glow
+function drawBgGlow(t) {
+  const g1 = ctx.createRadialGradient(CX - BRX*0.3, CY - BRY*0.2, 10, CX, CY, BRX*1.5);
+  g1.addColorStop(0, `rgba(80, 20, 160, ${0.10 + 0.04 * Math.sin(t * 0.3)})`);
+  g1.addColorStop(0.5, 'rgba(20, 5, 60, 0.05)');
+  g1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, W, H);
+
+  const g2 = ctx.createRadialGradient(CX + BRX*0.2, CY + BRY*0.3, 10, CX + BRX*0.2, CY + BRY*0.3, BRX);
+  g2.addColorStop(0, `rgba(0, 140, 200, ${0.07 + 0.03 * Math.sin(t * 0.5 + 1)})`);
+  g2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── MAIN LOOP ─────────────────────────────
+function loop() {
+  const t = frame * 0.016;
+  frame++;
+
+  // Clear
+  ctx.fillStyle = PAL.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawBgGlow(t);
+  drawBrainOutline(t);
+  drawLesions(t);
+  drawEdges(t);
+  drawNodes(t);
+  drawSignals(t);
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
