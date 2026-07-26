@@ -38,13 +38,13 @@ html, body {
 /* ── STARS BG ── */
 #kag-bg {
   position: fixed; inset: 0; z-index: -1;
-  background: url('sakurajima.jpg') center 35%/cover no-repeat;
+  background: url('sakurajima.jpg') center 85%/cover no-repeat;
 }
 #stars-canvas {
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: url('sakurajima.jpg') center 35%/cover no-repeat;
+  background: url('sakurajima.jpg') center 85%/cover no-repeat;
 }
 
 /* ── SUBTITLES ── */
@@ -73,14 +73,14 @@ html, body {
   align-items: center; justify-content: center;
   z-index: 10;
   overflow-y: auto;
-  background: url('sakurajima.jpg') center 35%/cover no-repeat;
+  background: url('sakurajima.jpg') center 85%/cover no-repeat;
 }
 
 /* ── TITLE ── */
 #title-screen {
   text-align: center;
   padding: 40px 24px;
-  background: url('sakurajima.jpg') center 35%/cover no-repeat;
+  background: url('sakurajima.jpg') center 85%/cover no-repeat;
 }
 
 .lantern-row {
@@ -495,15 +495,20 @@ html, body {
   const ctx = c.getContext('2d');
   let off = null;
 
+  // ── BACKGROUND PHOTO (drawn directly onto canvas) ────────────
+  const _bgNormal  = new Image(); _bgNormal.src  = 'sakurajima.jpg';
+  const _bgErupt   = new Image(); _bgErupt.src   = 'sakurajima-eruption.jpg';
+  let _bgCurrent = _bgNormal;
+
   // ── LIVE GEOMETRY (updated each frame) ──────────────────────
   const G = {};
   function refreshGeo() {
     G.W = c.width; G.H = c.height;
     G.sx = G.W*0.04; G.sw = G.W*0.92;
     G.midX = G.W*0.50;
-    G.roofPeak = G.H*0.28; G.roofEdge = G.H*0.40;
-    G.norenBot = G.roofEdge + (G.H*0.575 - G.roofEdge)*0.58;
-    G.counterY  = G.H*0.575; G.stallBot = G.H*0.69;
+    G.roofPeak = G.H*0.36; G.roofEdge = G.H*0.48;
+    G.norenBot = G.roofEdge + (G.H*0.655 - G.roofEdge)*0.58;
+    G.counterY  = G.H*0.655; G.stallBot = G.H*0.77;
     G.lamps = [G.sx+G.sw*0.18, G.sx+G.sw*0.50, G.sx+G.sw*0.82];
   }
 
@@ -526,33 +531,33 @@ html, body {
     g.fillRect(0, 0, W, H);
 
     // HORIZON CITY GLOW
-    const hg = g.createLinearGradient(0, H * 0.28, 0, H * 0.50);
+    const hg = g.createLinearGradient(0, H * 0.36, 0, H * 0.58);
     hg.addColorStop(0, 'rgba(0,0,0,0)');
     hg.addColorStop(0.5, 'rgba(255,90,20,0.045)');
     hg.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = hg; g.fillRect(0, H * 0.28, W, H * 0.22);
+    g.fillStyle = hg; g.fillRect(0, H * 0.36, W, H * 0.22);
 
     // STREET
-    const gr = g.createLinearGradient(0, H*0.68, 0, H);
+    const gr = g.createLinearGradient(0, H*0.76, 0, H);
     gr.addColorStop(0, '#070b14'); gr.addColorStop(1, '#040710');
-    g.fillStyle = gr; g.fillRect(0, H*0.68, W, H*0.32);
+    g.fillStyle = gr; g.fillRect(0, H*0.76, W, H*0.24);
 
     // Wet pavement reflection (warm)
-    const ref = g.createRadialGradient(W*0.50, H*0.71, 0, W*0.50, H*0.71, W*0.42);
+    const ref = g.createRadialGradient(W*0.50, H*0.79, 0, W*0.50, H*0.79, W*0.42);
     ref.addColorStop(0, 'rgba(255,130,40,0.09)');
     ref.addColorStop(0.5,'rgba(255,90,20,0.04)');
     ref.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = ref; g.fillRect(0, H*0.68, W, H*0.32);
+    g.fillStyle = ref; g.fillRect(0, H*0.76, W, H*0.24);
 
     // YATAI
     drawYatai(g, W, H);
 
     // Ground-level fog
-    const fog = g.createLinearGradient(0, H*0.66, 0, H*0.80);
+    const fog = g.createLinearGradient(0, H*0.74, 0, H*0.88);
     fog.addColorStop(0,'rgba(10,14,28,0)');
     fog.addColorStop(0.45,'rgba(10,14,28,0.18)');
     fog.addColorStop(1,'rgba(8,11,22,0)');
-    g.fillStyle = fog; g.fillRect(0, H*0.66, W, H*0.14);
+    g.fillStyle = fog; g.fillRect(0, H*0.74, W, H*0.14);
   }
 
   function drawYatai(g, W, H) {
@@ -719,6 +724,9 @@ html, body {
     // ── POLICE ──────────────────────────────────────────────────────
     { type:'suit', jacket:'#1c2854', jacketD:'#0e1638', pants:'#162044', shirt:'#e0e4d8', cuff:'#eaeedc', skin:'#c09870', skinD:'#9a7850', hair:'#0c0808', hairStyle:'buzz', police:true },
     { type:'suit', jacket:'#1a2650', jacketD:'#0c1430', pants:'#142040', shirt:'#dce0d0', cuff:'#e8ece0', skin:'#d0a878', skinD:'#aa8858', hair:'#242018', hairStyle:'buzz', police:true },
+    // ── POLITICIAN ──────────────────────────────────────────────────
+    { type:'suit', jacket:'#1a1a28', jacketD:'#0e0e18', pants:'#141420', shirt:'#eeeae0', cuff:'#f4f0e8', skin:'#c09870', skinD:'#9a7850', hair:'#b8b4b0', hairStyle:'thin', tieColor:'#8a1820', politician:true },
+    { type:'suit', jacket:'#162038', jacketD:'#0e1424', pants:'#101828', shirt:'#eae6dc', cuff:'#f2eee6', skin:'#c8a078', skinD:'#a88058', hair:'#989490', hairStyle:'medium', tieColor:'#1a2858', politician:true },
     // ── SUMO ────────────────────────────────────────────────────────
     { type:'tee', jacket:'#d0a878', jacketD:'#b08858', pants:'#18100a', shirt:'#d0a878', cuff:'#d0a878', skin:'#d0a878', skinD:'#b08858', hair:'#080404', hairStyle:'buzz', sumo:true },
   ];
@@ -1071,6 +1079,13 @@ html, body {
   if (window.speechSynthesis) {
     window.speechSynthesis.addEventListener('voiceschanged', _loadVoices);
     _loadVoices();
+    // Chrome bug: speaking flag gets stuck when tab is backgrounded; pause/resume unsticks it
+    setInterval(() => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 5000);
   }
   // customers cycle through all-but-last voice; master gets the last
   function _custVoice(idx) {
@@ -1350,11 +1365,12 @@ html, body {
     if (_enM) { setTimeout(() => { try { if (window._showSubtitle) window._showSubtitle(_enM); } catch(_) {} }, delay); }
     if (window.speechSynthesis) {
       setTimeout(() => {
-        window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(text);
-        utt.lang = 'ja-JP'; utt.rate = 1.05; utt.pitch = 0.78; utt.volume = 0.88;
-        const v = _masterVoice(); if (v) utt.voice = v;
-        window.speechSynthesis.speak(utt);
+        if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+          const utt = new SpeechSynthesisUtterance(text);
+          utt.lang = 'ja-JP'; utt.rate = 1.05; utt.pitch = 0.78; utt.volume = 0.88;
+          const v = _masterVoice(); if (v) utt.voice = v;
+          window.speechSynthesis.speak(utt);
+        }
       }, delay);
     }
   }
@@ -1552,6 +1568,14 @@ html, body {
     // Hardcoded event strings
     'うわ！大丈夫ですか！！': "Oh no! Are you alright?!",
     'え…大丈夫ですか！？': "W-what... are you okay?!",
+    'え！？大丈夫ですか！！おせんべい！！': "What!? Are you okay?! The rice cracker!!",
+    'げほっ…おせんべい…のどに…': "Geh... the rice cracker... my throat...",
+    'ごほっ…ごほっ…つまった…': "Cough... cough... it's stuck...",
+    'か、かたい…のどに…ごほっ': "S-so hard... in my throat... cough",
+    'おせんべい…げほっ…': "Rice cracker... cough...",
+    '政治家です！鹿児島のために頑張ってます！': "I'm a politician! Working hard for Kagoshima!",
+    '代議士の○○です！よろしくお願いします！': "I'm Representative ○○! Your support means everything!",
+    '市議会議員です！地域の声を届けます！': "I'm a city councillor! I carry the voice of the community!",
     // Nag strings
     'すみません！まだですか？': "Excuse me! Is it ready yet?",
     'あの…頼んだんですが…': "Um... I placed an order...",
@@ -2221,9 +2245,10 @@ html, body {
     const ph = Math.random() * 360;
     const ps = type === 'suit' ? 8 + Math.random()*22 : 15 + Math.random()*45;
     const pl = 14 + Math.random()*22;
-    const geisha = !!base.geisha;
-    const police = !!base.police;
-    const sumo   = !!base.sumo;
+    const geisha     = !!base.geisha;
+    const police     = !!base.police;
+    const sumo       = !!base.sumo;
+    const politician = !!base.politician;
     let skH = 18 + Math.random()*22, skS = 38 + Math.random()*32, skL = 42 + Math.random()*32;
     if (geisha) { skH = 35; skS = 12; skL = 88; } // white shironuri makeup
     const female = geisha || Math.random() < 0.50;
@@ -2239,12 +2264,14 @@ html, body {
       ? (base.tieColor || _tiePal[Math.floor(Math.random()*_tiePal.length)])
       : null;
     const skCol = hsl(skH, skS, skL), skDCol = hsl(skH, skS, Math.max(0, skL-16));
-    // Police and sumo preserve specific uniform colors
-    if (police || sumo) {
+    // Police, sumo, and politician preserve specific colors
+    if (police || sumo || politician) {
       return {
         type, jacket:base.jacket, jacketD:base.jacketD, pants:base.pants,
         shirt:base.shirt, cuff:base.cuff, skin:skCol, skinD:skDCol,
-        hair, hairStyle, tieColor:null, female:false, geisha:false, police, sumo,
+        hair:base.hair||hair, hairStyle:base.hairStyle||hairStyle,
+        tieColor:politician?(base.tieColor||null):null,
+        female:false, geisha:false, police, sumo, politician,
       };
     }
     return {
@@ -2255,7 +2282,7 @@ html, body {
       shirt:   type === 'suit' ? hsl(40,18,86) : hsl(h, s, l),
       cuff:    type === 'suit' ? hsl(40,14,90) : hsl(h, s, Math.max(0, l-14)),
       skin:    skCol, skinD: skDCol,
-      hair, hairStyle, tieColor, female, geisha, police:false, sumo:false,
+      hair, hairStyle, tieColor, female, geisha, police:false, sumo:false, politician:false,
     };
   }
 
@@ -2271,7 +2298,7 @@ html, body {
 
   // Stars → rep: 1★=8, 2★=22, 3★=45, 4★=70, 5★=90
   // At 5 stars: orders arrive ~75% faster, +18 extra rounds
-  function _repEatMax(base)   { return Math.floor(base * (1 - (_curRep / 100) * 0.75)); }
+  function _repEatMax(base)   { return Math.floor(base * 0.8 * (1 - (_curRep / 100) * 0.75)); }
   function _repRoundsBonus()  { return Math.floor((_curRep / 100) * 18); }
 
   function spawnCustomer() {
@@ -2281,6 +2308,9 @@ html, body {
     const ct = randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
     if (ct.type === 'kimono' && !ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playYakuzaSting(); } catch(_) {} }
     if (ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playGeishaMusic(); } catch(_) {} }
+    if (ct.sumo) { try { if (window.AUDIO_REF) window.AUDIO_REF.playSumoEntrance(); } catch(_) {} }
+    if (ct.police) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliceSiren(); } catch(_) {} }
+    if (ct.politician) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliticianFanfare(); } catch(_) {} }
     const tx = slotX(slot);
     slot.cu = {
       state: 'walk_in',
@@ -2295,7 +2325,7 @@ html, body {
       smoker: Math.random() < 0.28,
       eatTimer: 0,
       eatMax: ct.sumo ? _repEatMax(4000 + Math.floor(Math.random()*2000)) : _repEatMax(11200 + Math.floor(Math.random()*9600)),
-      roundsLeft: ct.sumo ? 22 + Math.floor(Math.random() * 14) + _repRoundsBonus() : 10 + Math.floor(Math.random() * 10) + _repRoundsBonus(),
+      roundsLeft: ct.sumo ? 26 + Math.floor(Math.random() * 17) + _repRoundsBonus() : 12 + Math.floor(Math.random() * 12) + _repRoundsBonus(),
       unhappy: Math.random() < 0.12,
       alcoholCount: ct.sumo ? 2 : 0,
       voiceIdx:   Math.floor(Math.random() * 12),
@@ -2322,8 +2352,8 @@ html, body {
         interest: _randInt(),
         smoker: Math.random() < 0.28,
         eatTimer: Math.floor(Math.random()*300),
-        eatMax: 5600 + Math.floor(Math.random()*4800),
-        roundsLeft: 5 + Math.floor(Math.random() * 6),
+        eatMax: 4480 + Math.floor(Math.random()*3840),
+        roundsLeft: 6 + Math.floor(Math.random() * 7),
         unhappy: Math.random() < 0.25,
         alcoholCount: 0,
         voiceIdx:   Math.floor(Math.random() * 12),
@@ -2541,6 +2571,21 @@ html, body {
             cu.roundsLeft = 0;
             return;
           }
+          // Osenbe choking — 10% chance of death
+          if (cu.dish === 'osenbe' && Math.random() < 0.10) {
+            cu.dead = true;
+            cu.deathTimer = 0;
+            cu.roundsLeft = 0;
+            _deathFlash = 60;
+            try { if (window.AUDIO_REF) window.AUDIO_REF.playChoke(); } catch(_) {}
+            setTimeout(() => { try { if (window.AUDIO_REF) window.AUDIO_REF.playSadTrombone(); } catch(_) {} }, 2200);
+            const { counterY } = G;
+            spawnBubble(cu.x, counterY - H*0.28,
+              ['げほっ…おせんべい…のどに…', 'ごほっ…ごほっ…つまった…', 'か、かたい…のどに…ごほっ', 'おせんべい…げほっ…'][Math.floor(Math.random()*4)],
+              { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch * 0.5, rate: 0.5 });
+            setTimeout(() => spawnMasterSay('え！？大丈夫ですか！！おせんべい！！'), 1600);
+            return;
+          }
           // Fugu poisoning — 10% chance of death
           if (cu.dish === 'fugu' && Math.random() < 0.10) {
             cu.dead = true;
@@ -2548,6 +2593,7 @@ html, body {
             cu.roundsLeft = 0;
             _deathFlash = 60;
             try { if (window.AUDIO_REF) window.AUDIO_REF.playDeathScream(); } catch(_) {}
+            setTimeout(() => { try { if (window.AUDIO_REF) window.AUDIO_REF.playSadTrombone(); } catch(_) {} }, 1800);
             const { counterY } = G;
             spawnBubble(cu.x, counterY - H*0.28,
               FUGU_DEATH_CRIES[Math.floor(Math.random() * FUGU_DEATH_CRIES.length)],
@@ -2560,10 +2606,10 @@ html, body {
             cu.alcoholCount = (cu.alcoholCount || 0) + 1;
             if (cu.alcoholCount === 2) {
               // Getting a buzz — order one more for sure
-              cu.roundsLeft += 2 + Math.floor(Math.random() * 3);
+              cu.roundsLeft += 2 + Math.floor(Math.random() * 4);
             } else if (cu.alcoholCount === 3) {
               // Drunk — settle in for a long night
-              cu.roundsLeft += 8 + Math.floor(Math.random() * 6);
+              cu.roundsLeft += 10 + Math.floor(Math.random() * 7);
             } else if (cu.alcoholCount > 3) {
               // Each drink after that leads to two more — deep in it now
               cu.roundsLeft += 1 + (Math.random() < 0.80 ? 1 : 0);
@@ -3873,6 +3919,20 @@ html, body {
           g.fillStyle = '#c8960a'; g.beginPath(); g.arc(_bx,_by,W*0.0065,0,Math.PI*2); g.fill();
           g.fillStyle = '#f0c020'; g.beginPath(); g.arc(_bx,_by,W*0.004,0,Math.PI*2); g.fill();
         }
+        // Politician rosette on left lapel
+        if (ct.politician) {
+          const _rx = -W*0.008, _ry = shldrY+H*0.038, _rr = W*0.009;
+          const _petals = 8;
+          g.fillStyle = ct.tieColor || '#c81820';
+          for (let _p = 0; _p < _petals; _p++) {
+            const _a = (_p / _petals) * Math.PI * 2;
+            g.beginPath();
+            g.ellipse(_rx + Math.cos(_a)*_rr*0.65, _ry + Math.sin(_a)*_rr*0.65, _rr*0.38, _rr*0.22, _a, 0, Math.PI*2);
+            g.fill();
+          }
+          g.fillStyle = '#f8f8f0'; g.beginPath(); g.arc(_rx, _ry, _rr*0.38, 0, Math.PI*2); g.fill();
+          g.fillStyle = ct.tieColor || '#c81820'; g.beginPath(); g.arc(_rx, _ry, _rr*0.20, 0, Math.PI*2); g.fill();
+        }
       } else if (ct.type === 'hoodie') {
         // Hood drape behind neck/shoulder
         g.fillStyle = ct.jacket;
@@ -5096,11 +5156,11 @@ html, body {
 
   // ── ROCKET LAUNCH EVENT ───────────────────────
   let _rocket = null; // { startT, reacted }
-  let _nextRocketT = 90 + Math.random() * 120; // first launch 1.5–3.5 min in
+  let _nextRocketT = 180 + Math.random() * 240; // first launch 3–7 min in
 
   // ── EARTHQUAKE EVENT ─────────────────────────
   let _earthquake = null; // { startT, intensity, reacted }
-  let _nextEarthquakeT = 80 + Math.random() * 120;
+  let _nextEarthquakeT = 200 + Math.random() * 240;
 
   function _applyShake(dx, dy) {
     c.style.transform = dx === 0 && dy === 0 ? '' : `translate(${dx}px,${dy}px)`;
@@ -5127,7 +5187,7 @@ html, body {
     const dur = 7 + _earthquake.intensity * 0.4;
     if (age > dur) {
       _earthquake = null;
-      _nextEarthquakeT = T + 150 + Math.random() * 200;
+      _nextEarthquakeT = T + 300 + Math.random() * 360;
       _applyShake(0, 0);
       return;
     }
@@ -5183,6 +5243,7 @@ html, body {
     if (!_eruption && T > _nextEruptionT) {
       _eruption = { startT: T, reacted: false };
       // Swap background to eruption photo
+      _bgCurrent = _bgErupt;
       const bg = document.getElementById('kag-bg');
       if (bg) bg.style.backgroundImage = "url('sakurajima-eruption.jpg')";
       // Seed embers
@@ -5211,6 +5272,7 @@ html, body {
     if (age > dur) {
       _eruption = null;
       _nextEruptionT = T + 180 + Math.random() * 240;
+      _bgCurrent = _bgNormal;
       const bg = document.getElementById('kag-bg');
       if (bg) bg.style.backgroundImage = "url('sakurajima.jpg')";
       return;
@@ -5314,7 +5376,7 @@ html, body {
     const { W, H } = G;
     const age = T - _rocket.startT;
     const dur = 7.0; // seconds of visible flight
-    if (age > dur) { _rocket = null; _nextRocketT = T + 120 + Math.random() * 180; return; }
+    if (age > dur) { _rocket = null; _nextRocketT = T + 300 + Math.random() * 360; return; }
 
     const progress = age / dur;
     // Arc from lower-right horizon up toward upper-left
@@ -5383,10 +5445,18 @@ html, body {
     const T = (ts - t0) / 1000;
     const { W, H } = G;
 
-    // Clear canvas so photo background shows through each frame
+    // Clear canvas then draw background photo directly (cover + top-biased)
     ctx.clearRect(0, 0, W, H);
+    if (_bgCurrent.complete && _bgCurrent.naturalWidth > 0) {
+      const iW = _bgCurrent.naturalWidth, iH = _bgCurrent.naturalHeight;
+      const scale = Math.max(W / iW, H / iH);
+      const sW = iW * scale, sH = iH * scale;
+      const bx = (W - sW) * 0.5;
+      const by = (H - sH) * 0.22; // 22% = lean toward top to show volcano
+      ctx.drawImage(_bgCurrent, bx, by, sW, sH);
+    }
 
-    // Composite static background
+    // Composite static background (stall structure, transparent sky area)
     ctx.drawImage(off, 0, 0);
 
     // Earthquake event
@@ -5515,7 +5585,14 @@ html, body {
         {
           const ct = cu.ct;
           let _typeJp, _typeEn;
-          if (ct.police) {
+          if (ct.politician) {
+            const _pols = [
+              ['政治家です！鹿児島のために頑張ってます！', "I'm a politician! Working hard for Kagoshima!"],
+              ['代議士の○○です！よろしくお願いします！', "I'm Representative ○○! Your support means everything!"],
+              ['市議会議員です！地域の声を届けます！', "I'm a city councillor! I carry the voice of the community!"],
+            ];
+            [_typeJp, _typeEn] = _pols[Math.floor(Math.random() * _pols.length)];
+          } else if (ct.police) {
             _typeJp = '警察官です！鹿児島を守ってますよ！'; _typeEn = "I'm a police officer! Protecting Kagoshima!";
           } else if (ct.sumo) {
             _typeJp = '力士です！毎日稽古してます！'; _typeEn = "I'm a sumo wrestler! Training every day!";
@@ -5651,7 +5728,7 @@ const AUDIO = {
     }
     this.ctx.resume().then(() => {
       this.bgmGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      this.bgmGain.gain.setTargetAtTime(0.44, this.ctx.currentTime, 3.5);
+      this.bgmGain.gain.setTargetAtTime(0.22, this.ctx.currentTime, 3.5);
       this.bgmEl.currentTime = 0;
       this.bgmEl.play().catch(e => console.warn('bgm play failed:', e));
     });
@@ -5877,6 +5954,72 @@ const AUDIO = {
     sine.start(t); sine.stop(t + 1.7);
   },
 
+  playSadTrombone() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Classic wah-wah-wah-waaaaah: four descending notes, last one long and drooping
+    const notes = [
+      { f: 466, start: 0.0,  dur: 0.38, endF: 440 },
+      { f: 392, start: 0.36, dur: 0.38, endF: 370 },
+      { f: 330, start: 0.70, dur: 0.38, endF: 311 },
+      { f: 277, start: 1.02, dur: 1.80, endF: 196 },
+    ];
+    notes.forEach(({ f, start, dur, endF }) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, t + start);
+      osc.frequency.linearRampToValueAtTime(endF, t + start + dur);
+      // Trombone formant: lowpass + slight resonance
+      const filt = this.ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 1800; filt.Q.value = 1.6;
+      const gn = this.ctx.createGain();
+      gn.gain.setValueAtTime(0, t + start);
+      gn.gain.linearRampToValueAtTime(0.32, t + start + 0.05);
+      gn.gain.setValueAtTime(0.32, t + start + dur - 0.12);
+      gn.gain.linearRampToValueAtTime(0, t + start + dur);
+      osc.connect(filt); filt.connect(gn); gn.connect(this.master);
+      osc.start(t + start); osc.stop(t + start + dur + 0.05);
+    });
+  },
+
+  playChoke() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Horrible choking: rapid guttural pulses followed by wheeze and silence
+    [0, 0.12, 0.22, 0.30, 0.37, 0.43, 0.48].forEach((delay, i) => {
+      const n = this.ctx.createBufferSource(); n.buffer = this._whiteBuf(0.15);
+      const filt = this.ctx.createBiquadFilter();
+      filt.type = 'bandpass'; filt.frequency.value = 800 + i * 120; filt.Q.value = 4.0;
+      const gn = this.ctx.createGain();
+      const vol = 0.5 + i * 0.06;
+      gn.gain.setValueAtTime(vol, t + delay); gn.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.10);
+      n.connect(filt); filt.connect(gn); gn.connect(this.master);
+      n.start(t + delay); n.stop(t + delay + 0.15);
+      // Pitched croak underneath each pulse
+      const osc = this.ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180 - i * 14, t + delay);
+      osc.frequency.exponentialRampToValueAtTime(80, t + delay + 0.08);
+      const og = this.ctx.createGain();
+      og.gain.setValueAtTime(0.30, t + delay); og.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.09);
+      osc.connect(og); og.connect(this.master);
+      osc.start(t + delay); osc.stop(t + delay + 0.10);
+    });
+    // Long death wheeze/rattle at 0.55s
+    const wheeze = this.ctx.createBufferSource(); wheeze.buffer = this._whiteBuf(1.5);
+    const wFilt = this.ctx.createBiquadFilter(); wFilt.type = 'bandpass'; wFilt.frequency.value = 1400; wFilt.Q.value = 8;
+    const wGain = this.ctx.createGain();
+    wGain.gain.setValueAtTime(0.001, t + 0.55); wGain.gain.linearRampToValueAtTime(0.55, t + 0.60); wGain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+    wheeze.connect(wFilt); wFilt.connect(wGain); wGain.connect(this.master);
+    wheeze.start(t + 0.55); wheeze.stop(t + 1.9);
+    // Final pitched death rattle descending
+    const rattle = this.ctx.createOscillator(); rattle.type = 'sawtooth';
+    rattle.frequency.setValueAtTime(160, t + 0.58); rattle.frequency.exponentialRampToValueAtTime(40, t + 1.6);
+    const rGain = this.ctx.createGain();
+    rGain.gain.setValueAtTime(0.20, t + 0.58); rGain.gain.exponentialRampToValueAtTime(0.001, t + 1.7);
+    rattle.connect(rGain); rGain.connect(this.master);
+    rattle.start(t + 0.58); rattle.stop(t + 1.75);
+  },
+
   playYakuzaSting() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -5974,6 +6117,114 @@ const AUDIO = {
     shimGain.gain.setValueAtTime(0.001, t); shimGain.gain.linearRampToValueAtTime(0.04, t + 1.0); shimGain.gain.linearRampToValueAtTime(0.001, t + 4.2);
     shimSrc.connect(shimFilt); shimFilt.connect(shimGain); shimGain.connect(this.master);
     shimSrc.start(t); shimSrc.stop(t + 4.5);
+  },
+
+  playPoliceSiren() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Japanese police siren: pi-po (ピーポー) alternating ~960Hz / ~770Hz
+    // Route through bandpass to mimic a car speaker/distance
+    const sirenOsc = this.ctx.createOscillator();
+    sirenOsc.type = 'square';
+    // Frequency automation: 4 cycles of pi (960) → po (770)
+    const hiF = 960, loF = 770, cycleLen = 0.42;
+    sirenOsc.frequency.setValueAtTime(hiF, t);
+    for (let i = 0; i < 5; i++) {
+      const base = t + i * cycleLen;
+      sirenOsc.frequency.setValueAtTime(hiF, base);
+      sirenOsc.frequency.linearRampToValueAtTime(loF, base + cycleLen * 0.48);
+      sirenOsc.frequency.setValueAtTime(loF, base + cycleLen * 0.50);
+      sirenOsc.frequency.linearRampToValueAtTime(hiF, base + cycleLen * 0.98);
+    }
+    // Bandpass: mimics loudspeaker resonance of a distant siren
+    const bpFilt = this.ctx.createBiquadFilter();
+    bpFilt.type = 'bandpass'; bpFilt.frequency.value = 860; bpFilt.Q.value = 1.4;
+    // Slight waver — Doppler-like pitch wobble
+    const waverOsc = this.ctx.createOscillator();
+    waverOsc.type = 'sine'; waverOsc.frequency.value = 3.8;
+    const waverGain = this.ctx.createGain(); waverGain.gain.value = 14;
+    waverOsc.connect(waverGain); waverGain.connect(sirenOsc.frequency);
+    // Amplitude envelope: fade in, hold, fade out
+    const sirenGain = this.ctx.createGain();
+    sirenGain.gain.setValueAtTime(0, t);
+    sirenGain.gain.linearRampToValueAtTime(0.28, t + 0.18);
+    sirenGain.gain.setValueAtTime(0.28, t + cycleLen * 4.5);
+    sirenGain.gain.linearRampToValueAtTime(0, t + cycleLen * 5 + 0.2);
+    sirenOsc.connect(bpFilt); bpFilt.connect(sirenGain); sirenGain.connect(this.master);
+    const dur = cycleLen * 5 + 0.25;
+    sirenOsc.start(t); sirenOsc.stop(t + dur);
+    waverOsc.start(t); waverOsc.stop(t + dur);
+  },
+
+  playPoliticianFanfare() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Cheesy campaign jingle: bright ascending brass + crowd cheer
+    [[523,0],[659,0.14],[784,0.26],[1047,0.38],[784,0.54],[1047,0.66]].forEach(([freq, delay]) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, t + delay);
+      const filt = this.ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 2200; filt.Q.value = 0.8;
+      const gn = this.ctx.createGain();
+      gn.gain.setValueAtTime(0, t + delay);
+      gn.gain.linearRampToValueAtTime(0.18, t + delay + 0.03);
+      gn.gain.linearRampToValueAtTime(0, t + delay + 0.13);
+      osc.connect(filt); filt.connect(gn); gn.connect(this.master);
+      osc.start(t + delay); osc.stop(t + delay + 0.16);
+    });
+    // Crowd cheer burst
+    const cheer = this.ctx.createBufferSource(); cheer.buffer = this._whiteBuf(1.5);
+    const cFilt = this.ctx.createBiquadFilter(); cFilt.type = 'bandpass'; cFilt.frequency.value = 1200; cFilt.Q.value = 0.5;
+    const cGain = this.ctx.createGain();
+    cGain.gain.setValueAtTime(0.001, t + 0.7); cGain.gain.linearRampToValueAtTime(0.22, t + 1.0); cGain.gain.linearRampToValueAtTime(0.001, t + 2.0);
+    cheer.connect(cFilt); cFilt.connect(cGain); cGain.connect(this.master);
+    cheer.start(t + 0.7); cheer.stop(t + 2.2);
+  },
+
+  playSumoEntrance() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Three heavy stomps — accelerating
+    [0, 0.30, 0.55].forEach((delay, i) => {
+      const scale = 1 - i * 0.12;
+      const nSrc = this.ctx.createBufferSource();
+      nSrc.buffer = this._whiteBuf(0.5);
+      const nFilt = this.ctx.createBiquadFilter();
+      nFilt.type = 'lowpass'; nFilt.frequency.setValueAtTime(130, t + delay);
+      const nGain = this.ctx.createGain();
+      nGain.gain.setValueAtTime(scale * 1.3, t + delay); nGain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.28);
+      nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(this.master);
+      nSrc.start(t + delay); nSrc.stop(t + delay + 0.35);
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(95 - i * 8, t + delay);
+      osc.frequency.exponentialRampToValueAtTime(36, t + delay + 0.22);
+      const oscG = this.ctx.createGain();
+      oscG.gain.setValueAtTime(scale * 1.6, t + delay); oscG.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.28);
+      osc.connect(oscG); oscG.connect(this.master);
+      osc.start(t + delay); osc.stop(t + delay + 0.32);
+    });
+    // Big final slam at 0.78s
+    const sNoise = this.ctx.createBufferSource(); sNoise.buffer = this._whiteBuf(0.8);
+    const sFilt = this.ctx.createBiquadFilter(); sFilt.type = 'lowpass'; sFilt.frequency.setValueAtTime(200, t + 0.78);
+    const sGain = this.ctx.createGain();
+    sGain.gain.setValueAtTime(2.2, t + 0.78); sGain.gain.exponentialRampToValueAtTime(0.001, t + 1.55);
+    sNoise.connect(sFilt); sFilt.connect(sGain); sGain.connect(this.master);
+    sNoise.start(t + 0.78); sNoise.stop(t + 1.6);
+    const bigThud = this.ctx.createOscillator();
+    bigThud.type = 'sine'; bigThud.frequency.setValueAtTime(130, t + 0.78);
+    bigThud.frequency.exponentialRampToValueAtTime(28, t + 1.20);
+    const bigG = this.ctx.createGain();
+    bigG.gain.setValueAtTime(2.6, t + 0.78); bigG.gain.exponentialRampToValueAtTime(0.001, t + 1.45);
+    bigThud.connect(bigG); bigG.connect(this.master);
+    bigThud.start(t + 0.78); bigThud.stop(t + 1.5);
+    // Crowd gasp/murmur
+    const crowd = this.ctx.createBufferSource(); crowd.buffer = this._whiteBuf(2.0);
+    const cFilt = this.ctx.createBiquadFilter(); cFilt.type = 'bandpass'; cFilt.frequency.value = 700; cFilt.Q.value = 0.7;
+    const cGain = this.ctx.createGain();
+    cGain.gain.setValueAtTime(0.001, t + 0.9); cGain.gain.linearRampToValueAtTime(0.18, t + 1.5); cGain.gain.linearRampToValueAtTime(0.001, t + 3.0);
+    crowd.connect(cFilt); cFilt.connect(cGain); cGain.connect(this.master);
+    crowd.start(t + 0.9); crowd.stop(t + 3.2);
   },
 
   playEarthquake() {
@@ -6159,34 +6410,34 @@ window.AUDIO_REF = AUDIO; // bridge for IIFE to access audio methods
 // DATA
 // ─────────────────────────────────────────────
 const MENU = [
-  { id:'shoyu',    name:'醤油ラーメン',  en:'Shoyu Ramen',    icon:'🍜', price:700,  cook:12, ing:'noodles', day:1, desc:'Soy-based broth with hand-pulled noodles, chashu pork, naruto fishcake, and negi.' },
+  { id:'shoyu',    name:'醤油ラーメン',  en:'Shoyu Ramen',    icon:'🍜', price:700,  cook:14, ing:'noodles', day:1, desc:'Soy-based broth with hand-pulled noodles, chashu pork, naruto fishcake, and negi.' },
   { id:'beer',     name:'ビール',        en:'Beer',           icon:'🍺', price:550,  cook:2,  ing:'beer',    day:1, desc:'Ice-cold Japanese lager, served in a frosted mug. Goes with everything.' },
-  { id:'edamame',  name:'枝豆',          en:'Edamame',        icon:'🫛', price:250,  cook:3,  ing:'edamame', day:1, desc:'Young soybeans steamed in salted water. The perfect bar snack.' },
-  { id:'yakitori', name:'焼き鳥',        en:'Yakitori',       icon:'🍢', price:380,  cook:8,  ing:'chicken', day:1, desc:'Charcoal-grilled chicken skewers glazed with sweet tare sauce.' },
+  { id:'edamame',  name:'枝豆',          en:'Edamame',        icon:'🫛', price:250,  cook:4,  ing:'edamame', day:1, desc:'Young soybeans steamed in salted water. The perfect bar snack.' },
+  { id:'yakitori', name:'焼き鳥',        en:'Yakitori',       icon:'🍢', price:380,  cook:10, ing:'chicken', day:1, desc:'Charcoal-grilled chicken skewers glazed with sweet tare sauce.' },
   { id:'sake',     name:'日本酒',        en:'Sake',           icon:'🍶', price:480,  cook:2,  ing:'sake',    day:1, desc:'Warm nihonshu from a local Niigata brewery. Smooth and slightly sweet.' },
-  { id:'gyoza',    name:'餃子',          en:'Gyoza',          icon:'🥟', price:460,  cook:10, ing:'gyoza',   day:1, desc:'Pan-fried pork and cabbage dumplings — crispy on the bottom, juicy inside.' },
-  { id:'tonk',     name:'豚骨ラーメン',  en:'Tonkotsu Ramen', icon:'🍜', price:950,  cook:18, ing:'pork',    day:1, desc:'Rich 18-hour pork bone broth with thick noodles, black garlic oil, and soft egg.' },
-  { id:'takoyaki', name:'たこ焼き',      en:'Takoyaki',       icon:'🐙', price:400,  cook:9,  ing:'tako',    day:1, desc:'Octopus balls topped with bonito flakes, kewpie mayo, and okonomiyaki sauce.' },
+  { id:'gyoza',    name:'餃子',          en:'Gyoza',          icon:'🥟', price:460,  cook:12, ing:'gyoza',   day:1, desc:'Pan-fried pork and cabbage dumplings — crispy on the bottom, juicy inside.' },
+  { id:'tonk',     name:'豚骨ラーメン',  en:'Tonkotsu Ramen', icon:'🍜', price:950,  cook:22, ing:'pork',    day:1, desc:'Rich 18-hour pork bone broth with thick noodles, black garlic oil, and soft egg.' },
+  { id:'takoyaki', name:'たこ焼き',      en:'Takoyaki',       icon:'🐙', price:400,  cook:11, ing:'tako',    day:1, desc:'Octopus balls topped with bonito flakes, kewpie mayo, and okonomiyaki sauce.' },
   { id:'shochu',   name:'焼酎',          en:'Shochu',         icon:'🥃', price:420,  cook:2,  ing:'shochu',  day:1, desc:'Distilled barley spirit served on the rocks. Clean, dry, and dangerously easy to drink.' },
   { id:'highball', name:'ハイボール',     en:'Highball',       icon:'🥂', price:480,  cook:2,  ing:'whisky',  day:1, desc:'Japanese whisky over ice, topped with soda. Crisp, cold, and dangerously refreshing.' },
-  { id:'adog',     name:'アメリカンドッグ',en:'American Dog',  icon:'🌭', price:320,  cook:6,  ing:'adog',    day:1, desc:'Deep-fried corn dog on a stick with ketchup and mustard. A Japanese festival classic.' },
-  { id:'napolitan',name:'ナポリタン',    en:'Napolitan',      icon:'🍝', price:620,  cook:14, ing:'pasta',   day:1, desc:'Ketchup-braised spaghetti with sausage and green peppers. A beloved Showa-era classic.' },
-  { id:'shiokara', name:'塩辛',          en:'Shiokara',       icon:'🦑', price:350,  cook:4,  ing:'ika',     day:1, desc:'Salted fermented squid in its own ink. Pungent, briny, and irresistible with sake.' },
-  { id:'tamago',   name:'玉子焼き',      en:'Tamagoyaki',     icon:'🥚', price:320,  cook:7,  ing:'tamago',  day:1, desc:'Sweet rolled omelette, sliced into three golden pieces. A soft, pillowy classic.' },
-  { id:'chanko',   name:'ちゃんこ鍋',   en:'Chanko Nabe',    icon:'🍲', price:1200, cook:22, ing:'chanko',  day:1, desc:'The legendary sumo wrestler\'s hot pot. Chicken, tofu, cabbage and negi in rich miso broth. Massive and warming.' },
-  { id:'okonomi',  name:'お好み焼き',   en:'Okonomiyaki',    icon:'🥞', price:650,  cook:13, ing:'ko',      day:1, desc:'Savory cabbage pancake griddled on iron, topped with dark sauce, kewpie mayo, aonori and dancing katsuobushi.' },
-  { id:'wagyu',    name:'和牛ステーキ', en:'Wagyu Steak',    icon:'🥩', price:3200, cook:18, ing:'wagyu',   day:1, desc:'A5 Wagyu ribeye seared on iron, served on black slate with wasabi and soy. Melt-in-your-mouth marbling.' },
-  { id:'miso',     name:'味噌ラーメン', en:'Miso Ramen',     icon:'🍜', price:800,  cook:15, ing:'miso',    day:1, desc:'Rich amber miso broth with thick noodles, chashu, melting butter, corn, and negi. A Hokkaido classic.' },
-  { id:'fugu',     name:'河豚刺身',     en:'Fugu Sashimi',   icon:'🐡', price:2800, cook:20, ing:'fugu',    day:1, desc:'Paper-thin pufferfish slices arranged in a kikuzukuri chrysanthemum fan. Served with ponzu and momiji oroshi. Eat carefully.' },
-  { id:'saba',     name:'鯖の塩焼き',   en:'Saba Shioyaki',  icon:'🐟', price:680,  cook:12, ing:'saba',    day:1, desc:'Whole mackerel fillet grilled with sea salt until the skin crisps. Served with daikon and a lemon wedge.' },
-  { id:'hamburg',  name:'ハンバーグ',   en:'Hamburg Steak',  icon:'🍳', price:780,  cook:13, ing:'hamburg', day:1, desc:'Juicy ground beef patty sizzled on iron, smothered in rich demi-glace sauce. Japan\'s beloved yoshoku comfort food.' },
+  { id:'adog',     name:'アメリカンドッグ',en:'American Dog',  icon:'🌭', price:320,  cook:7,  ing:'adog',    day:1, desc:'Deep-fried corn dog on a stick with ketchup and mustard. A Japanese festival classic.' },
+  { id:'napolitan',name:'ナポリタン',    en:'Napolitan',      icon:'🍝', price:620,  cook:17, ing:'pasta',   day:1, desc:'Ketchup-braised spaghetti with sausage and green peppers. A beloved Showa-era classic.' },
+  { id:'shiokara', name:'塩辛',          en:'Shiokara',       icon:'🦑', price:350,  cook:5,  ing:'ika',     day:1, desc:'Salted fermented squid in its own ink. Pungent, briny, and irresistible with sake.' },
+  { id:'tamago',   name:'玉子焼き',      en:'Tamagoyaki',     icon:'🥚', price:320,  cook:8,  ing:'tamago',  day:1, desc:'Sweet rolled omelette, sliced into three golden pieces. A soft, pillowy classic.' },
+  { id:'chanko',   name:'ちゃんこ鍋',   en:'Chanko Nabe',    icon:'🍲', price:1200, cook:26, ing:'chanko',  day:1, desc:'The legendary sumo wrestler\'s hot pot. Chicken, tofu, cabbage and negi in rich miso broth. Massive and warming.' },
+  { id:'okonomi',  name:'お好み焼き',   en:'Okonomiyaki',    icon:'🥞', price:650,  cook:16, ing:'ko',      day:1, desc:'Savory cabbage pancake griddled on iron, topped with dark sauce, kewpie mayo, aonori and dancing katsuobushi.' },
+  { id:'wagyu',    name:'和牛ステーキ', en:'Wagyu Steak',    icon:'🥩', price:3200, cook:22, ing:'wagyu',   day:1, desc:'A5 Wagyu ribeye seared on iron, served on black slate with wasabi and soy. Melt-in-your-mouth marbling.' },
+  { id:'miso',     name:'味噌ラーメン', en:'Miso Ramen',     icon:'🍜', price:800,  cook:18, ing:'miso',    day:1, desc:'Rich amber miso broth with thick noodles, chashu, melting butter, corn, and negi. A Hokkaido classic.' },
+  { id:'fugu',     name:'河豚刺身',     en:'Fugu Sashimi',   icon:'🐡', price:2800, cook:24, ing:'fugu',    day:1, desc:'Paper-thin pufferfish slices arranged in a kikuzukuri chrysanthemum fan. Served with ponzu and momiji oroshi. Eat carefully.' },
+  { id:'saba',     name:'鯖の塩焼き',   en:'Saba Shioyaki',  icon:'🐟', price:680,  cook:14, ing:'saba',    day:1, desc:'Whole mackerel fillet grilled with sea salt until the skin crisps. Served with daikon and a lemon wedge.' },
+  { id:'hamburg',  name:'ハンバーグ',   en:'Hamburg Steak',  icon:'🍳', price:780,  cook:16, ing:'hamburg', day:1, desc:'Juicy ground beef patty sizzled on iron, smothered in rich demi-glace sauce. Japan\'s beloved yoshoku comfort food.' },
   { id:'oshinko',  name:'おしんこ',     en:'Pickled Veg',    icon:'🥒', price:280,  cook:2,  ing:'oshinko', day:1, desc:'Seasonal vegetables pickled in salt brine — crisp daikon, eggplant, cucumber, and radish. Perfect with sake.' },
   { id:'oolong',   name:'ウーロン茶',   en:'Oolong Tea',     icon:'🍵', price:200,  cook:1,  ing:'oolong',  day:1, desc:'Fragrant Chinese oolong served hot in a ceramic cup. Perfect for those taking a break from the hard stuff.' },
-  { id:'yakisoba', name:'やきそば',     en:'Yakisoba',       icon:'🍜', price:580,  cook:11, ing:'yakisoba',day:1, desc:'Stir-fried wheat noodles with pork, cabbage and carrots, seasoned with savory sauce and topped with aonori and beni shoga.' },
-  { id:'flan',     name:'プリン',       en:'Purin Flan',     icon:'🍮', price:320,  cook:6,  ing:'flan',    day:1, desc:'Classic Japanese caramel custard pudding — silky, wobbling, and impossibly smooth. A beloved Showa-era dessert.' },
-  { id:'pocky',    name:'ポッキー＆クレームドゥマント', en:"Pocky & Crème de Menthe", icon:'🍫', price:520, cook:3, ing:'pocky',   day:1, desc:"Chocolate Pocky sticks served with an ice-cold glass of crème de menthe. Sweet, minty, and dangerously moreish." },
-  { id:'osenbe',   name:'おせんべい',    en:'Osenbe',             icon:'🍘', price:280,  cook:4,  ing:'osenbe',  day:1, desc:'Crispy grilled rice crackers brushed with soy sauce. Salty, crunchy, and impossible to stop eating.' },
-  { id:'yudofu',   name:'湯豆腐',       en:'Yudofu',             icon:'🍲', price:620,  cook:11, ing:'tofu',    day:1, desc:'Silken tofu simmered in kombu dashi, served with green onion, ginger, and ponzu. A Kyoto winter classic.' },
+  { id:'yakisoba', name:'やきそば',     en:'Yakisoba',       icon:'🍜', price:580,  cook:13, ing:'yakisoba',day:1, desc:'Stir-fried wheat noodles with pork, cabbage and carrots, seasoned with savory sauce and topped with aonori and beni shoga.' },
+  { id:'flan',     name:'プリン',       en:'Purin Flan',     icon:'🍮', price:320,  cook:7,  ing:'flan',    day:1, desc:'Classic Japanese caramel custard pudding — silky, wobbling, and impossibly smooth. A beloved Showa-era dessert.' },
+  { id:'pocky',    name:'ポッキー＆クレームドゥマント', en:"Pocky & Crème de Menthe", icon:'🍫', price:520, cook:4, ing:'pocky',   day:1, desc:"Chocolate Pocky sticks served with an ice-cold glass of crème de menthe. Sweet, minty, and dangerously moreish." },
+  { id:'osenbe',   name:'おせんべい',    en:'Osenbe',             icon:'🍘', price:280,  cook:5,  ing:'osenbe',  day:1, desc:'Crispy grilled rice crackers brushed with soy sauce. Salty, crunchy, and impossible to stop eating.' },
+  { id:'yudofu',   name:'湯豆腐',       en:'Yudofu',             icon:'🍲', price:620,  cook:13, ing:'tofu',    day:1, desc:'Silken tofu simmered in kombu dashi, served with green onion, ginger, and ponzu. A Kyoto winter classic.' },
 ];
 
 const SHOP = [
@@ -6381,7 +6632,7 @@ function updateService(dt) {
       if (c.patLeft <= 0) {
         c.state = 'gone';
         G.todayLost++;
-        G.rep = Math.max(0, G.rep - 3);
+        G.rep = Math.max(0, G.rep - 5);
         AUDIO.playLeave();
         toast(`${c.icon} ${c.en} left unhappy`, 'err');
         try { const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems(); } catch(_) {}
@@ -6434,7 +6685,7 @@ function doServe(cust, slotIdx) {
   G.money += price;
   G.todayEarned += price;
   G.todayServed++;
-  G.rep = Math.min(100, G.rep + 2);
+  G.rep = Math.min(100, G.rep + 1);
   AUDIO.playServe();
   floatYen(`+¥${price}`);
   try { if (window._iifeMasterServe) window._iifeMasterServe(slot.item.id); } catch(_) {}
