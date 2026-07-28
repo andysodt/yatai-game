@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>夜台 — Yatai Master</title>
+<title>夜台 — Yatai Master v7</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -168,7 +169,7 @@ html, body {
   z-index: 10;
 }
 
-#card-cook  { flex: 0 0 210px; overflow-y: auto; }
+#card-cook  { flex: 0 0 260px; overflow-y: auto; }
 #card-menu  { flex: 1 1 0;    min-width: 200px; overflow-y: auto; }
 #card-custs { flex: 0 0 210px; overflow-y: auto; }
 #card-stats { flex: 0 0 130px; overflow-y: auto; }
@@ -301,7 +302,7 @@ html, body {
 }
 .money-big { font-size: 32px; font-weight: 800; color: var(--gold); text-align: center; }
 
-.shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.shop-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
 .shop-item {
   background: var(--panel); border: 1px solid rgba(255,255,255,.07);
   border-radius: 8px; padding: 12px;
@@ -449,6 +450,20 @@ html, body {
 }
 .auto-cook-label input { accent-color: #4fc; width: 12px; height: 12px; cursor: pointer; }
 
+.hud-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 4px; border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.05); color: var(--dim);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all .18s; white-space: nowrap; user-select: none;
+  font-family: inherit; letter-spacing: 0.3px;
+}
+.hud-btn:hover { background: rgba(255,255,255,.10); color: #eee; border-color: rgba(255,255,255,.28); }
+.hud-btn.hud-btn-gold { color: var(--gold); border-color: rgba(255,200,60,.35); background: rgba(255,200,60,.06); }
+.hud-btn.hud-btn-gold:hover { background: rgba(255,200,60,.14); border-color: rgba(255,200,60,.6); }
+.hud-btn.hud-btn-muted { color: #f66; border-color: rgba(255,80,80,.35); background: rgba(255,80,80,.06); }
+.hud-btn.hud-btn-muted:hover { background: rgba(255,80,80,.12); }
+
 /* ── CHAT FEED ── */
 #card-chat { flex: 0 0 170px; display: flex; flex-direction: column; overflow: hidden; }
 #dialog-feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding: 2px 0; }
@@ -463,6 +478,25 @@ html, body {
 .dialog-msg.dm-master .dm-text { color: var(--lantern); opacity: 1; }
 .dialog-msg.dm-player .dm-text { color: rgba(120,210,255,.95); font-style: italic; }
 
+/* ── CUSTOMER CONTEXT POPUP ── */
+#cust-popup { position: fixed; z-index: 9999; background: rgba(10,14,28,0.97); border: 1px solid rgba(255,200,80,.35); border-radius: 8px; padding: 6px 0; min-width: 160px; box-shadow: 0 4px 24px rgba(0,0,0,.7); display: none; }
+#cust-popup.visible { display: block; }
+.cp-header { padding: 5px 14px 4px; font-size: 11px; color: rgba(255,200,80,.9); font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 3px; white-space: nowrap; }
+.cp-btn { display: block; width: 100%; text-align: left; padding: 6px 14px; font-size: 12px; color: var(--cream); background: none; border: none; cursor: pointer; font-family: inherit; transition: background .12s; }
+.cp-btn:hover { background: rgba(255,255,255,.08); }
+.cp-btn.danger { color: #ff6060; }
+.cp-btn.success { color: #60e880; }
+.cp-sep { border: none; border-top: 1px solid rgba(255,255,255,.06); margin: 3px 0; }
+
+/* ── CHAT INPUT ── */
+#chat-input-row { display: flex; gap: 4px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,.07); margin-top: 4px; flex-shrink: 0; }
+#chat-input { flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); border-radius: 4px; color: var(--cream); font-size: 11px; padding: 4px 6px; outline: none; font-family: inherit; min-width: 0; }
+#chat-input::placeholder { color: var(--dim); }
+#chat-input:focus { border-color: rgba(120,210,255,.45); }
+#chat-send-btn { background: rgba(120,210,255,.12); border: 1px solid rgba(120,210,255,.3); color: rgba(120,210,255,.9); border-radius: 4px; font-size: 10px; padding: 4px 7px; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+#chat-send-btn:active { background: rgba(120,210,255,.25); }
+#chat-send-btn:disabled { opacity: .4; cursor: default; }
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -471,21 +505,102 @@ html, body {
 @media (max-width: 500px) {
   .shop-grid { grid-template-columns: repeat(2, 1fr); }
   #game-wrap { height: 200px; }
-  #card-cook { flex: 0 0 175px; }
+  #card-cook { flex: 0 0 210px; }
   #card-custs { flex: 0 0 175px; }
   #card-stats { flex: 0 0 110px; }
   .hud-stats { gap: 8px; }
 }
+
+/* ── MULTIPLAYER ── */
+.multi-screen { max-width: 420px; margin: 0 auto; padding: 32px 20px; text-align: center; }
+.multi-title { font-size: 26px; font-weight: 800; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+.multi-sub { font-size: 13px; color: var(--dim); margin-bottom: 28px; }
+.role-cards { display: flex; gap: 16px; justify-content: center; margin-bottom: 20px; }
+.role-card { background: rgba(255,255,255,.05); border: 2px solid rgba(255,255,255,.12); border-radius: 12px; padding: 20px 24px; cursor: pointer; transition: all .18s; flex: 1; max-width: 160px; }
+.role-card:hover { border-color: var(--gold); background: rgba(255,200,80,.07); }
+.role-card .role-icon { font-size: 38px; display: block; margin-bottom: 8px; }
+.role-card .role-name { font-size: 14px; font-weight: 700; color: var(--cream); }
+.role-card .role-desc { font-size: 11px; color: var(--dim); margin-top: 4px; line-height: 1.4; }
+.room-code-box { background: rgba(255,200,80,.08); border: 2px solid rgba(255,200,80,.35); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.room-code-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+.room-code-val { font-size: 40px; font-weight: 900; color: var(--gold); letter-spacing: 10px; font-family: monospace; }
+.room-code-share { font-size: 11px; color: var(--dim); margin-top: 8px; }
+.room-code-copy { margin-top: 12px; background: rgba(255,200,80,.14); border: 1.5px solid rgba(255,200,80,.45); border-radius: 8px; color: var(--gold); font-size: 13px; font-weight: 600; padding: 7px 18px; cursor: pointer; transition: background .15s, border-color .15s; }
+.room-code-copy:hover { background: rgba(255,200,80,.24); border-color: rgba(255,200,80,.7); }
+.room-code-copy:active { background: rgba(255,200,80,.32); }
+.multi-input { width: 100%; background: rgba(255,200,80,.06); border: 2px solid rgba(255,200,80,.55); border-radius: 12px; color: #fff; font-size: 42px; font-weight: 700; padding: 16px 14px 14px; outline: none; font-family: monospace; text-transform: uppercase; text-align: center; letter-spacing: 14px; margin-bottom: 16px; box-sizing: border-box; transition: border-color .18s, box-shadow .18s; box-shadow: 0 0 0 0 rgba(255,200,80,0); }
+.multi-input:focus { border-color: var(--gold); box-shadow: 0 0 18px rgba(255,200,80,.22); }
+@keyframes pulse-border { 0%,100%{box-shadow:0 0 0 0 rgba(255,200,80,.18)} 50%{box-shadow:0 0 0 6px rgba(255,200,80,.08)} }
+.multi-input:not(:focus):placeholder-shown { animation: pulse-border 2.4s ease-in-out infinite; }
+.multi-players { text-align: left; margin: 16px 0; }
+.multi-player-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13px; }
+.mp-icon { font-size: 16px; }
+.mp-role { font-size: 10px; color: var(--dim); margin-left: auto; }
+.mp-you { color: var(--gold); font-size: 10px; }
+.customer-hud { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: rgba(0,0,0,.4); border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
+.customer-hud .ch-room { font-size: 11px; color: var(--dim); }
+.customer-hud .ch-name { font-size: 13px; font-weight: 700; color: var(--gold); flex: 1; }
+.customer-hud .ch-status { font-size: 11px; }
+.customer-panels { display: flex; gap: 8px; padding: 8px; overflow-x: auto; flex: 1; min-height: 0; }
+.customer-panels .card { flex: 0 0 auto; }
+#cp-order-card { flex: 0 0 175px; }
+#cp-status-card { flex: 0 0 200px; }
+#cp-chat-card { flex: 0 0 170px; display: flex; flex-direction: column; }
+.cust-menu-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.cust-menu-item .cmi-icon { font-size: 18px; }
+.cust-menu-item .cmi-name { font-size: 12px; flex: 1; }
+.cust-menu-item .cmi-price { font-size: 11px; color: var(--dim); }
+.cust-menu-item .cmi-btn { background: rgba(255,200,80,.12); border: 1px solid rgba(255,200,80,.3); color: var(--gold); border-radius: 4px; font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: inherit; }
+.cust-menu-item .cmi-btn:disabled { opacity: .4; cursor: default; }
+.my-order-box { text-align: center; padding: 12px; }
+.my-order-icon { font-size: 36px; margin-bottom: 6px; }
+.my-order-name { font-size: 14px; font-weight: 700; color: var(--cream); }
+.my-order-status { font-size: 12px; margin-top: 6px; }
+.my-order-status.waiting { color: #f0c040; }
+.my-order-status.cooking { color: #60e0ff; }
+.my-order-status.served { color: #60e880; }
+.multi-error { color: #ff6060; font-size: 12px; margin-top: 8px; }
+.multi-connecting { display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 13px; color: var(--dim); margin: 16px 0; }
 </style>
 </head>
 <body>
 
 <div id="kag-bg"></div>
 <div id="subtitle"><span class="subtitle-inner"></span></div>
+<script src="/peerjs.min.js"></script>
 <canvas id="stars-canvas"></canvas>
 <div id="root"></div>
+<div id="cust-popup">
+  <div class="cp-header" id="cp-name">お客様</div>
+  <button class="cp-btn" onclick="window._custPopupAction('talk')">💬 Talk</button>
+  <button class="cp-btn success" id="cp-free-drink-btn" onclick="window._custPopupAction('freedrink')">🍺 Give Free Drink</button>
+  <hr class="cp-sep">
+  <button class="cp-btn danger" onclick="window._custPopupAction('kickout')">🚪 Kick Out</button>
+  <button class="cp-btn danger" onclick="window._custPopupAction('86')">🚫 86 (Ban Today)</button>
+</div>
 
 <script>
+// Polyfill roundRect for browsers that don't support it (Safari <15.4, older Chrome)
+try {
+  if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      const radius = Array.isArray(r) ? r[0] : (r || 0);
+      const rr = Math.min(radius, Math.abs(w) / 2, Math.abs(h) / 2);
+      this.moveTo(x + rr, y);
+      this.lineTo(x + w - rr, y);
+      this.arcTo(x + w, y, x + w, y + rr, rr);
+      this.lineTo(x + w, y + h - rr);
+      this.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+      this.lineTo(x + rr, y + h);
+      this.arcTo(x, y + h, x, y + h - rr, rr);
+      this.lineTo(x, y + rr);
+      this.arcTo(x, y, x + rr, y, rr);
+      this.closePath();
+      return this;
+    };
+  }
+} catch(_) {}
+
 // ─────────────────────────────────────────────
 // YATAI SCENE — ANIMATED BACKGROUND
 // ─────────────────────────────────────────────
@@ -510,6 +625,8 @@ html, body {
     G.norenBot = G.roofEdge + (G.H*0.655 - G.roofEdge)*0.58;
     G.counterY  = G.H*0.655; G.stallBot = G.H*0.77;
     G.lamps = [G.sx+G.sw*0.18, G.sx+G.sw*0.50, G.sx+G.sw*0.82];
+    G.tvW = G.W*0.224; G.tvH = G.tvW*0.62;
+    G.tvCX = G.tvW*0.5 + G.W*0.01; G.tvTop = G.H*0.08;
   }
 
   // ── STATIC BACKGROUND (drawn once to offscreen canvas) ──────
@@ -640,6 +757,8 @@ html, body {
       g.fillRect(bx-W*0.006,counterY-H*0.063,W*0.012,H*0.028);
     });
 
+    // TV (floating upper-left — drawn in main loop for live content)
+
     // LANTERN bodies (static; glow is animated)
     lamps.forEach(lx => drawLantern(g, lx, roofEdge+6, W*0.018, H*0.038));
   }
@@ -729,6 +848,10 @@ html, body {
     { type:'suit', jacket:'#162038', jacketD:'#0e1424', pants:'#101828', shirt:'#eae6dc', cuff:'#f2eee6', skin:'#c8a078', skinD:'#a88058', hair:'#989490', hairStyle:'medium', tieColor:'#1a2858', politician:true },
     // ── SUMO ────────────────────────────────────────────────────────
     { type:'tee', jacket:'#d0a878', jacketD:'#b08858', pants:'#18100a', shirt:'#d0a878', cuff:'#d0a878', skin:'#d0a878', skinD:'#b08858', hair:'#080404', hairStyle:'buzz', sumo:true },
+    // ── HOSTESS ─────────────────────────────────────────────────────
+    { type:'shirt', jacket:'#c01860', jacketD:'#881040', pants:'#f8b0d8', shirt:'#f8b0d8', cuff:'#fcd8ec', skin:'#f0d090', skinD:'#d0b070', hair:'#060404', hairStyle:'long', hostess:true, female:true },
+    { type:'shirt', jacket:'#5808a8', jacketD:'#380678', pants:'#e8d0f8', shirt:'#e8d0f8', cuff:'#f4e8fc', skin:'#eee0c0', skinD:'#d0c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
+    { type:'shirt', jacket:'#181030', jacketD:'#0e0820', pants:'#f0ecf8', shirt:'#f0ecf8', cuff:'#faf6fc', skin:'#f2e0c0', skinD:'#d8c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
   ];
 
   // weighted dish pool — use same IDs as outer game MENU
@@ -758,7 +881,7 @@ html, body {
   function _randProf()  { return CUST_PROFS[Math.floor(Math.random() * CUST_PROFS.length)]; }
   function _randInt()   { return CUST_INTERESTS[Math.floor(Math.random() * CUST_INTERESTS.length)]; }
 
-  const DISHES = ['shoyu','tonk','miso','beer','beer','beer','beer','edamame','yakitori','sake','sake','sake','gyoza','takoyaki','shochu','shochu','shochu','napolitan','shiokara','tamago','chanko','okonomi','wagyu','fugu','saba','highball','highball','adog','hamburg','oshinko','yudofu','yudofu'];
+  const DISHES = ['shoyu','tonk','miso','beer','beer','beer','beer','edamame','yakitori','sake','sake','sake','gyoza','takoyaki','shochu','shochu','shochu','napolitan','shiokara','tamago','chanko','okonomi','wagyu','fugu','saba','highball','highball','adog','hamburg','oshinko','yudofu','yudofu','curry','curry','hotcake','hotcake'];
 
   const SLOTS = [
     { t:0.08, cu:null },
@@ -774,6 +897,7 @@ html, body {
   let lastSpawn = -4;
   let _lastInterChat = -25;
   let _lastFight = -60;
+  let _lastPolChat = -30;
   let _curRep = 8;
   let _deathFlash = 0; // frames remaining for fugu-death red overlay
   let _pukeFlash  = 0; // frames remaining for shiokara-puke green overlay
@@ -1010,6 +1134,8 @@ html, body {
     pocky:    'ポッキーとクレームドゥマント、ください！',
     osenbe:   'おせんべい、ください！',
     yudofu:   '湯豆腐、お願いします！',
+    curry:    'カレーライス、ください！',
+    hotcake:  'ホットケーキ、お願いします！',
   };
 
   const MASTER_REPLIES = {
@@ -1033,6 +1159,11 @@ html, body {
     pocky:    'はい！ポッキーとミント、どうぞ！',
     osenbe:   'はい！おせんべい、どうぞ！',
     yudofu:   'はい！湯豆腐、ただいま！',
+    korokke:  'はい！コロッケ、ただいま！',
+    misosoup: 'はい！味噌汁、どうぞ！',
+    gohan:    'はい！ご飯、どうぞ！',
+    curry:    'はい！カレーライス、ただいま！',
+    hotcake:  'はい！ホットケーキ、ただいま！',
   };
 
   const REORDER = {
@@ -1064,6 +1195,11 @@ html, body {
     pocky:    'ポッキー、おかわり！ミントも！',
     osenbe:   'おせんべい、追加でください！',
     yudofu:   '湯豆腐、おかわり！体があったまります！',
+    korokke:  'コロッケ、もう一個！サクサクで最高！',
+    misosoup: '味噌汁、おかわり！体があったまります！',
+    gohan:    'ご飯、おかわりください！',
+    curry:    'カレーライス、もう一皿！最高でした！',
+    hotcake:  'ホットケーキ、もう一枚！ふわふわで最高！',
   };
 
   // Active speech bubbles: { x, y, text, born, life }
@@ -1071,6 +1207,8 @@ html, body {
 
   // Cache of Japanese voices so we don't re-query every call
   // ── VOICE POOL ───────────────────────────────────
+  if (typeof window._npcVoiceMuted === 'undefined') window._npcVoiceMuted = false;
+
   let _jaVoices = [];
   function _loadVoices() {
     _jaVoices = (window.speechSynthesis ? window.speechSynthesis.getVoices() : [])
@@ -1101,6 +1239,8 @@ html, body {
     const _talkDur = 1.2 + text.length * 0.08;
     const _talkEnd = performance.now() / 1000 + _talkDur;
     bubbles.push({ x, y, text, born: performance.now() / 1000, life: 2.8 });
+    const _vIdx = opts.voice ? Math.max(0, _jaVoices.indexOf(opts.voice)) : 0;
+    _pendingSpeech.push({ xFrac: G.W > 0 ? x / G.W : 0, text, pitch: opts.pitch ?? 1.0, rate: opts.rate ?? 1.05, voiceIdx: _vIdx });
     // Mark the closest canvas customer as talking so their lips animate
     let _bestSlot = null, _bestDist = Infinity;
     for (const sl of SLOTS) {
@@ -1109,7 +1249,7 @@ html, body {
     if (_bestSlot && _bestDist < G.W * 0.18) _bestSlot.cu.talkUntil = _talkEnd;
     try { if (window._logDialog) window._logDialog(text, 'cust'); } catch(_) {}
     const _enC = TRANSLATIONS[text]; if (_enC) { try { if (window._showSubtitle) window._showSubtitle(_enC); } catch(_) {} }
-    if (window.speechSynthesis && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+    if (!window._npcVoiceMuted && window.speechSynthesis && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang   = 'ja-JP';
       utt.rate   = opts.rate  ?? 1.05;
@@ -1120,6 +1260,210 @@ html, body {
       window.speechSynthesis.speak(utt);
     }
   }
+  window._spawnBubbleAuto = (x, text, opts) => spawnBubble(x, G.counterY - G.H * 0.28, text, opts);
+  window._SLOTS = SLOTS;
+
+  // ── GUEST PLAYER SEATS ───────────────────────
+  let _guestSeats = {};
+
+  function seatGuestPlayer(guestId, guestName) {
+    if (_guestSeats[guestId]) return;
+    let slot = SLOTS.find(s => !s.cu);
+    if (!slot) {
+      const evictable = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.isPlayer);
+      if (!evictable.length) return;
+      slot = evictable[Math.floor(Math.random() * evictable.length)];
+      slot.cu = null;
+    }
+    const ct = randomCtype(CTYPES[Math.floor(Math.random() * CTYPES.length)]);
+    const tx = slotX(slot);
+    slot.cu = {
+      state: 'sit', x: tx, targetX: tx, ct,
+      phase: Math.random() * Math.PI * 2,
+      name: guestName, isPlayer: true, guestId,
+      served: false, eatTimer: 0, eatMax: 9e9, roundsLeft: 9999, unhappy: false,
+      alcoholCount: 0, voiceIdx: Math.floor(Math.random()*12),
+      voicePitch: 0.72 + Math.random()*0.62, voiceRate: 0.92 + Math.random()*0.24, slot,
+    };
+    _guestSeats[guestId] = slot;
+  }
+
+  function unseatGuestPlayer(guestId) {
+    const slot = _guestSeats[guestId];
+    if (slot && slot.cu && slot.cu.guestId === guestId) slot.cu = null;
+    delete _guestSeats[guestId];
+  }
+
+  window._seatGuestPlayer = seatGuestPlayer;
+  window._unseatGuestPlayer = unseatGuestPlayer;
+
+  // One stable appearance per guestId — picked once, never changed.
+  const _guestSelfCt = {};
+
+  window._seatSelf = (guestId, guestName) => {
+    // If the slot was synced from host first, adopt its ct as the stable one.
+    if (!_guestSelfCt[guestId]) {
+      for (const sl of SLOTS) {
+        if (sl.cu && sl.cu.guestId === guestId && sl.cu.ct) {
+          _guestSelfCt[guestId] = sl.cu.ct; break;
+        }
+      }
+    }
+    if (!_guestSelfCt[guestId]) {
+      _guestSelfCt[guestId] = randomCtype(CTYPES[Math.floor(Math.random() * CTYPES.length)]);
+    }
+    const ct = _guestSelfCt[guestId];
+
+    // If already seated anywhere, just enforce player flags and appearance.
+    for (const sl of SLOTS) {
+      if (sl.cu && sl.cu.guestId === guestId) {
+        sl.cu.isPlayer = true;
+        sl.cu.name = guestName;
+        sl.cu.ct = ct;
+        sl.cu._ctLocked = true;
+        sl.cu.dead = false; sl.cu.puking = false; sl.cu.falling = false;
+        if (sl.cu.state === 'walk_out') { sl.cu.state = 'sit'; sl.cu.x = sl.cu.targetX; }
+        return;
+      }
+    }
+    // Not found — create a new seat, evicting an NPC only if necessary.
+    delete _guestSeats[guestId];
+    let slot = SLOTS.find(s => !s.cu);
+    if (!slot) {
+      const ev = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.isPlayer);
+      if (!ev.length) return;
+      slot = ev[Math.floor(Math.random() * ev.length)];
+      slot.cu = null;
+    }
+    const tx = slotX(slot);
+    slot.cu = {
+      state: 'sit', x: tx, targetX: tx, ct,
+      phase: Math.random() * Math.PI * 2,
+      name: guestName, isPlayer: true, guestId,
+      served: false, eatTimer: 0, eatMax: 9e9, roundsLeft: 9999, unhappy: false,
+      dead: false, puking: false, falling: false,
+      alcoholCount: 0, voiceIdx: Math.floor(Math.random() * 12),
+      voicePitch: 0.72 + Math.random() * 0.62, voiceRate: 0.92 + Math.random() * 0.24,
+      _synced: false, slot,
+    };
+    _guestSeats[guestId] = slot;
+  };
+
+  // Return and forcibly set a guest's canonical ct (used for cross-device clothing sync)
+  window._getGuestCt = (guestId) => _guestSelfCt[guestId] || null;
+  window._setGuestCt = (guestId, ct) => {
+    _guestSelfCt[guestId] = ct;
+    for (const sl of SLOTS) {
+      if (sl.cu && sl.cu.guestId === guestId) { sl.cu.ct = ct; sl.cu._ctLocked = true; }
+    }
+  };
+
+  // ── CANVAS SYNC FOR GUESTS ───────────────────
+  let _pendingSpeech = [];
+  let _pendingEvents = [];
+  let _isFrozen = false;
+
+  window._freezeSpawning   = () => { _isFrozen = true; };
+  window._unfreezeSpawning = () => { _isFrozen = false; };
+  window._pushEvent = (msg, type) => { _pendingEvents.push({ msg, type }); };
+  window._takeEvents = () => _pendingEvents.splice(0);
+
+  window._getSlotState = () => SLOTS.map(s => {
+    if (!s.cu) return null;
+    const cu = s.cu;
+    const _w = G.W || 1;
+    return {
+      state: cu.state, x: cu.x, targetX: cu.targetX || cu.x,
+      xFrac: cu.x / _w, targetXFrac: (cu.targetX || cu.x) / _w,
+      phase: cu.phase, name: cu.name || null,
+      served: !!cu.served, alcoholCount: cu.alcoholCount || 0,
+      dead: !!cu.dead, puking: !!cu.puking, falling: !!cu.falling, angry: !!cu.angry,
+      isPlayer: !!cu.isPlayer, guestId: cu.guestId || null,
+      ct: cu.ct || null, dish: cu.dish || null,
+      smoker: !!cu.smoker,
+    };
+  });
+
+  window._syncSlots = (slotData) => {
+    const _w = G.W || 1;
+    for (let i = 0; i < SLOTS.length; i++) {
+      const d = slotData[i];
+      if (!d) {
+        if (SLOTS[i].cu && SLOTS[i].cu.isPlayer) continue; // never evict a human player
+        SLOTS[i].cu = null; continue;
+      }
+      const lx = d.xFrac != null ? d.xFrac * _w : d.x;
+      const ltx = d.targetXFrac != null ? d.targetXFrac * _w : (d.targetX || d.x);
+      const existing = SLOTS[i].cu;
+      // Always sync clothing from host — host is the authority (it stores the guest's own ct)
+      if (d.isPlayer && d.guestId && d.ct) {
+        _guestSelfCt[d.guestId] = d.ct;
+      }
+      if (existing && Math.abs(existing.phase - d.phase) < 0.001) {
+        // Human players: never move them — lock state to sit and keep their current position
+        if (d.isPlayer) {
+          existing.state = 'sit';
+          existing.dead = false; existing.puking = false; existing.falling = false;
+          existing.isPlayer = true;
+          if (d.name) existing.name = d.name;
+          existing.guestId = d.guestId || null;
+          // Apply synced clothing once we have it; never change again after that
+          if (d.ct && !existing._ctLocked) { existing.ct = d.ct; existing._ctLocked = true; }
+        } else {
+          existing.state = d.state;
+          existing.x = lx; existing.targetX = ltx;
+          existing.served = d.served; existing.alcoholCount = d.alcoholCount;
+          existing.dead = d.dead;
+          existing.puking = d.puking || false;
+          existing.falling = d.falling || false;
+          existing.angry = d.angry || false;
+          existing.ct = d.ct;
+          existing.smoker = d.smoker || false;
+        }
+        existing._synced = true;
+        existing.dish = d.dish || null;
+      } else {
+        // Newly created slot — snap human players immediately to sit at their target position
+        const sx = d.isPlayer ? ltx : lx;
+        SLOTS[i].cu = {
+          state: d.isPlayer ? 'sit' : d.state,
+          x: sx, targetX: ltx, ct: d.ct,
+          phase: d.phase, name: d.name,
+          served: d.served, eatTimer: 0, eatMax: 9e9,
+          roundsLeft: 9999, unhappy: false,
+          alcoholCount: d.alcoholCount,
+          isPlayer: d.isPlayer || false, guestId: d.guestId || null,
+          dead: false, puking: false, falling: false,
+          angry: d.isPlayer ? false : (d.angry || false),
+          dish: d.dish || null,
+          smoker: d.isPlayer ? false : (d.smoker || false),
+          voiceIdx: 0, voicePitch: 1.0, voiceRate: 1.0,
+          _synced: true, _ctLocked: !!(d.isPlayer && d.ct), slot: SLOTS[i],
+        };
+      }
+    }
+  };
+
+  window._replaySpeechBubble = (xFrac, text, pitch, rate, voiceIdx) => {
+    const x = (xFrac != null ? xFrac : 0.5) * G.W;
+    const _talkEnd = performance.now() / 1000 + 1.2 + text.length * 0.08;
+    bubbles.push({ x, y: G.counterY - G.H * 0.28, text, born: performance.now() / 1000, life: 2.8 });
+    let _best = null, _bd = Infinity;
+    for (const sl of SLOTS) {
+      if (sl.cu) { const d = Math.abs(sl.cu.x - x); if (d < _bd) { _bd = d; _best = sl; } }
+    }
+    if (_best && _bd < G.W * 0.18) _best.cu.talkUntil = _talkEnd;
+    if (!window._npcVoiceMuted && window.speechSynthesis) {
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'ja-JP'; utt.rate = rate ?? 1.05; utt.pitch = pitch ?? 1.00; utt.volume = 0.80;
+      const v = _custVoice(voiceIdx ?? 0);
+      if (v) utt.voice = v;
+      window.speechSynthesis.speak(utt);
+    }
+  };
+
+  window._takePendingSpeech = () => _pendingSpeech.splice(0);
+  window._clearBubbles = () => { bubbles = []; _pendingSpeech.length = 0; };
 
   const SMALL_TALK = [
     '今日は仕事で大変でした…',
@@ -1271,6 +1615,12 @@ html, body {
     '組の方ですかね、あの方。お酒の飲み方がまた違いますよ。',
     '着物の方が来ると、なんか静かになりますよね、お店が。',
     'あの方、河豚刺身を頼んだんですよ。命知らずですね、いろんな意味で。',
+    // Hostess
+    'お仕事終わりに屋台って、最高ですよね！',
+    '今日もお客さんがたくさんでした、疲れましたよ。',
+    '屋台のお酒って、なんか特別においしく感じます！',
+    'ゆっくりできる時間が一番幸せですよ、こんな感じで。',
+    '夜が長い仕事だから、ここで一息つけるのが好きなんです。',
   ];
 
   const MASTER_SMALL_TALK = [
@@ -1363,7 +1713,7 @@ html, body {
     try { if (window._logDialog) window._logDialog(text, 'master'); } catch(_) {}
     const _enM = TRANSLATIONS[text];
     if (_enM) { setTimeout(() => { try { if (window._showSubtitle) window._showSubtitle(_enM); } catch(_) {} }, delay); }
-    if (window.speechSynthesis) {
+    if (!window._npcVoiceMuted && window.speechSynthesis) {
       setTimeout(() => {
         if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
           const utt = new SpeechSynthesisUtterance(text);
@@ -1400,6 +1750,13 @@ html, body {
       slot.cu.dish  = dishId;
       slot.cu.served = true;
     }
+  };
+
+  // Guest-side serve: targets the specific guest character rather than a random customer
+  window._iifeServeGuest = function(guestId, dishId) {
+    spawnMasterBubble(dishId);
+    const slot = SLOTS.find(s => s.cu && s.cu.isPlayer && s.cu.guestId === guestId);
+    if (slot) { slot.cu.dish = dishId; slot.cu.served = true; }
   };
 
   function drawBubbles(g, T) {
@@ -1576,6 +1933,48 @@ html, body {
     '政治家です！鹿児島のために頑張ってます！': "I'm a politician! Working hard for Kagoshima!",
     '代議士の○○です！よろしくお願いします！': "I'm Representative ○○! Your support means everything!",
     '市議会議員です！地域の声を届けます！': "I'm a city councillor! I carry the voice of the community!",
+    'はい！コロッケ、ただいま！': "Sure! Korokke coming right up!",
+    'はい！味噌汁、どうぞ！': "Here's your miso soup!",
+    'はい！ご飯、どうぞ！': "Here's your rice!",
+    // Typhoon
+    '台風だ！！すごい風！': "It's a typhoon!! What a wind!",
+    'やばい！飛ばされそう！': "Oh no! I might get blown away!",
+    'こんな嵐の中、すごいですね！': "Out in a storm like this — incredible!",
+    '傘が壊れそう！！': "My umbrella is about to break!!",
+    '外は土砂降りだ！！': "It's pouring out there!!",
+    '風がすごい！！': "The wind is incredible!!",
+    '台風接近中！！': "Typhoon approaching!!",
+    '台風来てます！！大丈夫ですか！': "There's a typhoon!! Is everyone okay!",
+    'すごい嵐ですね！中で飲みましょう！': "What a storm! Let's drink inside!",
+    '台風の中わざわざありがとうございます！！': "Thank you for coming out in the typhoon!!",
+    // Politician caucus
+    '新党を立ち上げましょう！今がチャンスです！': "Let's launch a new party! Now is the time!",
+    '賛成です！名前はどうしますか？': "Agreed! What should we call it?",
+    '「鹿児島ファースト党」はどうでしょう！': "How about the Kagoshima First Party!",
+    '消費税の廃止を公約にすれば票が取れますよ。': "Abolishing consumption tax will win us votes.",
+    'でも財源はどうするんですか？': "But where does the funding come from?",
+    'まず選挙に勝つことが大事ですよ！': "Winning the election comes first!",
+    '先生、次の選挙は勝てますか？': "Sensei, can we win the next election?",
+    '地盤をしっかり固めればいける！': "If we solidify our base, we can do it!",
+    '後援会の拡大が急務ですね。': "Expanding the support network is urgent.",
+    '桜島の噴火対策、もっと国に訴えなければ！': "We must push the government harder on Sakurajima eruption measures!",
+    '防災予算の増額を要求しましょう！': "Let's demand a bigger disaster prevention budget!",
+    '地元の声を届けることが使命ですよ。': "Our mission is to carry the voice of the people.",
+    '野党との連立は考えていますか？': "Are you considering a coalition with the opposition?",
+    '政策が合えば検討の余地はありますよ。': "If the policies align, there's room to consider it.",
+    'まずは選挙区を守ることが先決です！': "First we must secure our constituencies!",
+    'こんな夜台でこっそり党の話をするのは…': "Secretly talking party business at a yatai stall…",
+    'いや、最高のブレインストーミングですよ！': "No, this is the best brainstorming!",
+    'ラーメン食べながら政治を語る、これが民主主義！': "Talking politics over ramen — this is democracy!",
+    '大臣ポストを狙うなら今ですよ！': "If you want a minister post, now is the time!",
+    'いやいや、地元の声を忘れてはいけません。': "No no, we must never forget the local voice.",
+    '足元を固めてから上を目指しましょう！': "Let's secure our ground before aiming higher!",
+    '選挙公約に屋台の支援を入れましょう！': "Let's add yatai stall support to our election pledges!",
+    '「夜台文化を守る会」、いい響きですね。': "The Society to Protect Yatai Culture — has a nice ring.",
+    '票になりますよ、確実に！': "It'll win us votes, for certain!",
+    '政治家のお客様が多いですね…何かあるのかな。': "Lots of politicians tonight… something's going on.",
+    'なんか秘密の会議みたいですね、うちの店で！': "Feels like a secret meeting — right here in my stall!",
+    '政治の話は難しいですが、料理は任せてください！': "Politics is complicated, but leave the cooking to me!",
     // Nag strings
     'すみません！まだですか？': "Excuse me! Is it ready yet?",
     'あの…頼んだんですが…': "Um... I placed an order...",
@@ -1656,6 +2055,10 @@ html, body {
     '湯豆腐、お願いします！': "Yudofu, please!",
     '湯豆腐、おかわり！体があったまります！': "More yudofu! It warms you right up!",
     '湯豆腐を食べてます！あったかい！': "Having yudofu — so warming!",
+    // Hotcake
+    'ホットケーキ、お願いします！': "Hotcakes, please!",
+    'はい！ホットケーキ、ただいま！': "Yes! Hotcakes right away!",
+    'ホットケーキ、もう一枚！ふわふわで最高！': "Another hotcake! So fluffy and amazing!",
     // MASTER_SMALL_TALK
     'そうですか！': "Is that so!",
     'それは大変でしたね。': "That sounds rough.",
@@ -2298,7 +2701,7 @@ html, body {
 
   // Stars → rep: 1★=8, 2★=22, 3★=45, 4★=70, 5★=90
   // At 5 stars: orders arrive ~75% faster, +18 extra rounds
-  function _repEatMax(base)   { return Math.floor(base * 0.8 * (1 - (_curRep / 100) * 0.75)); }
+  function _repEatMax(base)   { return Math.floor(base * 1.2 * (1 - (_curRep / 100) * 0.75)); }
   function _repRoundsBonus()  { return Math.floor((_curRep / 100) * 18); }
 
   function spawnCustomer() {
@@ -2311,6 +2714,7 @@ html, body {
     if (ct.sumo) { try { if (window.AUDIO_REF) window.AUDIO_REF.playSumoEntrance(); } catch(_) {} }
     if (ct.police) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliceSiren(); } catch(_) {} }
     if (ct.politician) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliticianFanfare(); } catch(_) {} }
+    if (ct.hostess) { try { if (window.AUDIO_REF) window.AUDIO_REF.playHostessMusic(); } catch(_) {} }
     const tx = slotX(slot);
     slot.cu = {
       state: 'walk_in',
@@ -2324,8 +2728,8 @@ html, body {
       interest: _randInt(),
       smoker: Math.random() < 0.28,
       eatTimer: 0,
-      eatMax: ct.sumo ? _repEatMax(4000 + Math.floor(Math.random()*2000)) : _repEatMax(11200 + Math.floor(Math.random()*9600)),
-      roundsLeft: ct.sumo ? 26 + Math.floor(Math.random() * 17) + _repRoundsBonus() : 12 + Math.floor(Math.random() * 12) + _repRoundsBonus(),
+      eatMax: ct.sumo ? _repEatMax(14000 + Math.floor(Math.random()*6000)) : _repEatMax(12000 + Math.floor(Math.random()*8000)),
+      roundsLeft: ct.sumo ? 30 + Math.floor(Math.random() * 20) + _repRoundsBonus() : 18 + Math.floor(Math.random() * 14) + _repRoundsBonus(),
       unhappy: Math.random() < 0.12,
       alcoholCount: ct.sumo ? 2 : 0,
       voiceIdx:   Math.floor(Math.random() * 12),
@@ -2352,8 +2756,8 @@ html, body {
         interest: _randInt(),
         smoker: Math.random() < 0.28,
         eatTimer: Math.floor(Math.random()*300),
-        eatMax: 4480 + Math.floor(Math.random()*3840),
-        roundsLeft: 6 + Math.floor(Math.random() * 7),
+        eatMax: 18000 + Math.floor(Math.random()*10500),
+        roundsLeft: 14 + Math.floor(Math.random() * 10),
         unhappy: Math.random() < 0.25,
         alcoholCount: 0,
         voiceIdx:   Math.floor(Math.random() * 12),
@@ -2379,26 +2783,26 @@ html, body {
     const _rep = _curRep;
     const _spawnBase   = Math.max(4,  16 - _rep * 0.12);
     const _spawnJitter = Math.max(2,   6 - _rep * 0.04);
-    if (T - lastSpawn > _spawnBase + Math.random() * _spawnJitter) {
+    if (!_isFrozen && T - lastSpawn > _spawnBase + Math.random() * _spawnJitter) {
       spawnCustomer();
       lastSpawn = T;
     }
 
     // Inter-customer conversations
     if (T - _lastInterChat > 22 + Math.random()*20) {
-      const sitters = SLOTS.filter(s => s.cu && s.cu.state === 'sit');
+      const sitters = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.isPlayer);
       if (sitters.length >= 2) {
         _lastInterChat = T;
         const shuffled = sitters.slice().sort(() => Math.random() - 0.5);
         const cuA = shuffled[0].cu, cuB = shuffled[1].cu;
         const pair = CHAT_PAIRS[Math.floor(Math.random() * CHAT_PAIRS.length)];
         const { counterY } = G;
-        const lineA = (cuA.alcoholCount || 0) > 2
+        const lineA = (cuA.alcoholCount || 0) > 7
           ? DRUNK_TALK[Math.floor(Math.random() * DRUNK_TALK.length)] : pair.a;
         spawnBubble(cuA.x, counterY - H*0.28, lineA, { voice: _custVoice(cuA.voiceIdx), pitch: cuA.voicePitch, rate: cuA.voiceRate });
         setTimeout(() => {
           if (cuB.state === 'sit') {
-            const lineB = (cuB.alcoholCount || 0) > 2
+            const lineB = (cuB.alcoholCount || 0) > 7
               ? DRUNK_TALK[Math.floor(Math.random() * DRUNK_TALK.length)] : pair.b;
             spawnBubble(cuB.x, G.counterY - G.H*0.28, lineB, { voice: _custVoice(cuB.voiceIdx), pitch: cuB.voicePitch, rate: cuB.voiceRate });
           }
@@ -2406,14 +2810,54 @@ html, body {
       }
     }
 
+    // Politician caucus — 2+ politicians huddle about politics
+    if (T - _lastPolChat > 18 + Math.random() * 16) {
+      const polSitters = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.isPlayer && s.cu.ct && s.cu.ct.politician);
+      if (polSitters.length >= 2) {
+        _lastPolChat = T;
+        const { counterY } = G;
+        // Rotating 3-line exchanges: A opens → B replies → A closes (or a third politician jumps in)
+        const _POL_EXCHANGES = [
+          { a:'新党を立ち上げましょう！今がチャンスです！', b:'賛成です！名前はどうしますか？', c:'「鹿児島ファースト党」はどうでしょう！' },
+          { a:'消費税の廃止を公約にすれば票が取れますよ。', b:'でも財源はどうするんですか？', c:'まず選挙に勝つことが大事ですよ！' },
+          { a:'先生、次の選挙は勝てますか？', b:'地盤をしっかり固めればいける！', c:'後援会の拡大が急務ですね。' },
+          { a:'桜島の噴火対策、もっと国に訴えなければ！', b:'防災予算の増額を要求しましょう！', c:'地元の声を届けることが使命ですよ。' },
+          { a:'野党との連立は考えていますか？', b:'政策が合えば検討の余地はありますよ。', c:'まずは選挙区を守ることが先決です！' },
+          { a:'こんな夜台でこっそり党の話をするのは…', b:'いや、最高のブレインストーミングですよ！', c:'ラーメン食べながら政治を語る、これが民主主義！' },
+          { a:'大臣ポストを狙うなら今ですよ！', b:'いやいや、地元の声を忘れてはいけません。', c:'足元を固めてから上を目指しましょう！' },
+          { a:'選挙公約に屋台の支援を入れましょう！', b:'「夜台文化を守る会」、いい響きですね。', c:'票になりますよ、確実に！' },
+        ];
+        const ex = _POL_EXCHANGES[Math.floor(Math.random() * _POL_EXCHANGES.length)];
+        const cuA = polSitters[0].cu;
+        const cuB = polSitters[1].cu;
+        const cuC = polSitters.length >= 3 ? polSitters[2].cu : null;
+
+        spawnBubble(cuA.x, counterY - H*0.28, ex.a, { voice: _custVoice(cuA.voiceIdx), pitch: cuA.voicePitch * 0.96, rate: cuA.voiceRate * 0.88 });
+        setTimeout(() => {
+          if (cuB.state === 'sit') spawnBubble(cuB.x, G.counterY - G.H*0.28, ex.b, { voice: _custVoice(cuB.voiceIdx), pitch: cuB.voicePitch * 0.94, rate: cuB.voiceRate * 0.88 });
+        }, 2400 + Math.random()*600);
+        setTimeout(() => {
+          const cuFinal = (cuC && cuC.state === 'sit') ? cuC : (cuA.state === 'sit' ? cuA : null);
+          if (cuFinal) spawnBubble(cuFinal.x, G.counterY - G.H*0.28, ex.c, { voice: _custVoice(cuFinal.voiceIdx), pitch: cuFinal.voicePitch * 0.92, rate: cuFinal.voiceRate * 0.86 });
+        }, 4800 + Math.random()*800);
+        // Master quietly comments
+        const _masterPolLines = [
+          '政治家のお客様が多いですね…何かあるのかな。',
+          'なんか秘密の会議みたいですね、うちの店で！',
+          '政治の話は難しいですが、料理は任せてください！',
+        ];
+        setTimeout(() => spawnMasterSay(_masterPolLines[Math.floor(Math.random() * _masterPolLines.length)]), 6500);
+      }
+    }
+
     // Fights — more likely when drunk
     if (T - _lastFight > 45 + Math.random()*40) {
-      const sitters = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.falling);
+      const sitters = SLOTS.filter(s => s.cu && s.cu.state === 'sit' && !s.cu.isPlayer && !s.cu.falling);
       if (sitters.length >= 2) {
         // Weight toward drunk customers as instigators
         const weighted = [];
         sitters.forEach(s => {
-          const times = (s.cu.alcoholCount || 0) > 2 ? 4 : 1;
+          const times = (s.cu.alcoholCount || 0) > 7 ? 4 : 1;
           for (let i = 0; i < times; i++) weighted.push(s);
         });
         const slotA = weighted[Math.floor(Math.random() * weighted.length)];
@@ -2471,6 +2915,7 @@ html, body {
           cu.sitTimer = 0;
         }
       } else if (cu.state === 'sit_in') {
+        if (cu.isPlayer || cu._synced) return;
         cu.sitTimer++;
         if (cu.sitTimer > 40) {
           cu.state = 'sit';
@@ -2482,6 +2927,8 @@ html, body {
             : -1;
         }
       } else if (cu.state === 'sit') {
+        // Human players are immortal — clear any hazard flags immediately
+        if (cu.isPlayer) { cu.dead = false; cu.puking = false; cu.falling = false; return; }
         // Death animation — overrides everything else
         if (cu.dead) {
           cu.deathTimer = (cu.deathTimer || 0) + 1;
@@ -2522,17 +2969,18 @@ html, body {
           }
           return; // skip all eating/ordering logic
         }
-        cu.eatTimer += cu.served ? 1 : 2; // tick faster when waiting for food
+        if (cu._synced) return; // broadcast-synced NPC
+        cu.eatTimer += cu.served ? 1 : 4; // slow eat when served, fast tick when waiting
         // Empty-plate impatience — only counts when not yet served
         if (!cu.served && cu.eatTimer > 150) {
           cu.emptyTimer = (cu.emptyTimer || 0) + 1;
-          if (cu.emptyTimer === 2400) {
+          if (cu.emptyTimer === 7200) {
             const { counterY } = G;
             const _nags = ['すみません！まだですか？', 'あの…頼んだんですが…', 'もうちょっとかかりますか？', 'ちょっと！遅くないですか？'];
             spawnBubble(cu.x, counterY - H*0.28, _nags[Math.floor(Math.random()*_nags.length)],
               { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch * 1.15, rate: cu.voiceRate * 1.1 });
           }
-          if (cu.emptyTimer >= 3600) {
+          if (cu.emptyTimer >= 12000) {
             const { counterY } = G;
             spawnBubble(cu.x, counterY - H*0.28, 'もういいです、帰ります！',
               { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch * 1.2, rate: cu.voiceRate * 1.2 });
@@ -2546,7 +2994,7 @@ html, body {
         if (cu.chatAt > 0 && cu.eatTimer === cu.chatAt) {
           cu.chatAt = -1;
           const { counterY } = G;
-          const _isDrunkChat = (cu.alcoholCount || 0) > 2;
+          const _isDrunkChat = (cu.alcoholCount || 0) > 7;
           const pool = _isDrunkChat ? DRUNK_TALK : SMALL_TALK;
           const line = pool[Math.floor(Math.random() * pool.length)];
           const _chatRate = _isDrunkChat ? cu.voiceRate * 0.80 : cu.voiceRate * 0.92;
@@ -2578,7 +3026,6 @@ html, body {
             cu.roundsLeft = 0;
             _deathFlash = 60;
             try { if (window.AUDIO_REF) window.AUDIO_REF.playChoke(); } catch(_) {}
-            setTimeout(() => { try { if (window.AUDIO_REF) window.AUDIO_REF.playSadTrombone(); } catch(_) {} }, 2200);
             const { counterY } = G;
             spawnBubble(cu.x, counterY - H*0.28,
               ['げほっ…おせんべい…のどに…', 'ごほっ…ごほっ…つまった…', 'か、かたい…のどに…ごほっ', 'おせんべい…げほっ…'][Math.floor(Math.random()*4)],
@@ -2593,7 +3040,6 @@ html, body {
             cu.roundsLeft = 0;
             _deathFlash = 60;
             try { if (window.AUDIO_REF) window.AUDIO_REF.playDeathScream(); } catch(_) {}
-            setTimeout(() => { try { if (window.AUDIO_REF) window.AUDIO_REF.playSadTrombone(); } catch(_) {} }, 1800);
             const { counterY } = G;
             spawnBubble(cu.x, counterY - H*0.28,
               FUGU_DEATH_CRIES[Math.floor(Math.random() * FUGU_DEATH_CRIES.length)],
@@ -2604,18 +3050,18 @@ html, body {
           // Count the drink they just finished
           if (ALCOHOL_DISHES.has(cu.dish)) {
             cu.alcoholCount = (cu.alcoholCount || 0) + 1;
-            if (cu.alcoholCount === 2) {
+            if (cu.alcoholCount === 7) {
               // Getting a buzz — order one more for sure
               cu.roundsLeft += 2 + Math.floor(Math.random() * 4);
-            } else if (cu.alcoholCount === 3) {
+            } else if (cu.alcoholCount === 10) {
               // Drunk — settle in for a long night
               cu.roundsLeft += 10 + Math.floor(Math.random() * 7);
-            } else if (cu.alcoholCount > 3) {
+            } else if (cu.alcoholCount > 10) {
               // Each drink after that leads to two more — deep in it now
               cu.roundsLeft += 1 + (Math.random() < 0.80 ? 1 : 0);
             }
             // Too drunk — fall off the stool
-            if (cu.alcoholCount >= 9 && !cu.falling && Math.random() < 0.55) {
+            if (cu.alcoholCount >= 20 && !cu.falling && Math.random() < 0.55) {
               cu.falling  = true;
               cu.fallTimer = 0;
               cu.roundsLeft = 0;
@@ -2625,7 +3071,7 @@ html, body {
                 { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch * 1.5, rate: 1.4 });
             }
           }
-          const _isDrunk = (cu.alcoholCount || 0) > 2;
+          const _isDrunk = (cu.alcoholCount || 0) > 7;
           if (cu.roundsLeft > 0) {
             // Still hungry/thirsty — place another order
             cu.roundsLeft--;
@@ -2650,6 +3096,7 @@ html, body {
           }
         }
       } else if (cu.state === 'walk_out') {
+        if (cu.isPlayer) { cu.state = 'sit'; cu.x = cu.targetX; return; }
         cu.x += speed;
         if (cu.x > W + W*0.06) {
           slot.cu = null;
@@ -3820,13 +4267,84 @@ html, body {
         });
         break;
       }
+
+      case 'korokke': {
+        // Drop shadow
+        g.fillStyle = 'rgba(0,0,0,.20)';
+        g.beginPath(); g.ellipse(0, cY-H*.001, W*.030, H*.005, 0, 0, Math.PI*2); g.fill();
+        // White plate
+        g.fillStyle = '#f0ece4';
+        g.beginPath(); g.ellipse(0, cY-H*.005, W*.028, H*.008, 0, 0, Math.PI*2); g.fill();
+        // Two oval croquettes
+        [[-W*.009, cY-H*.016, 0.15], [W*.009, cY-H*.014, -0.12]].forEach(([cx2, cy2, rot]) => {
+          g.save(); g.translate(cx2, cy2); g.rotate(rot);
+          // Golden-brown fried crust
+          const kcg = g.createRadialGradient(-W*.002, -H*.002, W*.001, 0, 0, W*.012);
+          kcg.addColorStop(0, '#e8b850'); kcg.addColorStop(0.6, '#c88830'); kcg.addColorStop(1, '#9a6018');
+          g.fillStyle = kcg;
+          g.beginPath(); g.ellipse(0, 0, W*.013, H*.008, 0, 0, Math.PI*2); g.fill();
+          // Panko texture dots
+          g.fillStyle = 'rgba(180,100,30,.45)';
+          [[-W*.006,H*.002],[W*.003,-H*.003],[W*.007,H*.002],[-W*.001,H*.005]].forEach(([dx,dy]) => {
+            g.beginPath(); g.arc(dx, dy, W*.0015, 0, Math.PI*2); g.fill();
+          });
+          g.restore();
+        });
+        // Ketchup drizzle
+        g.strokeStyle = '#d03020'; g.lineWidth = W*.002; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(-W*.012, cY-H*.018); g.quadraticCurveTo(0, cY-H*.022, W*.010, cY-H*.017); g.stroke();
+        break;
+      }
+
+      case 'misosoup': {
+        // Drop shadow
+        g.fillStyle = 'rgba(0,0,0,.25)';
+        g.beginPath(); g.ellipse(W*.002, cY-H*.002, W*.022, H*.006, 0, 0, Math.PI*2); g.fill();
+        // Dark ceramic bowl
+        g.fillStyle = '#1a1008';
+        g.beginPath(); g.ellipse(0, cY-H*.009, W*.020, H*.010, 0, 0, Math.PI*2); g.fill();
+        // Soup surface — pale amber miso
+        g.fillStyle = '#c8a060';
+        g.beginPath(); g.ellipse(0, cY-H*.014, W*.016, H*.006, 0, 0, Math.PI*2); g.fill();
+        // Wakame seaweed bit
+        g.fillStyle = '#2a5020';
+        g.beginPath(); g.ellipse(-W*.004, cY-H*.016, W*.004, H*.003, -0.3, 0, Math.PI*2); g.fill();
+        // Tofu cube
+        g.fillStyle = 'rgba(240,232,210,.85)';
+        g.fillRect(W*.004, cY-H*.018, W*.008, H*.005);
+        // Negi floater
+        g.fillStyle = '#50a030';
+        g.beginPath(); g.arc(W*.002, cY-H*.013, W*.002, 0, Math.PI*2); g.fill();
+        break;
+      }
+
+      case 'gohan': {
+        // Drop shadow
+        g.fillStyle = 'rgba(0,0,0,.22)';
+        g.beginPath(); g.ellipse(W*.002, cY-H*.002, W*.021, H*.006, 0, 0, Math.PI*2); g.fill();
+        // Ceramic bowl base
+        g.fillStyle = '#e8d8c0';
+        g.beginPath(); g.ellipse(0, cY-H*.008, W*.019, H*.010, 0, 0, Math.PI*2); g.fill();
+        g.strokeStyle = '#c0a880'; g.lineWidth = W*.002;
+        g.beginPath(); g.ellipse(0, cY-H*.008, W*.019, H*.010, 0, 0, Math.PI*2); g.stroke();
+        // White rice dome
+        g.fillStyle = '#f8f6f0';
+        g.beginPath();
+        g.ellipse(0, cY-H*.018, W*.016, H*.008, 0, 0, Math.PI*2); g.fill();
+        // Subtle rice grain texture
+        g.fillStyle = 'rgba(200,190,170,.60)';
+        [[-W*.007,cY-H*.018],[W*.000,cY-H*.022],[W*.007,cY-H*.018],[-W*.003,cY-H*.015],[W*.003,cY-H*.015]].forEach(([rx,ry]) => {
+          g.beginPath(); g.ellipse(rx, ry, W*.0025, H*.0015, 0, 0, Math.PI*2); g.fill();
+        });
+        break;
+      }
     }
   }
 
   function drawCustomer(g, cu, T) {
     const { W, H, counterY, stallBot } = G;
     const { state, x, ct, phase } = cu;
-    const _drunkAmt = Math.max(0, (cu.alcoholCount || 0) - 2);
+    const _drunkAmt = Math.max(0, (cu.alcoholCount || 0) - 7);
 
     if (state === 'walk_in' || state === 'walk_out') {
       // ── WALKING — full profile figure ───────────────────────────
@@ -4002,7 +4520,7 @@ html, body {
         g.beginPath(); g.ellipse(frFootX+W*0.007, gndY-H*0.002, W*0.007, H*0.003, 0.10, 0, Math.PI*2); g.fill();
       } else if (ct.female && ct.type !== 'kimono') {
         // Skirt flares from waist, bare legs peek below hem
-        const skirtBot = gndY - H*0.06;
+        const skirtBot = ct.hostess ? gndY - H*0.14 : gndY - H*0.06;
         const sway = Math.sin(T*4.5 + phase) * W*0.004;
         g.fillStyle = ct.pants;
         g.beginPath();
@@ -4028,9 +4546,26 @@ html, body {
         g.beginPath(); g.moveTo(_bkLX+W*0.002, skirtBot); g.lineTo(_bkLX+W*0.006, gndY-H*0.002); g.stroke();
         g.lineWidth = W*0.013;
         g.beginPath(); g.moveTo(_frLX-W*0.002, skirtBot); g.lineTo(_frLX+W*0.006, gndY-H*0.002); g.stroke();
-        g.fillStyle = '#181212';
+        g.fillStyle = ct.hostess ? '#c01068' : '#181212';
         g.beginPath(); g.ellipse(_bkLX+W*0.008, gndY, W*0.012, H*0.004, 0.10, 0, Math.PI*2); g.fill();
         g.beginPath(); g.ellipse(_frLX+W*0.010, gndY, W*0.014, H*0.004, 0.10, 0, Math.PI*2); g.fill();
+        if (ct.hostess) {
+          // High heel stilettos
+          g.fillStyle = '#b00858';
+          g.beginPath(); g.ellipse(_frLX+W*0.013, gndY-H*0.006, W*0.005, H*0.008, -0.3, 0, Math.PI*2); g.fill();
+          g.fillRect(_frLX+W*0.016, gndY-H*0.014, W*0.003, H*0.014);
+          // Sparkle dots on dress (stable using phase seed)
+          const _sSeeds = [0.12,0.37,0.58,0.81,0.24,0.69,0.45,0.92,0.05,0.76];
+          _sSeeds.forEach((s, idx) => {
+            const _sx = (s - 0.5) * W * 0.05;
+            const _sy = waistY + (skirtBot - waistY) * ((idx % 5) * 0.20 + 0.10);
+            const _sa = 0.5 + 0.5 * Math.sin(T * 3.8 + phase + idx * 1.2);
+            g.fillStyle = `rgba(255,240,200,${_sa * 0.70})`;
+            g.beginPath(); g.arc(_sx, _sy, W * 0.006, 0, Math.PI * 2); g.fill();
+            g.fillStyle = `rgba(255,255,255,${_sa * 0.55})`;
+            g.beginPath(); g.arc(_sx, _sy, W * 0.003, 0, Math.PI * 2); g.fill();
+          });
+        }
       } else {
         // Geta sandal peeking from kimono hem (slight shuffle)
         const _gtX = Math.sin(stride*0.25)*W*0.006;
@@ -4159,6 +4694,20 @@ html, body {
         g.fillStyle = '#ff4060';
         g.beginPath(); g.arc(-hr*0.08, headCy-hr*1.32, hr*0.04, 0, Math.PI*2); g.fill();
       }
+      if (ct.hostess) {
+        // Glossy pink lips
+        g.strokeStyle = '#e00858'; g.lineWidth = hr*0.17; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(-hr*0.93, headCy+hr*0.53); g.quadraticCurveTo(-hr*0.79, headCy+hr*0.61 + _tkFw, -hr*0.66, headCy+hr*0.53); g.stroke();
+        // Lip gloss highlight
+        g.strokeStyle = 'rgba(255,200,220,0.55)'; g.lineWidth = hr*0.06;
+        g.beginPath(); g.moveTo(-hr*0.89, headCy+hr*0.52); g.lineTo(-hr*0.79, headCy+hr*0.53); g.stroke();
+        // Eye shadow (smoky)
+        g.fillStyle = 'rgba(100,0,160,0.30)';
+        g.beginPath(); g.ellipse(-hr*0.74, headCy+hr*0.17, hr*0.18, hr*0.07, -0.1, 0, Math.PI*2); g.fill();
+        // Eyelash curl
+        g.strokeStyle = '#060402'; g.lineWidth = hr*0.08; g.lineCap = 'round';
+        g.beginPath(); g.arc(-hr*0.74, headCy+hr*0.12, hr*0.16, Math.PI*0.8, Math.PI*1.8); g.stroke();
+      }
 
       // ── HAIR (profile) ─────────────────────────────
       g.fillStyle = ct.hair;
@@ -4256,6 +4805,10 @@ html, body {
       const _eatY = (state === 'sit' && cu.served)
         ? Math.pow(Math.max(0, _eatPhase), 2) * H * 0.048
         : 0;
+      // Smoking: left arm raises to bring cigarette to mouth during puff cycle
+      const _puffCycle = (cu.smoker && state === 'sit') ? Math.sin(T * 0.55 + phase * 2.1) : -1;
+      const _smokeRaise = Math.pow(Math.max(0, _puffCycle), 2) * H * 0.15;
+      const _lAY = armY - _smokeRaise;
       const headBob = state === 'sit' ? Math.sin(T*2.8+phase)*H*0.004 : 0;
 
       g.save(); g.translate(x, 0);
@@ -4523,47 +5076,46 @@ html, body {
       // ── ARMS ───────────────────────────────────────
       const slvC = ct.type === 'tee' ? ct.shirt  : ct.jacket;
       const frmC = ct.type === 'tee' ? ct.skin   : ct.jacket;
-      // Left upper arm
+      // Left upper arm — follows forearm lift when smoking
       g.fillStyle = slvC;
       g.beginPath();
       g.moveTo(-W*0.054, shldrY+H*0.025);
-      g.quadraticCurveTo(-W*0.068, shldrY+H*0.075, -W*0.064, armY);
-      g.lineTo(-W*0.046, armY);
+      g.quadraticCurveTo(-W*0.068, shldrY+H*0.075, -W*0.064, _lAY);
+      g.lineTo(-W*0.046, _lAY);
       g.quadraticCurveTo(-W*0.040, shldrY+H*0.072, -W*0.030, shldrY+H*0.030);
       g.closePath(); g.fill();
       if (ct.type === 'tee') {
         g.strokeStyle = ct.jacketD; g.lineWidth = 1;
-        g.beginPath(); g.moveTo(-W*0.064, armY); g.lineTo(-W*0.046, armY); g.stroke();
+        g.beginPath(); g.moveTo(-W*0.064, _lAY); g.lineTo(-W*0.046, _lAY); g.stroke();
       }
-      // Left forearm (horizontal on counter)
+      // Left forearm — lifts when smoker raises cigarette to mouth
       g.fillStyle = frmC;
       g.beginPath();
-      g.moveTo(-W*0.064, armY-H*0.006); g.lineTo(-W*0.064, armY+H*0.016);
-      g.lineTo(W*0.004, armY+H*0.016); g.lineTo(W*0.004, armY-H*0.006);
+      g.moveTo(-W*0.064, _lAY-H*0.006); g.lineTo(-W*0.064, _lAY+H*0.016);
+      g.lineTo(W*0.004, _lAY+H*0.016); g.lineTo(W*0.004, _lAY-H*0.006);
       g.closePath(); g.fill();
       // Wrist detail
       if (ct.type === 'suit') {
         g.fillStyle = ct.cuff;
-        g.fillRect(W*0.002, armY-H*0.006, W*0.016, H*0.022);
+        g.fillRect(W*0.002, _lAY-H*0.006, W*0.016, H*0.022);
       } else if (ct.type === 'hoodie') {
         g.fillStyle = ct.jacketD;
-        g.fillRect(-W*0.064, armY-H*0.006, W*0.010, H*0.022);
+        g.fillRect(-W*0.064, _lAY-H*0.006, W*0.010, H*0.022);
       } else if (ct.type === 'shirt') {
         g.fillStyle = ct.jacketD;
-        g.fillRect(W*0.002, armY-H*0.006, W*0.012, H*0.022);
+        g.fillRect(W*0.002, _lAY-H*0.006, W*0.012, H*0.022);
       }
       // Left hand
       g.fillStyle = ct.skin;
-      g.beginPath(); g.ellipse(W*0.016, armY+H*0.006, W*0.014, H*0.009, 0.08, 0, Math.PI*2); g.fill();
+      g.beginPath(); g.ellipse(W*0.016, _lAY+H*0.006, W*0.014, H*0.009, 0.08, 0, Math.PI*2); g.fill();
       g.strokeStyle = ct.skinD; g.lineWidth = 0.5;
       [-W*0.004, W*0.003, W*0.010].forEach(kx => {
-        g.beginPath(); g.moveTo(kx, armY+H*0.002); g.lineTo(kx, armY+H*0.012); g.stroke();
+        g.beginPath(); g.moveTo(kx, _lAY+H*0.002); g.lineTo(kx, _lAY+H*0.012); g.stroke();
       });
 
       // Cigarette — smokers only, while seated
       if (cu.smoker && state === 'sit') {
-        const _cigX = W*0.024, _cigBaseY = armY - H*0.004;
-        const _puffCycle = Math.sin(T * 0.55 + phase * 2.1);
+        const _cigX = W*0.024, _cigBaseY = _lAY - H*0.004;
         const _isPuffing  = _puffCycle > 0.55;
 
         g.save();
@@ -5059,15 +5611,20 @@ html, body {
 
       g.restore(); // end head-turn transform
 
-      // Name tag above head — only after clicked, for 10 seconds
-      if (cu.name && !cu.falling && T < (cu.nameShownUntil || 0)) {
+      // Name tag above head — always for human players, else only for 10s after click
+      if (cu.name && !cu.falling && (cu.isPlayer || T < (cu.nameShownUntil || 0))) {
         const _nY = shldrY - H*0.14;
         g.font = `bold ${Math.round(W*0.018)}px sans-serif`;
         g.textAlign = 'center';
-        g.fillStyle = 'rgba(0,0,0,0.45)';
+        g.fillStyle = 'rgba(0,0,0,0.55)';
         g.fillText(cu.name, 1, _nY + 1);
-        g.fillStyle = (cu.alcoholCount||0) > 2 ? 'rgba(255,160,120,0.95)' : 'rgba(255,240,200,0.92)';
+        g.fillStyle = cu.isPlayer ? 'rgba(80,220,255,0.95)' : ((cu.alcoholCount||0) > 7 ? 'rgba(255,160,120,0.95)' : 'rgba(255,240,200,0.92)');
         g.fillText(cu.name, 0, _nY);
+        if (cu.isPlayer) {
+          // small crown above the name
+          g.font = `${Math.round(W*0.013)}px sans-serif`;
+          g.fillText('👤', 0, _nY - H*0.022);
+        }
       }
 
       g.restore(); // end body rotation — food drawn in clean translated space
@@ -5154,13 +5711,186 @@ html, body {
     });
   }
 
+  // ── TYPHOON EVENT ────────────────────────────
+  let _typhoon = null; // { startT, reacted }
+  let _nextTyphoonT = 1760 + Math.random() * 2240; // first typhoon ~29–66 min in
+  const _RAIN = Array.from({length: 220}, () => ({ x:0, y:0, vx:0, vy:0, len:0, a:0 }));
+
+  function _resetRainDrop(d, W, H, fresh) {
+    d.x = Math.random() * W * 1.4 - W * 0.2;
+    d.y = fresh ? Math.random() * H : -10 - Math.random() * 40;
+    d.vx = 7 + Math.random() * 7;
+    d.vy = 13 + Math.random() * 9;
+    d.len = 10 + Math.random() * 16;
+    d.a  = 0.3 + Math.random() * 0.45;
+  }
+
+  function maybeSpawnTyphoon(T) {
+    if (!window.stallOpen || _isFrozen) return;
+    if (!_typhoon && T > _nextTyphoonT) {
+      _typhoon = { startT: T, reacted: false };
+      _RAIN.forEach(d => _resetRainDrop(d, G.W, G.H, true));
+      try { if (window.AUDIO_REF) window.AUDIO_REF.playTyphoon(); } catch(_) {}
+    }
+  }
+
+  function drawTyphoon(ctx, T) {
+    if (!_typhoon) return;
+    const { W, H } = G;
+    const age = T - _typhoon.startT;
+    const dur = 26;
+    if (age > dur) {
+      _typhoon = null;
+      _nextTyphoonT = T + 2080 + Math.random() * 2400;
+      _applyShake(0, 0);
+      return;
+    }
+    const fade = age < 3 ? age / 3 : age > dur - 5 ? (dur - age) / 5 : 1;
+
+    // Dark stormy sky overlay
+    ctx.fillStyle = `rgba(12,18,38,${fade * 0.30})`;
+    ctx.fillRect(0, 0, W, H);
+
+    // Rain drops
+    ctx.save();
+    ctx.lineWidth = 0.9;
+    _RAIN.forEach(d => {
+      d.x += d.vx; d.y += d.vy;
+      if (d.y > H + 30 || d.x > W + 60) _resetRainDrop(d, W, H, false);
+      const ra = d.a * fade;
+      if (ra < 0.04) return;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x - d.vx * 0.55, d.y - d.vy * 0.55);
+      ctx.strokeStyle = `rgba(170,210,255,${ra})`;
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // Wind gust streaks
+    if (Math.random() < 0.14 * fade) {
+      const gy = Math.random() * H * 0.85;
+      const gLen = W * (0.25 + Math.random() * 0.55);
+      const gx = -gLen * 0.1;
+      const ga = fade * (0.05 + Math.random() * 0.07);
+      const gg = ctx.createLinearGradient(gx, gy, gx + gLen, gy);
+      gg.addColorStop(0, `rgba(200,225,255,0)`);
+      gg.addColorStop(0.35, `rgba(200,225,255,${ga})`);
+      gg.addColorStop(1, `rgba(200,225,255,0)`);
+      ctx.fillStyle = gg;
+      ctx.fillRect(gx, gy - 1.5, gLen, 3);
+    }
+
+    // Horizontal wind shake
+    const wx = (Math.sin(T * 13.7) * 2.8 + Math.sin(T * 7.1) * 1.8) * fade;
+    const wy = Math.sin(T * 10.2) * 0.6 * fade;
+    _applyShake(wx, wy);
+
+    // Customer reactions — once at age 1.5s
+    if (!_typhoon.reacted && age > 1.5) {
+      _typhoon.reacted = true;
+      const _typhoonShouts = [
+        '台風だ！！すごい風！', 'やばい！飛ばされそう！', 'こんな嵐の中、すごいですね！',
+        '傘が壊れそう！！', '外は土砂降りだ！！', '風がすごい！！', '台風接近中！！',
+      ];
+      const _masterTLines = [
+        '台風来てます！！大丈夫ですか！', 'すごい嵐ですね！中で飲みましょう！',
+        '台風の中わざわざありがとうございます！！',
+      ];
+      const { counterY } = G;
+      SLOTS.forEach((slot, idx) => {
+        const cu = slot.cu;
+        if (!cu || (cu.state !== 'sit' && cu.state !== 'sit_in')) return;
+        setTimeout(() => {
+          if (!cu || (cu.state !== 'sit' && cu.state !== 'sit_in')) return;
+          const line = _typhoonShouts[Math.floor(Math.random() * _typhoonShouts.length)];
+          bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.2 });
+          cu.talkUntil = performance.now() / 1000 + 2.0;
+          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_e) {}
+          if (!window._npcVoiceMuted && window.speechSynthesis) {
+            const _u = new SpeechSynthesisUtterance(line);
+            _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.1; _u.pitch = (cu.voicePitch || 1) * 1.1;
+            const _v = _custVoice(cu.voiceIdx); if (_v) _u.voice = _v;
+            window.speechSynthesis.speak(_u);
+          }
+        }, idx * 440);
+      });
+      setTimeout(() => spawnMasterSay(_masterTLines[Math.floor(Math.random() * _masterTLines.length)]), 1600);
+    }
+  }
+
+  function drawWetCustomers(ctx, T) {
+    if (!_typhoon) return;
+    const { W, H, counterY } = G;
+    const age = T - _typhoon.startT;
+    const dur = 26;
+    if (age > dur) return;
+    const fade = age < 3 ? age / 3 : age > dur - 5 ? (dur - age) / 5 : 1;
+    if (fade < 0.05) return;
+
+    const topY  = counterY - H * 0.24;
+    const botY  = counterY + H * 0.05;
+    const figH  = botY - topY;
+    const figW  = W * 0.065;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    SLOTS.forEach(slot => {
+      const cu = slot.cu;
+      if (!cu || (cu.state !== 'sit' && cu.state !== 'sit_in')) return;
+
+      // Wet sheen — horizontal gradient tinted blue across the figure
+      const sheenA = fade * 0.14;
+      const sh = ctx.createLinearGradient(cu.x - figW * 0.6, 0, cu.x + figW * 0.6, 0);
+      sh.addColorStop(0,   `rgba(110,180,255,0)`);
+      sh.addColorStop(0.3, `rgba(110,180,255,${sheenA})`);
+      sh.addColorStop(0.7, `rgba(110,180,255,${sheenA})`);
+      sh.addColorStop(1,   `rgba(110,180,255,0)`);
+      ctx.fillStyle = sh;
+      ctx.fillRect(cu.x - figW * 0.6, topY, figW * 1.2, figH);
+
+      // Drip streaks — 5 streams that continuously fall down the figure
+      ctx.lineWidth = W * 0.003;
+      for (let d = 0; d < 5; d++) {
+        const xFrac    = (d / 4) - 0.5;
+        const dx       = xFrac * figW;
+        const dripFrac = ((T * 0.85 + d * 0.2 + (cu.phase || 0)) % 1);
+        const dripY    = topY + dripFrac * figH;
+        const dripLen  = H * 0.028;
+        const edgeFade = 1 - Math.abs(xFrac) * 1.6;
+        if (edgeFade <= 0) continue;
+        ctx.beginPath();
+        ctx.moveTo(cu.x + dx, dripY);
+        ctx.lineTo(cu.x + dx, Math.min(dripY + dripLen, botY));
+        ctx.strokeStyle = `rgba(165,215,255,${fade * 0.55 * edgeFade})`;
+        ctx.stroke();
+      }
+
+      // Splash drops — small pulses at head and shoulder level
+      for (let s = 0; s < 4; s++) {
+        const sp = (T * 5.1 + s * 1.571 + (cu.phase || 0) * 2) % (Math.PI * 2);
+        const sa = fade * 0.45 * Math.max(0, Math.sin(sp)) ** 2;
+        if (sa < 0.04) continue;
+        const sx = cu.x + (s - 1.5) * figW * 0.28;
+        const sy = topY + H * 0.04 + (s % 2) * H * 0.035;
+        ctx.beginPath();
+        ctx.arc(sx, sy, W * 0.0035, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,220,255,${sa})`;
+        ctx.fill();
+      }
+    });
+
+    ctx.restore();
+  }
+
   // ── ROCKET LAUNCH EVENT ───────────────────────
   let _rocket = null; // { startT, reacted }
-  let _nextRocketT = 180 + Math.random() * 240; // first launch 3–7 min in
+  let _nextRocketT = 1440 + Math.random() * 1920; // first launch ~24–56 min in
 
   // ── EARTHQUAKE EVENT ─────────────────────────
   let _earthquake = null; // { startT, intensity, reacted }
-  let _nextEarthquakeT = 200 + Math.random() * 240;
+  let _nextEarthquakeT = 1600 + Math.random() * 1920;
 
   function _applyShake(dx, dy) {
     c.style.transform = dx === 0 && dy === 0 ? '' : `translate(${dx}px,${dy}px)`;
@@ -5173,7 +5903,7 @@ html, body {
   }
 
   function maybeSpawnEarthquake(T) {
-    if (!window.stallOpen) return;
+    if (!window.stallOpen || _isFrozen) return;
     if (!_earthquake && T > _nextEarthquakeT) {
       _earthquake = { startT: T, intensity: 5 + Math.random() * 9, reacted: false };
       try { if (window.AUDIO_REF) window.AUDIO_REF.playEarthquake(); } catch(_) {}
@@ -5187,7 +5917,7 @@ html, body {
     const dur = 7 + _earthquake.intensity * 0.4;
     if (age > dur) {
       _earthquake = null;
-      _nextEarthquakeT = T + 300 + Math.random() * 360;
+      _nextEarthquakeT = T + 2400 + Math.random() * 2880;
       _applyShake(0, 0);
       return;
     }
@@ -5210,7 +5940,7 @@ html, body {
         const cu = slot.cu;
         if (!cu || (cu.state !== 'sit' && cu.state !== 'sit_in')) return;
         // Drunk customers topple
-        if ((cu.alcoholCount || 0) > 2 && !cu.falling && Math.random() < 0.75) {
+        if (!cu.isPlayer && (cu.alcoholCount || 0) > 7 && !cu.falling && Math.random() < 0.75) {
           cu.falling = true; cu.fallTimer = 0;
         }
         setTimeout(() => {
@@ -5219,7 +5949,7 @@ html, body {
           bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 2.8 });
           cu.talkUntil = performance.now() / 1000 + 1.5;
           try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_) {}
-          if (window.speechSynthesis) {
+          if (!window._npcVoiceMuted && window.speechSynthesis) {
             const _u = new SpeechSynthesisUtterance(line);
             _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.15; _u.pitch = (cu.voicePitch || 1) * 1.1;
             const _v = _custVoice(cu.voiceIdx); if (_v) _u.voice = _v;
@@ -5233,13 +5963,13 @@ html, body {
 
   // ── VOLCANO ERUPTION EVENT ────────────────────
   let _eruption = null; // { startT }
-  let _nextEruptionT = 150 + Math.random() * 180; // first eruption 2.5–5 min in
+  let _nextEruptionT = 300 + Math.random() * 360; // first eruption 5–11 min in
   const _EMBERS = Array.from({length: 60}, () => ({
     x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, r: 0
   }));
 
   function maybeSpawnEruption(T) {
-    if (!window.stallOpen) return;
+    if (!window.stallOpen || _isFrozen) return;
     if (!_eruption && T > _nextEruptionT) {
       _eruption = { startT: T, reacted: false };
       // Swap background to eruption photo
@@ -5271,7 +6001,7 @@ html, body {
     const dur = 28;
     if (age > dur) {
       _eruption = null;
-      _nextEruptionT = T + 180 + Math.random() * 240;
+      _nextEruptionT = T + 360 + Math.random() * 480;
       _bgCurrent = _bgNormal;
       const bg = document.getElementById('kag-bg');
       if (bg) bg.style.backgroundImage = "url('sakurajima.jpg')";
@@ -5301,7 +6031,7 @@ html, body {
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: fleeLine, born: performance.now() / 1000, life: 2.5 });
             cu.talkUntil = performance.now() / 1000 + 1.2;
             try { if (window._showSubtitle && TRANSLATIONS[fleeLine]) window._showSubtitle(TRANSLATIONS[fleeLine]); } catch(_e) {}
-            if (window.speechSynthesis) {
+            if (!window._npcVoiceMuted && window.speechSynthesis) {
               const _u = new SpeechSynthesisUtterance(fleeLine);
               _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.4; _u.pitch = (cu.voicePitch || 1) * 1.2;
               const _v = _custVoice(cu.voiceIdx); if (_v) _u.voice = _v;
@@ -5313,7 +6043,7 @@ html, body {
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.0 });
             cu.talkUntil = performance.now() / 1000 + 1.8;
             try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_e) {}
-            if (window.speechSynthesis) {
+            if (!window._npcVoiceMuted && window.speechSynthesis) {
               const _u = new SpeechSynthesisUtterance(line);
               _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.2; _u.pitch = (cu.voicePitch || 1) * 1.15;
               const _v = _custVoice(cu.voiceIdx); if (_v) _u.voice = _v;
@@ -5364,7 +6094,7 @@ html, body {
   }
 
   function maybeSpawnRocket(T) {
-    if (!window.stallOpen) return;
+    if (!window.stallOpen || _isFrozen) return;
     if (!_rocket && T > _nextRocketT) {
       _rocket = { startT: T, reacted: false };
       try { if (window.AUDIO_REF) window.AUDIO_REF.playRocketLaunch(); } catch(_) {}
@@ -5376,7 +6106,7 @@ html, body {
     const { W, H } = G;
     const age = T - _rocket.startT;
     const dur = 7.0; // seconds of visible flight
-    if (age > dur) { _rocket = null; _nextRocketT = T + 300 + Math.random() * 360; return; }
+    if (age > dur) { _rocket = null; _nextRocketT = T + 2400 + Math.random() * 2880; return; }
 
     const progress = age / dur;
     // Arc from lower-right horizon up toward upper-left
@@ -5426,7 +6156,7 @@ html, body {
           bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.2 });
           cu.talkUntil = performance.now() / 1000 + 2.0;
           try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_) {}
-          if (window.speechSynthesis) {
+          if (!window._npcVoiceMuted && window.speechSynthesis) {
             const _u = new SpeechSynthesisUtterance(line);
             _u.lang = 'ja-JP'; _u.rate = cu.voiceRate * 0.92; _u.pitch = cu.voicePitch;
             const _v = _custVoice(cu.voiceIdx); if (_v) _u.voice = _v;
@@ -5438,11 +6168,227 @@ html, body {
     }
   }
 
+  // ── TV SUMO / AD ──────────────────────────────
+  let _tvAdPhase = 0; // 0=content, 1=ad
+  let _tvAdTimer = 0;
+
+  // Hidden video element for tv.mkv playback
+  let _tvVideo = null;
+  let _tvUserInteracted = false;
+  (function() {
+    try {
+      const v = document.createElement('video');
+      v.src = 'tv.mp4';
+      v.loop = true;
+      v.muted = true;
+      v.playsInline = true;
+      v.style.cssText = 'position:fixed;width:0;height:0;opacity:0;pointer-events:none;top:-9999px';
+      document.body.appendChild(v);
+      v.play().catch(() => {});
+      _tvVideo = v;
+      // Track first user gesture so audio can play when TV is explicitly turned on
+      const _tvMarkInteracted = () => { _tvUserInteracted = true; document.removeEventListener('click', _tvMarkInteracted); document.removeEventListener('touchend', _tvMarkInteracted); };
+      document.addEventListener('click', _tvMarkInteracted);
+      document.addEventListener('touchend', _tvMarkInteracted);
+    } catch(_) {}
+  })();
+
+  let _tvOn = false;
+  function _applyTvState(on) {
+    _tvOn = on;
+    if (_tvVideo) { if (_tvOn) { _tvVideo.play().catch(()=>{}); if (_tvUserInteracted) { _tvVideo.muted = false; _tvVideo.volume = 0.35; } } else { _tvVideo.pause(); _tvVideo.muted = true; } }
+    const btn = document.getElementById('tv-btn');
+    if (btn) btn.style.opacity = _tvOn ? '1' : '0.35';
+  }
+  window._tvToggle = function(btn) { _applyTvState(!_tvOn); };
+  window._tvGetOn  = () => _tvOn;
+  window._tvSetOn  = (on) => { if (_tvOn !== on) _applyTvState(on); };
+  const TV_AD_INTERVAL = 600; // seconds between ads
+  const TV_SUMO_ADS = [
+    { text: 'さつま揚げ\n西日本一！', color: '#f0c820', bg: '#c01808' },
+    { text: '芋焼酎\n限定醸造', color: '#f4e890', bg: '#1a3010' },
+    { text: '桜島温泉\nご招待！', color: '#f8f0e0', bg: '#1828a0' },
+    { text: '黒豚ラーメン\n一杯¥800', color: '#fff0c0', bg: '#281808' },
+  ];
+  let _tvAdIdx = 0;
+  let _tvAdStart = 0;
+  const TV_AD_DURATION = 30; // seconds ad plays
+  const TV_AD_EARN = 500;    // ¥ earned per ad
+
+  function drawSumoTV(ctx, T) {
+    const { tvCX, tvTop, tvW, tvH } = G;
+    if (!tvW || !_tvOn) return;
+    const tvL = tvCX - tvW * 0.5, tvBot = tvTop + tvH;
+    const bez = tvW * 0.045;
+
+    // Floating shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = tvW * 0.25;
+    ctx.shadowOffsetY = tvH * 0.08;
+    ctx.fillStyle = 'rgba(0,0,0,0.01)';
+    ctx.fillRect(tvL - bez, tvTop - bez, tvW + bez*2, tvH + bez*2);
+    ctx.restore();
+
+    // Bezel
+    ctx.fillStyle = '#100e12';
+    ctx.fillRect(tvL - bez, tvTop - bez, tvW + bez*2, tvH + bez*2);
+    // Top sheen
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(tvL - bez, tvTop - bez, tvW + bez*2, bez*0.4);
+
+    // Check if it's time to run an ad
+    if (!_tvAdTimer) _tvAdTimer = T + TV_AD_INTERVAL;
+    if (_tvAdPhase === 0 && T > _tvAdTimer) {
+      _tvAdPhase = 1; _tvAdStart = T; _tvAdIdx = (_tvAdIdx + 1) % TV_SUMO_ADS.length;
+      _tvAdTimer = T + TV_AD_DURATION + TV_AD_INTERVAL;
+      // Pay the player
+      if (window._gameG) {
+        window._gameG.money = (window._gameG.money || 0) + TV_AD_EARN;
+        try { if (window._logDialog) window._logDialog(`CM収入 +¥${TV_AD_EARN}`, 'master'); } catch(_) {}
+      }
+    }
+    if (_tvAdPhase === 1 && T > _tvAdStart + TV_AD_DURATION) {
+      _tvAdPhase = 0;
+    }
+
+    ctx.save();
+    ctx.beginPath(); ctx.rect(tvL, tvTop, tvW, tvH); ctx.clip();
+
+    if (_tvAdPhase === 1) {
+      // ── AD SCREEN ──
+      const ad = TV_SUMO_ADS[_tvAdIdx];
+      ctx.fillStyle = ad.bg; ctx.fillRect(tvL, tvTop, tvW, tvH);
+      ctx.fillStyle = ad.color;
+      ctx.font = `bold ${Math.round(tvH * 0.20)}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const lines = ad.text.split('\n');
+      lines.forEach((ln, i) => ctx.fillText(ln, tvCX, tvTop + tvH * (0.35 + i * 0.38)));
+      // Flash border
+      const blink = Math.sin(T * 6) > 0;
+      if (blink) { ctx.strokeStyle = ad.color; ctx.lineWidth = 2; ctx.strokeRect(tvL+1, tvTop+1, tvW-2, tvH-2); }
+    } else {
+      // ── VIDEO or SUMO MATCH ──
+      if (_tvVideo && _tvVideo.readyState >= 2) {
+        ctx.drawImage(_tvVideo, tvL, tvTop, tvW, tvH);
+      } else {
+        // Fallback: animated sumo match
+        ctx.fillStyle = '#0c1828'; ctx.fillRect(tvL, tvTop, tvW, tvH);
+        const matTop = tvTop + tvH * 0.28;
+        ctx.fillStyle = '#1a1208'; ctx.fillRect(tvL, matTop, tvW, tvBot - matTop);
+        const dCX = tvCX, dCY = tvTop + tvH * 0.70;
+        const dR = tvW * 0.28;
+        ctx.strokeStyle = '#c8a840'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.ellipse(dCX, dCY, dR, dR * 0.32, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = 'rgba(200,170,50,0.06)';
+        ctx.beginPath(); ctx.ellipse(dCX, dCY, dR, dR * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+        const push = Math.sin(T * 1.6);
+        const bR = tvW * 0.060;
+        const rY = dCY - bR * 1.1;
+        [
+          { x: dCX - bR*0.30 + push*bR*0.12, col:'#f0d090', colD:'#c8a860', dir:-1 },
+          { x: dCX + bR*0.30 + push*bR*0.12, col:'#c89060', colD:'#a07040', dir: 1 },
+        ].forEach(r => {
+          const bg = ctx.createRadialGradient(r.x, rY, 0, r.x, rY, bR);
+          bg.addColorStop(0, r.col); bg.addColorStop(1, r.colD);
+          ctx.fillStyle = bg;
+          ctx.beginPath(); ctx.arc(r.x, rY, bR, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = r.col;
+          ctx.beginPath(); ctx.arc(r.x + r.dir*bR*0.20, rY - bR*0.85, bR*0.42, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#1c0c04';
+          ctx.fillRect(r.x - bR*0.65, rY - bR*0.12, bR*1.30, bR*0.26);
+          ctx.strokeStyle = r.col; ctx.lineWidth = bR*0.38; ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(r.x + r.dir*bR*0.55, rY - bR*0.22);
+          ctx.lineTo(r.x + r.dir*bR*1.10 + push*r.dir*bR*0.05, rY - bR*0.10);
+          ctx.stroke();
+        });
+        ctx.fillStyle = 'rgba(200,200,255,0.50)';
+        ctx.font = `bold ${Math.round(tvH*0.11)}px monospace`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText('相撲 NHK', tvL + tvW*0.06, tvTop + tvH*0.05);
+      }
+    }
+
+    // Scanlines
+    ctx.strokeStyle = 'rgba(0,0,0,0.10)'; ctx.lineWidth = 0.7;
+    for (let y = tvTop; y < tvBot; y += 2.2) {
+      ctx.beginPath(); ctx.moveTo(tvL, y); ctx.lineTo(tvL + tvW, y); ctx.stroke();
+    }
+    // Screen edge glow
+    const eg = ctx.createLinearGradient(tvL, 0, tvL + tvW, 0);
+    eg.addColorStop(0, 'rgba(80,120,200,0.12)'); eg.addColorStop(0.5, 'rgba(0,0,0,0)'); eg.addColorStop(1, 'rgba(80,120,200,0.12)');
+    ctx.fillStyle = eg; ctx.fillRect(tvL, tvTop, tvW, tvH);
+
+    ctx.restore();
+  }
+
+  // ── EVENT STATE SYNC (for multiplayer guests) ─
+  let _currentT = 0;
+
+  window._getEventState = () => ({
+    typhoon:    _typhoon    ? { elapsed: _currentT - _typhoon.startT }                              : null,
+    earthquake: _earthquake ? { elapsed: _currentT - _earthquake.startT, intensity: _earthquake.intensity } : null,
+    eruption:   _eruption   ? { elapsed: _currentT - _eruption.startT }                            : null,
+    rocket:     _rocket     ? { elapsed: _currentT - _rocket.startT }                              : null,
+  });
+
+  window._applyEventState = (state) => {
+    if (!state) return;
+    const { W, H } = G;
+
+    // Typhoon
+    if (state.typhoon && !_typhoon) {
+      _typhoon = { startT: _currentT - state.typhoon.elapsed, reacted: true };
+      _RAIN.forEach(d => _resetRainDrop(d, W || 800, H || 600, true));
+    } else if (!state.typhoon && _typhoon) {
+      _typhoon = null; _applyShake(0, 0);
+    }
+
+    // Earthquake
+    if (state.earthquake && !_earthquake) {
+      _earthquake = { startT: _currentT - state.earthquake.elapsed, intensity: state.earthquake.intensity, reacted: true };
+    } else if (!state.earthquake && _earthquake) {
+      _earthquake = null; _applyShake(0, 0);
+    }
+
+    // Eruption
+    if (state.eruption && !_eruption) {
+      _eruption = { startT: _currentT - state.eruption.elapsed, reacted: true };
+      _bgCurrent = _bgErupt;
+      const bg = document.getElementById('kag-bg');
+      if (bg) bg.style.backgroundImage = "url('sakurajima-eruption.jpg')";
+      _EMBERS.forEach(e => _resetEmber(e, W || 800, H || 600, true));
+    } else if (!state.eruption && _eruption) {
+      _eruption = null;
+      _bgCurrent = _bgNormal;
+      const bg = document.getElementById('kag-bg');
+      if (bg) bg.style.backgroundImage = "url('sakurajima.jpg')";
+    }
+
+    // Rocket
+    if (state.rocket && !_rocket) {
+      _rocket = { startT: _currentT - state.rocket.elapsed, reacted: true };
+    } else if (!state.rocket && _rocket) {
+      _rocket = null;
+    }
+  };
+
+  // ── PRE-COMPUTED NIGHT STARS ──────────────────
+  const _STARS = Array.from({ length: 55 }, (_, i) => ({
+    xFrac: ((i * 7907 + 1234) % 10000) / 10000 * 0.88 + 0.06,
+    yFrac: ((i * 3571 + 9876) % 10000) / 10000 * 0.28 + 0.01,
+    rFrac: ((i * 1301 + 5678) % 10000) / 10000 * 0.0045 + 0.0018,
+    speed: ((i * 4423 + 3333) % 10000) / 10000 * 1.8 + 0.8,
+    off:   ((i * 2207 + 7777) % 10000) / 10000 * 20,
+  }));
+
   // ── MAIN LOOP ─────────────────────────────────
   let t0 = null;
   function loop(ts) {
     if (!t0) t0 = ts;
     const T = (ts - t0) / 1000;
+    _currentT = T;
     const { W, H } = G;
 
     // Clear canvas then draw background photo directly (cover + top-biased)
@@ -5456,8 +6402,31 @@ html, body {
       ctx.drawImage(_bgCurrent, bx, by, sW, sH);
     }
 
+    // Night-time dimming — background darkens as service progresses
+    const _tPct = window._serviceTimePct || 0;
+    if (_tPct > 0.05) {
+      const _darkA = Math.min(0.80, (_tPct - 0.05) / 0.95 * 0.80);
+      ctx.fillStyle = `rgba(1,3,8,${_darkA.toFixed(3)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    // Stars appear in the last 35% of service
+    if (_tPct > 0.65) {
+      const _starA = Math.min(1, (_tPct - 0.65) / 0.35);
+      ctx.save();
+      _STARS.forEach(st => {
+        const twinkle = 0.6 + 0.4 * Math.sin(T * st.speed + st.off);
+        const a = _starA * twinkle * 0.88;
+        ctx.fillStyle = `rgba(235,242,255,${a.toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(st.xFrac * W, st.yFrac * H, st.rFrac * W, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.restore();
+    }
+
     // Composite static background (stall structure, transparent sky area)
     ctx.drawImage(off, 0, 0);
+
+    // TV sumo / ads
+    drawSumoTV(ctx, T);
 
     // Earthquake event
     maybeSpawnEarthquake(T);
@@ -5466,6 +6435,10 @@ html, body {
     // Volcano eruption event
     maybeSpawnEruption(T);
     drawEruption(ctx, T);
+
+    // Typhoon event
+    maybeSpawnTyphoon(T);
+    drawTyphoon(ctx, T);
 
     // Rocket launch event
     maybeSpawnRocket(T);
@@ -5479,6 +6452,7 @@ html, body {
     SLOTS.forEach(slot => {
       if (slot.cu) drawCustomer(ctx, slot.cu, T);
     });
+    drawWetCustomers(ctx, T);
 
     // Speech bubbles (above everything)
     drawBubbles(ctx, T);
@@ -5556,8 +6530,16 @@ html, body {
         botY = stallBot + H * 0.01;
       }
       if (cx >= cu.x - hx && cx <= cu.x + hx && cy >= topY && cy <= botY) {
-        const _DISH_JP = { shoyu:'醤油ラーメンを食べてます！', tonk:'豚骨ラーメンを食べてます！', beer:'ビールを飲んでます！', edamame:'枝豆を食べてます！', yakitori:'焼き鳥を食べてます！', sake:'日本酒を飲んでます！', gyoza:'餃子を食べてます！', takoyaki:'たこ焼きを食べてます！', shochu:'焼酎を飲んでます！', highball:'ハイボールを飲んでます！', adog:'アメリカンドッグを食べてます！', napolitan:'ナポリタンを食べてます！', shiokara:'塩辛を食べてます！', tamago:'玉子焼きを食べてます！', chanko:'ちゃんこ鍋を食べてます！', okonomi:'お好み焼きを食べてます！', wagyu:'和牛ステーキを食べてます！', miso:'味噌ラーメンを食べてます！', fugu:'河豚刺身を食べてます！', saba:'鯖の塩焼きを食べてます！', hamburg:'ハンバーグを食べてます！', oshinko:'おしんこを食べてます！', oolong:'ウーロン茶を飲んでます！', yakisoba:'やきそばを食べてます！', flan:'プリンを食べてます！', pocky:'ポッキーとミントを楽しんでます！', osenbe:'おせんべいを食べてます！', yudofu:'湯豆腐を食べてます！あったかい！' };
-        const _DISH_EN = { shoyu:'Having the shoyu ramen!', tonk:'Having the tonkotsu ramen!', beer:'Drinking a beer!', edamame:'Snacking on edamame!', yakitori:'Having yakitori!', sake:'Drinking some sake!', gyoza:'Having gyoza!', takoyaki:'Having takoyaki!', shochu:'Drinking shochu!', highball:'Drinking a highball!', adog:'Having a corn dog!', napolitan:'Having the napolitan!', shiokara:'Having the shiokara!', tamago:'Having tamagoyaki!', chanko:'Having chanko nabe!', okonomi:'Having okonomiyaki!', wagyu:'Having wagyu steak!', miso:'Having miso ramen!', fugu:'Having the fugu... bravely!', saba:'Having grilled mackerel!', hamburg:'Having hamburger steak!', oshinko:'Having pickled veggies!', oolong:'Drinking oolong tea!', yakisoba:'Having yakisoba!', flan:'Having a purin flan!', pocky:'Enjoying Pocky and crème de menthe!', osenbe:'Munching on rice crackers!', yudofu:'Having yudofu — so warming!' };
+        // Show popup menu instead of immediately triggering intro
+        if (window._showCustPopup) {
+          const rect2 = c.getBoundingClientRect();
+          const screenX = rect2.left + (cu.x / G.W) * rect2.width;
+          const screenY = rect2.top + ((counterY - H * 0.14) / G.H) * rect2.height;
+          window._showCustPopup(cu, screenX, screenY);
+          break;
+        }
+        const _DISH_JP = { shoyu:'醤油ラーメンを食べてます！', tonk:'豚骨ラーメンを食べてます！', beer:'ビールを飲んでます！', edamame:'枝豆を食べてます！', yakitori:'焼き鳥を食べてます！', sake:'日本酒を飲んでます！', gyoza:'餃子を食べてます！', takoyaki:'たこ焼きを食べてます！', shochu:'焼酎を飲んでます！', highball:'ハイボールを飲んでます！', adog:'アメリカンドッグを食べてます！', napolitan:'ナポリタンを食べてます！', shiokara:'塩辛を食べてます！', tamago:'玉子焼きを食べてます！', chanko:'ちゃんこ鍋を食べてます！', okonomi:'お好み焼きを食べてます！', wagyu:'和牛ステーキを食べてます！', miso:'味噌ラーメンを食べてます！', fugu:'河豚刺身を食べてます！', saba:'鯖の塩焼きを食べてます！', hamburg:'ハンバーグを食べてます！', oshinko:'おしんこを食べてます！', oolong:'ウーロン茶を飲んでます！', yakisoba:'やきそばを食べてます！', flan:'プリンを食べてます！', pocky:'ポッキーとミントを楽しんでます！', osenbe:'おせんべいを食べてます！', yudofu:'湯豆腐を食べてます！あったかい！', korokke:'コロッケを食べてます！サクサクです！', misosoup:'味噌汁を飲んでます！あったかい！', gohan:'ご飯を食べてます！おいしい！' };
+        const _DISH_EN = { shoyu:'Having the shoyu ramen!', tonk:'Having the tonkotsu ramen!', beer:'Drinking a beer!', edamame:'Snacking on edamame!', yakitori:'Having yakitori!', sake:'Drinking some sake!', gyoza:'Having gyoza!', takoyaki:'Having takoyaki!', shochu:'Drinking shochu!', highball:'Drinking a highball!', adog:'Having a corn dog!', napolitan:'Having the napolitan!', shiokara:'Having the shiokara!', tamago:'Having tamagoyaki!', chanko:'Having chanko nabe!', okonomi:'Having okonomiyaki!', wagyu:'Having wagyu steak!', miso:'Having miso ramen!', fugu:'Having the fugu... bravely!', saba:'Having grilled mackerel!', hamburg:'Having hamburger steak!', oshinko:'Having pickled veggies!', oolong:'Drinking oolong tea!', yakisoba:'Having yakisoba!', flan:'Having a purin flan!', pocky:'Enjoying Pocky and crème de menthe!', osenbe:'Munching on rice crackers!', yudofu:'Having yudofu — so warming!', korokke:'Having korokke — so crispy!', misosoup:'Having miso soup — so warm!', gohan:'Having steamed rice — delicious!', hotcake:'Having fluffy hotcakes — so good!' };
         const _name = cu.name || '私';
         const _greets = [`${_name}と申します！`, `${_name}です！よろしく！`, `あ、私ですか？${_name}です！`, `${_name}と申します。どうぞよろしく。`];
         const _greetEn = [`My name is ${_name}!`, `I'm ${_name}! Nice to meet you!`, `Oh, me? I'm ${_name}!`, `${_name}. A pleasure!`];
@@ -5648,6 +6630,57 @@ html, body {
       }
     }
   });
+
+  // ── POPUP ACTION BRIDGES ──────────────────────
+  window._custKickOut = function(cu) {
+    if (!cu) return;
+    cu.state = 'walk_out';
+    spawnBubble(cu.x, G.counterY - G.H * 0.28, 'えっ…わかりました。', { pitch: cu.voicePitch, rate: cu.voiceRate });
+  };
+
+  window._custTalkIntro = function(cu) {
+    if (!cu) return;
+    const { W, H, counterY } = G;
+    const _DISH_JP = { shoyu:'醤油ラーメンを食べてます！', tonk:'豚骨ラーメンを食べてます！', beer:'ビールを飲んでます！', edamame:'枝豆を食べてます！', yakitori:'焼き鳥を食べてます！', sake:'日本酒を飲んでます！', gyoza:'餃子を食べてます！', takoyaki:'たこ焼きを食べてます！', shochu:'焼酎を飲んでます！', highball:'ハイボールを飲んでます！', adog:'アメリカンドッグを食べてます！', napolitan:'ナポリタンを食べてます！', shiokara:'塩辛を食べてます！', tamago:'玉子焼きを食べてます！', chanko:'ちゃんこ鍋を食べてます！', okonomi:'お好み焼きを食べてます！', wagyu:'和牛ステーキを食べてます！', miso:'味噌ラーメンを食べてます！', fugu:'河豚刺身を食べてます！', saba:'鯖の塩焼きを食べてます！', hamburg:'ハンバーグを食べてます！', oshinko:'おしんこを食べてます！', oolong:'ウーロン茶を飲んでます！', yakisoba:'やきそばを食べてます！', flan:'プリンを食べてます！', pocky:'ポッキーとミントを楽しんでます！', osenbe:'おせんべいを食べてます！', yudofu:'湯豆腐を食べてます！あったかい！', korokke:'コロッケを食べてます！サクサクです！', misosoup:'味噌汁を飲んでます！あったかい！', gohan:'ご飯を食べてます！おいしい！' };
+    const _name = cu.name || '私';
+    const _greets = [`${_name}と申します！`, `${_name}です！よろしく！`, `${_name}と申します。どうぞよろしく。`];
+    const _greetEn = [`My name is ${_name}!`, `I'm ${_name}! Nice to meet you!`, `${_name}. A pleasure!`];
+    const _gIdx = Math.floor(Math.random() * _greets.length);
+    const line = _greets[_gIdx];
+    try { if (window._showSubtitle) window._showSubtitle(_greetEn[_gIdx]); } catch(_e) {}
+    const _te = performance.now()/1000 + 1.2 + line.length*0.08;
+    bubbles.push({ x:cu.x, y:counterY-H*0.28, text:line, born:performance.now()/1000, life:3.2 });
+    cu.talkUntil = _te; cu.nameShownUntil = performance.now()/1000 + 10;
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(line);
+      utt.lang='ja-JP'; utt.rate=(cu.voiceRate||1.0)*0.88; utt.pitch=cu.voicePitch||1.0; utt.volume=0.90;
+      const v = _custVoice(cu.voiceIdx); if (v) utt.voice=v;
+      window.speechSynthesis.speak(utt);
+    }
+    if (cu.dish && _DISH_JP[cu.dish]) {
+      const _fj = _DISH_JP[cu.dish];
+      setTimeout(() => {
+        if (cu.state!=='sit' && cu.state!=='sit_in') return;
+        bubbles.push({ x:cu.x, y:counterY-H*0.28, text:_fj, born:performance.now()/1000, life:3.0 });
+        cu.talkUntil = performance.now()/1000 + 1.0 + _fj.length*0.08;
+        if (window.speechSynthesis) {
+          const u2 = new SpeechSynthesisUtterance(_fj);
+          u2.lang='ja-JP'; u2.rate=(cu.voiceRate||1.0)*0.88; u2.pitch=cu.voicePitch||1.0; u2.volume=0.90;
+          const v2=_custVoice(cu.voiceIdx); if(v2) u2.voice=v2;
+          window.speechSynthesis.speak(u2);
+        }
+      }, 1600);
+    }
+  };
+
+  window._custGiveDrink = function(cu, drinkId) {
+    if (!cu) return;
+    const line = 'えっ、サービスですか？ありがとうございます！';
+    spawnBubble(cu.x, G.counterY - G.H * 0.28, line, { pitch: cu.voicePitch, rate: cu.voiceRate });
+    cu.unhappy = false;
+    if (cu.eatTimer) cu.eatTimer = Math.max(0, cu.eatTimer - cu.eatMax * 0.30);
+  };
 
   window.addEventListener('resize', resize);
   resize();
@@ -6119,6 +7152,46 @@ const AUDIO = {
     shimSrc.start(t); shimSrc.stop(t + 4.5);
   },
 
+  playHostessMusic() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Sultry lounge: slow sax-style melody — square wave + heavy lowpass + vibrato
+    [[415,0.00,0.14],[349,0.55,0.13],[329,1.10,0.15],[293,1.65,0.12],[261,2.20,0.13],[220,2.75,0.11]].forEach(([freq,delay,vol]) => {
+      const osc = this.ctx.createOscillator(); osc.type = 'square'; osc.frequency.setValueAtTime(freq, t+delay);
+      const vib = this.ctx.createOscillator(); vib.type = 'sine'; vib.frequency.setValueAtTime(4.8, t+delay);
+      const vibG = this.ctx.createGain(); vibG.gain.setValueAtTime(freq*0.007, t+delay);
+      vib.connect(vibG); vibG.connect(osc.frequency);
+      const filt = this.ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 980; filt.Q.value = 4.0;
+      const gn = this.ctx.createGain();
+      gn.gain.setValueAtTime(0, t+delay);
+      gn.gain.linearRampToValueAtTime(vol, t+delay+0.08);
+      gn.gain.setValueAtTime(vol*0.82, t+delay+0.38);
+      gn.gain.linearRampToValueAtTime(0.001, t+delay+0.55);
+      osc.connect(filt); filt.connect(gn); gn.connect(this.master);
+      osc.start(t+delay); osc.stop(t+delay+0.60);
+      vib.start(t+delay); vib.stop(t+delay+0.60);
+    });
+    // Walking bass
+    [110,98,87,82,87,98].forEach((bf,i) => {
+      const b = this.ctx.createOscillator(); b.type = 'triangle'; b.frequency.setValueAtTime(bf, t+i*0.55);
+      const bf2 = this.ctx.createBiquadFilter(); bf2.type = 'lowpass'; bf2.frequency.value = 280;
+      const bg = this.ctx.createGain();
+      bg.gain.setValueAtTime(0, t+i*0.55); bg.gain.linearRampToValueAtTime(0.17, t+i*0.55+0.05);
+      bg.gain.linearRampToValueAtTime(0.001, t+i*0.55+0.52);
+      b.connect(bf2); bf2.connect(bg); bg.connect(this.master);
+      b.start(t+i*0.55); b.stop(t+i*0.55+0.55);
+    });
+    // Shimmer (high hat-ish)
+    const hh = this._whiteBuf(3.5);
+    const hhS = this.ctx.createBufferSource(); hhS.buffer = hh;
+    const hhF = this.ctx.createBiquadFilter(); hhF.type = 'highpass'; hhF.frequency.value = 6000;
+    const hhG = this.ctx.createGain();
+    hhG.gain.setValueAtTime(0.001, t); hhG.gain.linearRampToValueAtTime(0.028, t+0.5);
+    hhG.gain.linearRampToValueAtTime(0.001, t+3.2);
+    hhS.connect(hhF); hhF.connect(hhG); hhG.connect(this.master);
+    hhS.start(t); hhS.stop(t+3.5);
+  },
+
   playPoliceSiren() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -6180,6 +7253,51 @@ const AUDIO = {
     cGain.gain.setValueAtTime(0.001, t + 0.7); cGain.gain.linearRampToValueAtTime(0.22, t + 1.0); cGain.gain.linearRampToValueAtTime(0.001, t + 2.0);
     cheer.connect(cFilt); cFilt.connect(cGain); cGain.connect(this.master);
     cheer.start(t + 0.7); cheer.stop(t + 2.2);
+  },
+
+  playTyphoon() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const dur = 22.0;
+    // Wind howl — bandpass noise with sweeping frequency
+    const wBuf = this._whiteBuf(dur);
+    const wSrc = this.ctx.createBufferSource(); wSrc.buffer = wBuf;
+    const wFilt = this.ctx.createBiquadFilter();
+    wFilt.type = 'bandpass'; wFilt.Q.value = 1.8;
+    wFilt.frequency.setValueAtTime(280, t);
+    wFilt.frequency.linearRampToValueAtTime(620, t + 4.5);
+    wFilt.frequency.linearRampToValueAtTime(220, t + 9.5);
+    wFilt.frequency.linearRampToValueAtTime(750, t + 15);
+    wFilt.frequency.linearRampToValueAtTime(350, t + dur);
+    const wGain = this.ctx.createGain();
+    wGain.gain.setValueAtTime(0.001, t);
+    wGain.gain.linearRampToValueAtTime(0.55, t + 3.0);
+    wGain.gain.linearRampToValueAtTime(0.42, t + 12);
+    wGain.gain.linearRampToValueAtTime(0.001, t + dur);
+    wSrc.connect(wFilt); wFilt.connect(wGain); wGain.connect(this.master);
+    wSrc.start(t); wSrc.stop(t + dur);
+    // Low wind moan
+    const lBuf = this._whiteBuf(dur);
+    const lSrc = this.ctx.createBufferSource(); lSrc.buffer = lBuf;
+    const lFilt = this.ctx.createBiquadFilter();
+    lFilt.type = 'lowpass'; lFilt.frequency.setValueAtTime(90, t);
+    const lGain = this.ctx.createGain();
+    lGain.gain.setValueAtTime(0.001, t);
+    lGain.gain.linearRampToValueAtTime(0.38, t + 2.5);
+    lGain.gain.linearRampToValueAtTime(0.001, t + dur);
+    lSrc.connect(lFilt); lFilt.connect(lGain); lGain.connect(this.master);
+    lSrc.start(t); lSrc.stop(t + dur);
+    // Rain hiss — highpass noise
+    const rBuf = this._whiteBuf(dur);
+    const rSrc = this.ctx.createBufferSource(); rSrc.buffer = rBuf;
+    const rFilt = this.ctx.createBiquadFilter();
+    rFilt.type = 'highpass'; rFilt.frequency.setValueAtTime(3800, t);
+    const rGain = this.ctx.createGain();
+    rGain.gain.setValueAtTime(0.001, t);
+    rGain.gain.linearRampToValueAtTime(0.22, t + 2.0);
+    rGain.gain.linearRampToValueAtTime(0.001, t + dur);
+    rSrc.connect(rFilt); rFilt.connect(rGain); rGain.connect(this.master);
+    rSrc.start(t); rSrc.stop(t + dur);
   },
 
   playSumoEntrance() {
@@ -6410,34 +7528,39 @@ window.AUDIO_REF = AUDIO; // bridge for IIFE to access audio methods
 // DATA
 // ─────────────────────────────────────────────
 const MENU = [
-  { id:'shoyu',    name:'醤油ラーメン',  en:'Shoyu Ramen',    icon:'🍜', price:700,  cook:14, ing:'noodles', day:1, desc:'Soy-based broth with hand-pulled noodles, chashu pork, naruto fishcake, and negi.' },
+  { id:'shoyu',    name:'醤油ラーメン',  en:'Shoyu Ramen',    icon:'🍜', price:700,  cook:17, ing:'noodles', day:1, desc:'Soy-based broth with hand-pulled noodles, chashu pork, naruto fishcake, and negi.' },
   { id:'beer',     name:'ビール',        en:'Beer',           icon:'🍺', price:550,  cook:2,  ing:'beer',    day:1, desc:'Ice-cold Japanese lager, served in a frosted mug. Goes with everything.' },
-  { id:'edamame',  name:'枝豆',          en:'Edamame',        icon:'🫛', price:250,  cook:4,  ing:'edamame', day:1, desc:'Young soybeans steamed in salted water. The perfect bar snack.' },
-  { id:'yakitori', name:'焼き鳥',        en:'Yakitori',       icon:'🍢', price:380,  cook:10, ing:'chicken', day:1, desc:'Charcoal-grilled chicken skewers glazed with sweet tare sauce.' },
+  { id:'edamame',  name:'枝豆',          en:'Edamame',        icon:'🫛', price:250,  cook:5,  ing:'edamame', day:1, desc:'Young soybeans steamed in salted water. The perfect bar snack.' },
+  { id:'yakitori', name:'焼き鳥',        en:'Yakitori',       icon:'🍢', price:380,  cook:12, ing:'chicken', day:1, desc:'Charcoal-grilled chicken skewers glazed with sweet tare sauce.' },
   { id:'sake',     name:'日本酒',        en:'Sake',           icon:'🍶', price:480,  cook:2,  ing:'sake',    day:1, desc:'Warm nihonshu from a local Niigata brewery. Smooth and slightly sweet.' },
-  { id:'gyoza',    name:'餃子',          en:'Gyoza',          icon:'🥟', price:460,  cook:12, ing:'gyoza',   day:1, desc:'Pan-fried pork and cabbage dumplings — crispy on the bottom, juicy inside.' },
-  { id:'tonk',     name:'豚骨ラーメン',  en:'Tonkotsu Ramen', icon:'🍜', price:950,  cook:22, ing:'pork',    day:1, desc:'Rich 18-hour pork bone broth with thick noodles, black garlic oil, and soft egg.' },
-  { id:'takoyaki', name:'たこ焼き',      en:'Takoyaki',       icon:'🐙', price:400,  cook:11, ing:'tako',    day:1, desc:'Octopus balls topped with bonito flakes, kewpie mayo, and okonomiyaki sauce.' },
+  { id:'gyoza',    name:'餃子',          en:'Gyoza',          icon:'🥟', price:460,  cook:14, ing:'gyoza',   day:1, desc:'Pan-fried pork and cabbage dumplings — crispy on the bottom, juicy inside.' },
+  { id:'tonk',     name:'豚骨ラーメン',  en:'Tonkotsu Ramen', icon:'🍜', price:950,  cook:26, ing:'pork',    day:1, desc:'Rich 18-hour pork bone broth with thick noodles, black garlic oil, and soft egg.' },
+  { id:'takoyaki', name:'たこ焼き',      en:'Takoyaki',       icon:'🐙', price:400,  cook:13, ing:'tako',    day:1, desc:'Octopus balls topped with bonito flakes, kewpie mayo, and okonomiyaki sauce.' },
   { id:'shochu',   name:'焼酎',          en:'Shochu',         icon:'🥃', price:420,  cook:2,  ing:'shochu',  day:1, desc:'Distilled barley spirit served on the rocks. Clean, dry, and dangerously easy to drink.' },
   { id:'highball', name:'ハイボール',     en:'Highball',       icon:'🥂', price:480,  cook:2,  ing:'whisky',  day:1, desc:'Japanese whisky over ice, topped with soda. Crisp, cold, and dangerously refreshing.' },
-  { id:'adog',     name:'アメリカンドッグ',en:'American Dog',  icon:'🌭', price:320,  cook:7,  ing:'adog',    day:1, desc:'Deep-fried corn dog on a stick with ketchup and mustard. A Japanese festival classic.' },
-  { id:'napolitan',name:'ナポリタン',    en:'Napolitan',      icon:'🍝', price:620,  cook:17, ing:'pasta',   day:1, desc:'Ketchup-braised spaghetti with sausage and green peppers. A beloved Showa-era classic.' },
-  { id:'shiokara', name:'塩辛',          en:'Shiokara',       icon:'🦑', price:350,  cook:5,  ing:'ika',     day:1, desc:'Salted fermented squid in its own ink. Pungent, briny, and irresistible with sake.' },
-  { id:'tamago',   name:'玉子焼き',      en:'Tamagoyaki',     icon:'🥚', price:320,  cook:8,  ing:'tamago',  day:1, desc:'Sweet rolled omelette, sliced into three golden pieces. A soft, pillowy classic.' },
-  { id:'chanko',   name:'ちゃんこ鍋',   en:'Chanko Nabe',    icon:'🍲', price:1200, cook:26, ing:'chanko',  day:1, desc:'The legendary sumo wrestler\'s hot pot. Chicken, tofu, cabbage and negi in rich miso broth. Massive and warming.' },
-  { id:'okonomi',  name:'お好み焼き',   en:'Okonomiyaki',    icon:'🥞', price:650,  cook:16, ing:'ko',      day:1, desc:'Savory cabbage pancake griddled on iron, topped with dark sauce, kewpie mayo, aonori and dancing katsuobushi.' },
-  { id:'wagyu',    name:'和牛ステーキ', en:'Wagyu Steak',    icon:'🥩', price:3200, cook:22, ing:'wagyu',   day:1, desc:'A5 Wagyu ribeye seared on iron, served on black slate with wasabi and soy. Melt-in-your-mouth marbling.' },
-  { id:'miso',     name:'味噌ラーメン', en:'Miso Ramen',     icon:'🍜', price:800,  cook:18, ing:'miso',    day:1, desc:'Rich amber miso broth with thick noodles, chashu, melting butter, corn, and negi. A Hokkaido classic.' },
-  { id:'fugu',     name:'河豚刺身',     en:'Fugu Sashimi',   icon:'🐡', price:2800, cook:24, ing:'fugu',    day:1, desc:'Paper-thin pufferfish slices arranged in a kikuzukuri chrysanthemum fan. Served with ponzu and momiji oroshi. Eat carefully.' },
-  { id:'saba',     name:'鯖の塩焼き',   en:'Saba Shioyaki',  icon:'🐟', price:680,  cook:14, ing:'saba',    day:1, desc:'Whole mackerel fillet grilled with sea salt until the skin crisps. Served with daikon and a lemon wedge.' },
-  { id:'hamburg',  name:'ハンバーグ',   en:'Hamburg Steak',  icon:'🍳', price:780,  cook:16, ing:'hamburg', day:1, desc:'Juicy ground beef patty sizzled on iron, smothered in rich demi-glace sauce. Japan\'s beloved yoshoku comfort food.' },
+  { id:'adog',     name:'アメリカンドッグ',en:'American Dog',  icon:'🌭', price:320,  cook:8,  ing:'adog',    day:1, desc:'Deep-fried corn dog on a stick with ketchup and mustard. A Japanese festival classic.' },
+  { id:'napolitan',name:'ナポリタン',    en:'Napolitan',      icon:'🍝', price:620,  cook:20, ing:'pasta',   day:1, desc:'Ketchup-braised spaghetti with sausage and green peppers. A beloved Showa-era classic.' },
+  { id:'shiokara', name:'塩辛',          en:'Shiokara',       icon:'🦑', price:350,  cook:6,  ing:'ika',     day:1, desc:'Salted fermented squid in its own ink. Pungent, briny, and irresistible with sake.' },
+  { id:'tamago',   name:'玉子焼き',      en:'Tamagoyaki',     icon:'🥚', price:320,  cook:10, ing:'tamago',  day:1, desc:'Sweet rolled omelette, sliced into three golden pieces. A soft, pillowy classic.' },
+  { id:'chanko',   name:'ちゃんこ鍋',   en:'Chanko Nabe',    icon:'🍲', price:1200, cook:31, ing:'chanko',  day:1, desc:'The legendary sumo wrestler\'s hot pot. Chicken, tofu, cabbage and negi in rich miso broth. Massive and warming.' },
+  { id:'okonomi',  name:'お好み焼き',   en:'Okonomiyaki',    icon:'🥞', price:650,  cook:19, ing:'ko',      day:1, desc:'Savory cabbage pancake griddled on iron, topped with dark sauce, kewpie mayo, aonori and dancing katsuobushi.' },
+  { id:'wagyu',    name:'和牛ステーキ', en:'Wagyu Steak',    icon:'🥩', price:3200, cook:26, ing:'wagyu',   day:1, desc:'A5 Wagyu ribeye seared on iron, served on black slate with wasabi and soy. Melt-in-your-mouth marbling.' },
+  { id:'miso',     name:'味噌ラーメン', en:'Miso Ramen',     icon:'🍜', price:800,  cook:22, ing:'miso',    day:1, desc:'Rich amber miso broth with thick noodles, chashu, melting butter, corn, and negi. A Hokkaido classic.' },
+  { id:'fugu',     name:'河豚刺身',     en:'Fugu Sashimi',   icon:'🐡', price:2800, cook:29, ing:'fugu',    day:1, desc:'Paper-thin pufferfish slices arranged in a kikuzukuri chrysanthemum fan. Served with ponzu and momiji oroshi. Eat carefully.' },
+  { id:'saba',     name:'鯖の塩焼き',   en:'Saba Shioyaki',  icon:'🐟', price:680,  cook:17, ing:'saba',    day:1, desc:'Whole mackerel fillet grilled with sea salt until the skin crisps. Served with daikon and a lemon wedge.' },
+  { id:'hamburg',  name:'ハンバーグ',   en:'Hamburg Steak',  icon:'🍳', price:780,  cook:19, ing:'hamburg', day:1, desc:'Juicy ground beef patty sizzled on iron, smothered in rich demi-glace sauce. Japan\'s beloved yoshoku comfort food.' },
   { id:'oshinko',  name:'おしんこ',     en:'Pickled Veg',    icon:'🥒', price:280,  cook:2,  ing:'oshinko', day:1, desc:'Seasonal vegetables pickled in salt brine — crisp daikon, eggplant, cucumber, and radish. Perfect with sake.' },
   { id:'oolong',   name:'ウーロン茶',   en:'Oolong Tea',     icon:'🍵', price:200,  cook:1,  ing:'oolong',  day:1, desc:'Fragrant Chinese oolong served hot in a ceramic cup. Perfect for those taking a break from the hard stuff.' },
-  { id:'yakisoba', name:'やきそば',     en:'Yakisoba',       icon:'🍜', price:580,  cook:13, ing:'yakisoba',day:1, desc:'Stir-fried wheat noodles with pork, cabbage and carrots, seasoned with savory sauce and topped with aonori and beni shoga.' },
-  { id:'flan',     name:'プリン',       en:'Purin Flan',     icon:'🍮', price:320,  cook:7,  ing:'flan',    day:1, desc:'Classic Japanese caramel custard pudding — silky, wobbling, and impossibly smooth. A beloved Showa-era dessert.' },
-  { id:'pocky',    name:'ポッキー＆クレームドゥマント', en:"Pocky & Crème de Menthe", icon:'🍫', price:520, cook:4, ing:'pocky',   day:1, desc:"Chocolate Pocky sticks served with an ice-cold glass of crème de menthe. Sweet, minty, and dangerously moreish." },
-  { id:'osenbe',   name:'おせんべい',    en:'Osenbe',             icon:'🍘', price:280,  cook:5,  ing:'osenbe',  day:1, desc:'Crispy grilled rice crackers brushed with soy sauce. Salty, crunchy, and impossible to stop eating.' },
-  { id:'yudofu',   name:'湯豆腐',       en:'Yudofu',             icon:'🍲', price:620,  cook:13, ing:'tofu',    day:1, desc:'Silken tofu simmered in kombu dashi, served with green onion, ginger, and ponzu. A Kyoto winter classic.' },
+  { id:'yakisoba', name:'やきそば',     en:'Yakisoba',       icon:'🍜', price:580,  cook:16, ing:'yakisoba',day:1, desc:'Stir-fried wheat noodles with pork, cabbage and carrots, seasoned with savory sauce and topped with aonori and beni shoga.' },
+  { id:'flan',     name:'プリン',       en:'Purin Flan',     icon:'🍮', price:320,  cook:8,  ing:'flan',    day:1, desc:'Classic Japanese caramel custard pudding — silky, wobbling, and impossibly smooth. A beloved Showa-era dessert.' },
+  { id:'pocky',    name:'ポッキー＆クレームドゥマント', en:"Pocky & Crème de Menthe", icon:'🍫', price:520, cook:5, ing:'pocky',   day:1, desc:"Chocolate Pocky sticks served with an ice-cold glass of crème de menthe. Sweet, minty, and dangerously moreish." },
+  { id:'osenbe',   name:'おせんべい',    en:'Osenbe',             icon:'🍘', price:280,  cook:6,  ing:'osenbe',  day:1, desc:'Crispy grilled rice crackers brushed with soy sauce. Salty, crunchy, and impossible to stop eating.' },
+  { id:'yudofu',   name:'湯豆腐',       en:'Yudofu',             icon:'🍲', price:620,  cook:16, ing:'tofu',    day:1, desc:'Silken tofu simmered in kombu dashi, served with green onion, ginger, and ponzu. A Kyoto winter classic.' },
+  { id:'korokke',  name:'コロッケ',     en:'Korokke',            icon:'🥔', price:340,  cook:12, ing:'potato',  day:1, desc:'Golden deep-fried potato croquette with a crispy panko crust. Filled with seasoned mashed potato and minced pork. A beloved Japanese street food.' },
+  { id:'misosoup', name:'味噌汁',       en:'Miso Soup',          icon:'🥣', price:220,  cook:5,  ing:'misoshiru',day:1, desc:'Classic Japanese miso soup with silken tofu, wakame seaweed, and fresh negi. A warm bowl of comfort.' },
+  { id:'gohan',    name:'ご飯',         en:'Steamed Rice',       icon:'🍚', price:180,  cook:3,  ing:'kome',    day:1, desc:'A bowl of perfectly steamed Japanese short-grain rice. Simple, warm, and the heart of any Japanese meal.' },
+  { id:'curry',    name:'カレーライス', en:'Curry Rice',         icon:'🍛', price:750,  cook:20, ing:'curry',   day:1, desc:'Japanese curry rice with tender chicken and potato in a thick, mildly spiced roux. Warm, filling, and deeply comforting.' },
+  { id:'hotcake',  name:'ホットケーキ', en:'Hotcakes',           icon:'🥞', price:560,  cook:14, ing:'hotcake', day:1, desc:'Fluffy stacked Japanese hotcakes drizzled with butter and maple syrup. Thick, soft, and impossibly satisfying at any hour.' },
 ];
 
 const SHOP = [
@@ -6469,16 +7592,22 @@ const SHOP = [
   { id:'pocky',    name:'Pocky + Mint', jp:'ポッキー', icon:'🍫', price:140, qty:4, forItem:'pocky'    },
   { id:'osenbe',   name:'Rice Crackers',jp:'おせんべい',icon:'🍘', price:60,  qty:6, forItem:'osenbe'   },
   { id:'tofu',     name:'Silken Tofu',  jp:'豆腐',     icon:'🫙', price:90,  qty:4, forItem:'yudofu'   },
+  { id:'potato',   name:'Potatoes',    jp:'じゃがいも',icon:'🥔', price:80,  qty:4, forItem:'korokke'  },
+  { id:'misoshiru',name:'Miso Kit',    jp:'味噌汁の具', icon:'🥣', price:65,  qty:5, forItem:'misosoup' },
+  { id:'kome',     name:'Rice',        jp:'お米',       icon:'🍚', price:50,  qty:6, forItem:'gohan'    },
+  { id:'curry',    name:'Curry Roux',  jp:'カレー',     icon:'🍛', price:160, qty:2, forItem:'curry'    },
+  { id:'hotcake',  name:'Hotcake Mix', jp:'ホットケーキ粉', icon:'🥞', price:90,  qty:3, forItem:'hotcake'  },
 ];
 
 const CUST_TYPES = [
-  { type:'salaryman', jp:'サラリーマン', en:'Salaryman', icon:'👔', patience:300, prefs:['beer','beer','sake','sake','shochu','beer','hamburg','shoyu'] },
-  { type:'student',   jp:'学生',         en:'Student',   icon:'🎒', patience:260, prefs:['beer','beer','beer','highball','highball','shochu','edamame','hamburg'] },
-  { type:'tourist',   jp:'旅行者',       en:'Tourist',   icon:'📸', patience:350, prefs:['beer','beer','beer','sake','highball','yakitori','gyoza'] },
-  { type:'elder',     jp:'おじいさん',   en:'Elder',     icon:'👴', patience:400, prefs:['sake','sake','sake','shochu','shochu','yakitori','edamame','oshinko'] },
-  { type:'couple',    jp:'カップル',     en:'Couple',    icon:'👫', patience:280, prefs:['sake','sake','beer','beer','highball','highball','tonk'] },
-  { type:'chef',      jp:'料理人',       en:'Local Chef',icon:'🧑‍🍳',patience:260, prefs:['sake','sake','shochu','shochu','beer','gyoza','yakitori','oshinko'] },
-  { type:'yakuza',    jp:'組の者',        en:'Yakuza',    icon:'🎌', patience:500, prefs:['sake','sake','sake','sake','shochu','shochu','fugu','wagyu'] },
+  { type:'salaryman', jp:'サラリーマン', en:'Salaryman', icon:'👔', patience:600, prefs:['beer','beer','sake','sake','shochu','beer','hamburg','shoyu','curry','hotcake'] },
+  { type:'student',   jp:'学生',         en:'Student',   icon:'🎒', patience:520, prefs:['beer','beer','beer','highball','highball','shochu','edamame','hamburg','curry','curry','hotcake','hotcake'] },
+  { type:'tourist',   jp:'旅行者',       en:'Tourist',   icon:'📸', patience:700, prefs:['beer','beer','beer','sake','highball','yakitori','gyoza','curry','hotcake'] },
+  { type:'elder',     jp:'おじいさん',   en:'Elder',     icon:'👴', patience:800, prefs:['sake','sake','sake','shochu','shochu','yakitori','edamame','oshinko','hotcake'] },
+  { type:'couple',    jp:'カップル',     en:'Couple',    icon:'👫', patience:560, prefs:['sake','sake','beer','beer','highball','highball','tonk','curry','hotcake','hotcake'] },
+  { type:'chef',      jp:'料理人',       en:'Local Chef',icon:'🧑‍🍳',patience:520, prefs:['sake','sake','shochu','shochu','beer','gyoza','yakitori','oshinko'] },
+  { type:'yakuza',    jp:'組の者',        en:'Yakuza',    icon:'🎌', patience:1000, prefs:['sake','sake','sake','sake','shochu','shochu','fugu','wagyu'] },
+  { type:'hostess',   jp:'ホステス',      en:'Hostess',   icon:'💃', patience:760, prefs:['sake','sake','sake','highball','highball','highball','wagyu','wagyu','flan','beer','hotcake'] },
 ];
 
 const WEATHER = [
@@ -6506,6 +7635,7 @@ const TIME_SPEED    = 0.6; // game-minutes per real second
     clearTimeout(_subTimer);
     _subTimer = setTimeout(() => el.classList.remove('visible'),
       Math.min(6000, 2800 + text.length * 52));
+    if (typeof _pendingSubtitles !== 'undefined' && MP && MP.role === 'master') _pendingSubtitles.push(text);
   };
 }
 
@@ -6589,6 +7719,7 @@ function stopLoop() {
 
 function updateService(dt) {
   G.gameTime += dt * TIME_SPEED;
+  window._serviceTimePct = Math.min(1, Math.max(0, (G.gameTime - SERVICE_START) / (SERVICE_END - SERVICE_START)));
   if (G.gameTime >= SERVICE_END) { endService(); return; }
 
   // cooking
@@ -6628,7 +7759,8 @@ function updateService(dt) {
   for (let i = G.customers.length - 1; i >= 0; i--) {
     const c = G.customers[i];
     if (c.state === 'wait') {
-      c.patLeft -= dt;
+      if (c.isPlayer || c.peerId) continue; // human players manage their own ordering, no timeout
+      c.patLeft -= dt * 0.4;
       if (c.patLeft <= 0) {
         c.state = 'gone';
         G.todayLost++;
@@ -6689,9 +7821,20 @@ function doServe(cust, slotIdx) {
   AUDIO.playServe();
   floatYen(`+¥${price}`);
   try { if (window._iifeMasterServe) window._iifeMasterServe(slot.item.id); } catch(_) {}
+  if (cust.peerId) {
+    try { MP.notifyServed(cust.peerId, slot.item.id); } catch(_) {}
+    // Post a durable message so the guest's poll loop reliably picks it up
+    try { MP._post(MP.roomCode, { type: 'msg', guestId: cust.peerId, data: { type: 'served', itemId: slot.item.id } }); } catch(_) {}
+  }
   try { const area = document.getElementById('cook-area'); if (area) area.innerHTML = buildCookSlots(); } catch(_) {}
   try { const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems(); } catch(_) {}
   setTimeout(() => {
+    if (cust.isPlayer || cust.peerId) {
+      // Human player — remove from queue; they'll send another order if they want more
+      const idx = G.customers.indexOf(cust);
+      if (idx !== -1) G.customers.splice(idx, 1);
+      return;
+    }
     if (!cust.reordered && Math.random() < 0.35) {
       const claimed = {};
       G.customers.filter(c => c.state === 'wait' && c.order).forEach(c => { claimed[c.order.id] = (claimed[c.order.id] || 0) + 1; });
@@ -6704,6 +7847,7 @@ function doServe(cust, slotIdx) {
         cust.patLeft = cust.patMax * 0.75;
         cust.reordered = true;
         cust.state = 'wait';
+        console.error('[NPC REORDER]', cust.en, 'reordered', cust.order.en);
         AUDIO.playArrive();
         toast(`${cust.icon} ${cust.en} wants another round! ${cust.order.icon}`, 'info');
         const rid = cust.order.id;
@@ -6713,7 +7857,7 @@ function doServe(cust, slotIdx) {
         // Serve immediately if matching food is already ready
         for (let si = 0; si < G.cookSlots.length; si++) {
           const s = G.cookSlots[si];
-          if (s && s.state === 'ready' && s.item.id === cust.order.id) { autoServe(si); break; }
+          if (s && s.item && s.state === 'ready' && s.item.id === cust.order.id) { autoServe(si); break; }
         }
         return;
       }
@@ -6739,44 +7883,22 @@ function spawnCust() {
     return G.inv[s.id] - (claimed[pid] || 0) > 0;
   };
 
-  // 30% chance to spawn a registered player as a customer
-  const allAccts = getAccounts();
-  const waitingPlayerNames = G.customers.filter(c => c.isPlayer && c.state === 'wait').map(c => c.en);
-  const availPlayers = allAccts.filter(n => !waitingPlayerNames.includes(n));
-  if (availPlayers.length > 0 && Math.random() < 0.30) {
-    const pName = availPlayers[Math.floor(Math.random() * availPlayers.length)];
-    const any = MENU.filter(m => canOrder(m.id));
-    if (!any.length) return;
-    const pOrder = any[Math.floor(Math.random() * any.length)];
-    const pat = 300 * (0.85 + Math.random() * 0.3);
-    G.customers.push({
-      id: G.nextId++, type: 'player', jp: pName, en: pName,
-      icon: _playerIcon(pName), order: pOrder,
-      patMax: pat, patLeft: pat, state: 'wait', isPlayer: true
-    });
-    AUDIO.playArrive();
-    if (pOrder && window._iifeOrderSpeech) setTimeout(() => { try { window._iifeOrderSpeech(pOrder.id); } catch(_) {} }, 400);
-    try { const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems(); } catch(_) {}
-    for (let si = 0; si < G.cookSlots.length; si++) {
-      const _rs = G.cookSlots[si];
-      if (_rs && _rs.state === 'ready' && _rs.item.id === pOrder.id) { autoServe(si); break; }
-    }
-    return;
-  }
-
   const type = CUST_TYPES[Math.floor(Math.random() * CUST_TYPES.length)];
   const avail = type.prefs.filter(canOrder);
 
   let order;
   if (avail.length > 0) {
     order = MENU.find(m => m.id === avail[Math.floor(Math.random() * avail.length)]);
-  } else {
+  }
+  if (!order) {
     const any = MENU.filter(m => canOrder(m.id));
     if (!any.length) return;
     order = any[Math.floor(Math.random() * any.length)];
   }
+  if (!order) return;
 
   const pat = type.patience * (0.85 + Math.random() * 0.3);
+  console.error('[NPC SPAWN]', type.en, 'ordered', order.en);
   G.customers.push({
     id: G.nextId++,
     type: type.type, jp: type.jp, en: type.en, icon: type.icon,
@@ -6787,7 +7909,7 @@ function spawnCust() {
   try { const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems(); } catch(_) {}
   for (let si = 0; si < G.cookSlots.length; si++) {
     const _rs = G.cookSlots[si];
-    if (_rs && _rs.state === 'ready' && _rs.item.id === order.id) { autoServe(si); break; }
+    if (_rs && _rs.item && _rs.state === 'ready' && _rs.item.id === order.id) { autoServe(si); break; }
   }
 }
 
@@ -7083,9 +8205,25 @@ function playOutro(onDone) {
 function endService() {
   G.isOpen = false;
   window.stallOpen = false;
+  window._serviceTimePct = 0;
   stopLoop();
   AUDIO.stopService();
   savePlayerState();
+  // Clear host canvas bubbles, turn off TV
+  if (window._clearBubbles) window._clearBubbles();
+  try { if (window._tvSetOn) { window._tvSetOn(false); const _tvb = document.getElementById('tv-btn'); if (_tvb) _tvb.style.opacity = '0.35'; } } catch(_) {}
+  G.customers = [];
+  G.cookSlots = G.cookSlots.map(() => null);
+  // Flush MP state and send terminal broadcast so guests clear their NPC/order/speech state
+  if (typeof MP !== 'undefined') {
+    MP._pendingServed = {};
+    MP.stopBroadcastLoop();
+    if (MP._post && MP.roomCode) {
+      try {
+        MP._post(MP.roomCode, { type: 'state', data: { isOpen: false, slotState: [], customers: [], cookSlots: [], menu: [], speech: [], events: [], dialog: [], dialogDelta: [] } });
+      } catch(_) {}
+    }
+  }
   playOutro(() => {
     G.screen = 'review';
     fullRender();
@@ -7492,7 +8630,7 @@ window.startGame = function() {
   const hasSave = loadPlayerState(G.playerName);
   if (!hasSave) {
     G.day = 1; G.money = 10000; G.rep = 8;
-    SHOP.forEach(s => { G.inv[s.id] = 10; });
+    SHOP.forEach(s => { G.inv[s.id] = 0; });
     G.weather = WEATHER[0];
   }
   playIntro(() => { G.screen = 'prep'; fullRender(); });
@@ -7524,6 +8662,9 @@ window.openStall = function() {
   G.isOpen = true;
   window.stallOpen = true;
   fullRender();
+  // Subtitle off by default; hide the overlay element to match unchecked checkbox
+  const _subEl = document.getElementById('subtitle');
+  if (_subEl) _subEl.style.display = 'none';
   startLoop();
   AUDIO.startService(G.weather?.id === 'rainy');
 };
@@ -7580,21 +8721,8 @@ window.nextDay = function() {
 };
 
 // ─────────────────────────────────────────────
-// RENDER SYSTEM
+// RENDER SYSTEM — single fullRender defined at bottom of file
 // ─────────────────────────────────────────────
-function fullRender() {
-  stopLoop();
-  const root = document.getElementById('root');
-  switch (G.screen) {
-    case 'signin':  root.innerHTML = buildSignIn();  break;
-    case 'title':  root.innerHTML = buildTitle();  break;
-    case 'prep':   root.innerHTML = buildPrepShell(); break;
-    case 'service': root.innerHTML = buildServiceShell();
-      setTimeout(() => VOICE_SYS.updateBtn(), 0);
-      break;
-    case 'review': root.innerHTML = buildReview(); break;
-  }
-}
 
 // Called from game loop — fast partial update
 function renderService() {
@@ -7663,7 +8791,8 @@ function buildTitle() {
       Cook dishes, serve customers, earn your reputation.<br>
       Will your yatai become legendary in Fukuoka?
     </p>
-    <button class="btn btn-primary" onclick="startGame()">🍜 Open Your Stall</button>
+    <button class="btn btn-primary" onclick="window.goMultiplayer()" style="width:100%">🌐 Play</button>
+    <button class="btn" onclick="if(confirm('Restart from Day 1? This erases your save.'))window.resetGame()" style="margin-top:8px;width:100%;font-size:13px;opacity:.65">🔄 Restart from Day 1</button>
     <div style="margin-top:18px; font-size:12px; color:var(--dim)">
       Click menu items to cook · Tap ready dishes to serve
     </div>
@@ -7759,14 +8888,18 @@ function buildServiceShell() {
         </div>
         <button id="mic-btn" onclick="toggleMic()" title="Voice commands (speak dish names to cook)">🎤</button>
         <button id="mute-btn" onclick="toggleMute()" title="Toggle sound">🔊</button>
+        <button id="tv-btn" style="opacity:0.35" onclick="window._tvToggle&&window._tvToggle(this)" title="Toggle TV">📺</button>
         <label class="auto-cook-label" title="Automatically cook and serve orders">
           <input type="checkbox" id="auto-cook-cb" onchange="toggleAutoCook(this)">
           Auto
         </label>
         <label class="auto-cook-label" title="Toggle English subtitles">
-          <input type="checkbox" id="subtitle-cb" onchange="toggleSubtitles(this)" checked>
+          <input type="checkbox" id="subtitle-cb" onchange="toggleSubtitles(this)">
           Subs
         </label>
+        <button id="restock-btn" class="hud-btn hud-btn-gold" onclick="window.autoRestock()" title="Restock all menu items to 10">🛒 Restock</button>
+        <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
+        ${MP.role === 'master' ? `<div class="hud-stat" style="cursor:pointer" title="Room code — share with guests" onclick="navigator.clipboard&&navigator.clipboard.writeText('${MP.roomCode}').then(()=>toast('Room code copied!','info'))"><span class="hud-val" style="font-size:11px;letter-spacing:2px;color:var(--teal)" id="mp-room-code-hud">${MP.roomCode}</span><span class="hud-label">Room</span></div>` : ''}
       </div>
     </div>
 
@@ -7797,6 +8930,10 @@ function buildServiceShell() {
         <div class="card-title">💬 Chat</div>
         <div id="player-roster"></div>
         <div id="dialog-feed"></div>
+        <div id="chat-input-row">
+          <input id="chat-input" type="text" placeholder="Talk to customer…" maxlength="80" onkeydown="if(event.key==='Enter')window.sendChatToCustomer()">
+          <button id="chat-send-btn" onclick="window.sendChatToCustomer()">Send</button>
+        </div>
       </div>
     </div>`;
 }
@@ -7823,26 +8960,59 @@ function buildCookSlots() {
   }).join('');
 }
 
+window.toggleNpcVoice = function(btn) {
+  window._npcVoiceMuted = !window._npcVoiceMuted;
+  if (window._npcVoiceMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+  document.querySelectorAll('#npc-voice-btn').forEach(b => {
+    b.textContent = window._npcVoiceMuted ? '🔇 Voice' : '🗣️ Voice';
+    b.classList.toggle('hud-btn-muted', window._npcVoiceMuted);
+  });
+};
+
+window.autoRestock = function() {
+  const TARGET = 10;
+  let totalCost = 0;
+  const purchases = [];
+  for (const item of G.unlockedMenu) {
+    const si = SHOP.find(s => s.forItem === item.id);
+    if (!si) continue;
+    const cur = G.inv[si.id] || 0;
+    if (cur >= TARGET) continue;
+    const batches = Math.ceil((TARGET - cur) / si.qty);
+    const cost = batches * si.price;
+    if (G.money - totalCost < cost) continue;
+    totalCost += cost;
+    purchases.push({ si, batches });
+  }
+  if (!purchases.length) { toast('All stocked to 10+', 'info'); return; }
+  for (const { si, batches } of purchases) G.inv[si.id] = Math.min(99, (G.inv[si.id] || 0) + batches * si.qty);
+  G.money -= totalCost;
+  toast(`Restocked! -¥${totalCost.toLocaleString()}`, 'info');
+  const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems();
+  const mon = document.getElementById('hud-money'); if (mon) mon.textContent = '¥' + G.money.toLocaleString();
+};
+
 function buildMenuItems() {
   const hasEmpty = G.cookSlots.some(s => s === null);
   const waiting = {};
   G.customers.filter(c => c.state === 'wait' && c.order).forEach(c => {
     waiting[c.order.id] = (waiting[c.order.id] || 0) + 1;
   });
-  return G.unlockedMenu.map(item => {
+  return G.unlockedMenu.filter(item => {
+    const si = SHOP.find(s => s.forItem === item.id);
+    return si ? G.inv[si.id] > 0 : false;
+  }).map(item => {
     const si = SHOP.find(s => s.forItem === item.id);
     const stock = si ? G.inv[si.id] : 0;
     const canCook = stock > 0 && hasEmpty;
     const w = waiting[item.id] || 0;
-    let cls = '';
-    if (stock <= 0) cls = 'no-stock';
-    else if (!hasEmpty) cls = 'no-slot';
+    const cls = !hasEmpty ? 'no-slot' : '';
     return `<button class="menu-btn ${cls}" data-cook="${item.id}" onclick="window.cookItem('${item.id}')">
       <div class="icon">${item.icon}</div>
       <div class="en">${item.en}</div>
       <div class="jp">${item.name}</div>
       <div class="price">¥${item.price}</div>
-      <div class="stock">${stock > 0 ? stock + ' left' : 'Out of stock'}</div>
+      <div class="stock">${stock} left</div>
       ${w > 0 ? `<div style="font-size:10px;font-weight:700;color:var(--red-l);margin-top:1px">${w} waiting</div>` : ''}
     </button>`;
   }).join('');
@@ -7860,10 +9030,11 @@ function buildCustList() {
     const pct = (c.patLeft / c.patMax) * 100;
     const col = pct > 55 ? '#27ae60' : pct > 28 ? '#f39c12' : '#e74c3c';
     const urgent = pct < 25 ? 'urgent' : '';
+    const playerBadge = c.isPlayer ? ` <span style="background:rgba(80,200,255,.25);color:#7ff;border:1px solid rgba(80,200,255,.4);border-radius:4px;font-size:10px;padding:1px 5px;vertical-align:middle">PLAYER</span>` : '';
     return `<div class="cust-card ${urgent}">
       <div class="cust-icon">${c.icon}</div>
       <div class="cust-info">
-        <div class="cust-type">${c.jp} · ${c.en}</div>
+        <div class="cust-type">${c.jp} · ${c.en}${playerBadge}</div>
         <div class="cust-order">${c.order.icon} ${c.order.en} <span style="color:var(--dim);font-size:11px">${c.order.name}</span></div>
       </div>
       <div class="pat-wrap">
@@ -7878,7 +9049,7 @@ function buildPlayerRoster() {
   const players = G.customers.filter(c => c.isPlayer);
   if (!players.length) return '';
   const items = players.map(c => {
-    const stateLabel = c.state === 'wait' ? 'waiting' : c.state === 'sit' ? 'seated' : 'leaving';
+    const stateLabel = c.state === 'wait' ? 'waiting' : (c.state === 'sit' || c.state === 'seated') ? 'seated' : 'leaving';
     return `<div class="roster-item">${c.icon} ${c.en} <span class="ri-state">${stateLabel}</span></div>`;
   }).join('');
   return `<div class="roster-label">Players here</div>${items}`;
@@ -7948,6 +9119,7 @@ function toast(msg, type = '') {
   el.textContent = msg;
   document.body.appendChild(el);
   toastTimer = setTimeout(() => el.remove(), 2400);
+  if (MP && MP.role === 'master' && typeof window._pushEvent === 'function') window._pushEvent(msg, type);
 }
 
 function floatYen(txt) {
@@ -7963,9 +9135,12 @@ function floatYen(txt) {
 // ─────────────────────────────────────────────
 // VOICE SYSTEM — speech recognition + dialog log
 // ─────────────────────────────────────────────
+let _pendingDialog = [];
+let _pendingSubtitles = [];
 window._logDialog = function(text, speaker) {
   G.dialogLog.push({ text, speaker });
-  if (G.dialogLog.length > 30) G.dialogLog.shift();
+  if (G.dialogLog.length > 60) G.dialogLog.shift();
+  _pendingDialog.push({ text, speaker });
   const feed = document.getElementById('dialog-feed');
   if (!feed) return;
   const div = document.createElement('div');
@@ -7973,8 +9148,151 @@ window._logDialog = function(text, speaker) {
   const icon = speaker === 'master' ? '🧑‍🍳' : speaker === 'player' ? '🎙️' : '👤';
   div.innerHTML = `<span class="dm-icon">${icon}</span><span class="dm-text">${text}</span>`;
   feed.appendChild(div);
-  while (feed.children.length > 10) feed.removeChild(feed.firstChild);
+  while (feed.children.length > 20) feed.removeChild(feed.firstChild);
   feed.scrollTop = feed.scrollHeight;
+};
+window._takeDialogDelta = () => _pendingDialog.splice(0);
+window._takeSubtitles  = () => _pendingSubtitles.splice(0);
+
+// ── CUSTOMER POPUP MENU ──────────────────────────
+{
+  let _popupCu = null;
+  const _86Set = new Set();
+
+  window._showCustPopup = function(cu, screenX, screenY) {
+    _popupCu = cu;
+    const popup = document.getElementById('cust-popup');
+    if (!popup) return;
+    const nameEl = document.getElementById('cp-name');
+    if (nameEl) {
+      const ct = cu.ct || {};
+      const label = ct.sumo ? '力士' : ct.geisha ? '芸者' : ct.police ? '警察官' : ct.politician ? '政治家' : ct.hostess ? 'ホステス' : ct.type === 'kimono' ? '組の者' : 'お客様';
+      nameEl.textContent = `${cu.name || label} (${label})`;
+    }
+    // Position popup — keep within viewport
+    popup.style.left = '0px'; popup.style.top = '0px'; popup.classList.add('visible');
+    const pw = popup.offsetWidth || 170, ph = popup.offsetHeight || 180;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let px = Math.min(screenX - pw / 2, vw - pw - 8);
+    let py = Math.min(screenY - ph - 8, vh - ph - 8);
+    if (px < 8) px = 8;
+    if (py < 8) py = 8;
+    popup.style.left = `${px}px`;
+    popup.style.top  = `${py}px`;
+    // Dismiss on outside click
+    setTimeout(() => {
+      const dismiss = (ev) => {
+        if (!popup.contains(ev.target)) { popup.classList.remove('visible'); document.removeEventListener('click', dismiss); }
+      };
+      document.addEventListener('click', dismiss);
+    }, 50);
+  };
+
+  window._custPopupAction = function(action) {
+    const popup = document.getElementById('cust-popup');
+    if (popup) popup.classList.remove('visible');
+    const cu = _popupCu;
+    if (!cu) return;
+    if (action === 'talk') {
+      if (window._custTalkIntro) window._custTalkIntro(cu);
+    } else if (action === 'kickout') {
+      if (window._custKickOut) window._custKickOut(cu);
+      toast('Kicked out!', 'warn');
+    } else if (action === '86') {
+      const key = `${(cu.ct||{}).type}_${(cu.ct||{}).geisha}_${(cu.ct||{}).sumo}`;
+      _86Set.add(key);
+      if (window._custKickOut) window._custKickOut(cu);
+      toast('86\'d — won\'t come back today!', 'warn');
+    } else if (action === 'freedrink') {
+      // Pick a drink from available inventory
+      const drinks = ['beer','sake','shochu','highball','oolong'].filter(id => {
+        const s = SHOP.find(sh => sh.forItem === id);
+        return s && G.inv[s.id] > 0;
+      });
+      const pick = drinks.length ? drinks[Math.floor(Math.random() * drinks.length)] : 'beer';
+      const menuItem = MENU.find(m => m.id === pick);
+      if (menuItem) {
+        const shopItem = SHOP.find(s => s.forItem === pick);
+        if (shopItem && G.inv[shopItem.id] > 0) G.inv[shopItem.id]--;
+        if (window._custGiveDrink) window._custGiveDrink(cu, pick);
+        toast(`Free ${menuItem.en} sent!`);
+      } else {
+        if (window._custGiveDrink) window._custGiveDrink(cu, null);
+        toast('Free drink sent!');
+      }
+    }
+    _popupCu = null;
+  };
+
+  // Expose 86 check for spawn system
+  window._is86d = function(cu) {
+    if (!cu || !cu.ct) return false;
+    const key = `${cu.ct.type}_${cu.ct.geisha}_${cu.ct.sumo}`;
+    return _86Set.has(key);
+  };
+}
+
+// ── AI CUSTOMER CHAT ─────────────────────────────
+window.sendChatToCustomer = async function() {
+  const inp = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
+  if (!inp) return;
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  if (btn) btn.disabled = true;
+
+  if (window._logDialog) window._logDialog(msg, 'player');
+
+  // Find a seated customer
+  const seated = (window._SLOTS || []).filter(s => s.cu && (s.cu.state === 'sit' || s.cu.state === 'sit_in'));
+  if (!seated.length) {
+    if (window._logDialog) window._logDialog('（お客様はまだいません）', 'master');
+    if (btn) btn.disabled = false;
+    return;
+  }
+  const slot = seated[Math.floor(Math.random() * seated.length)];
+  const cu = slot.cu;
+  const ct = cu.ct || {};
+
+  let persona = 'You are a customer at a Japanese yatai (late-night street food stall) near Sakurajima volcano in Kagoshima. Respond in casual Japanese. Keep it short — 1 or 2 sentences max. Be warm and in-character.';
+  if (ct.sumo) persona = 'You are a sumo wrestler enjoying a late-night meal at a yatai. You are large, jovial, enthusiastic about food. Reply in casual Japanese, short and lively.';
+  else if (ct.geisha) persona = 'You are a geisha relaxing at a yatai after a performance. You are graceful and cultured. Reply in polished Japanese, short and elegant.';
+  else if (ct.police) persona = 'You are an off-duty police officer having a drink at a yatai. You are professional but friendly and tired. Reply in casual Japanese, short.';
+  else if (ct.politician) persona = 'You are a Japanese politician at a yatai. You are a bit pompous and tend to relate everything to politics or your constituency. Reply in formal Japanese, short.';
+  else if (ct.hostess) persona = 'You are a hostess (ホステス) unwinding at a yatai after a long night of work. You are charming, a little flirty, and tired. Reply in casual Japanese, short and warm.';
+  else if (ct.type === 'kimono' && !ct.geisha) persona = 'You are a yakuza member eating at a yatai. You are gruff but courteous about food. Reply in terse Japanese, very short.';
+
+  // Show typing indicator
+  const feed = document.getElementById('dialog-feed');
+  let thinkEl = null;
+  if (feed) {
+    thinkEl = document.createElement('div');
+    thinkEl.className = 'dialog-msg dm-cust';
+    thinkEl.innerHTML = '<span class="dm-icon">💭</span><span class="dm-text" style="opacity:.4">…</span>';
+    feed.appendChild(thinkEl);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, systemPrompt: persona }),
+    });
+    const data = await resp.json();
+    const reply = (data.reply || '').trim() || '…';
+    if (thinkEl) thinkEl.remove();
+    if (window._logDialog) window._logDialog(reply, 'cust');
+    if (window._spawnBubbleAuto && cu.x) {
+      window._spawnBubbleAuto(cu.x, reply, { pitch: cu.voicePitch, rate: cu.voiceRate });
+    }
+  } catch(e) {
+    if (thinkEl) thinkEl.remove();
+    if (window._logDialog) window._logDialog('（通信エラー）', 'master');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 };
 
 const VOICE_SYS = (function() {
@@ -8082,6 +9400,17 @@ function _saveAccount(name) {
   localStorage.setItem('yatai_current', name);
 }
 
+window.resetGame = function() {
+  if (!G.playerName) return;
+  try { localStorage.removeItem('yatai_save_' + G.playerName); } catch(_) {}
+  G.day = 1; G.money = 10000; G.rep = 8;
+  SHOP.forEach(s => { G.inv[s.id] = 0; G.cart[s.id] = 0; });
+  G.weather = WEATHER[0];
+  G.screen = 'title';
+  fullRender();
+  toast('Game restarted! 新しい出発！');
+};
+
 function savePlayerState() {
   if (!G.playerName) return;
   try {
@@ -8163,11 +9492,8 @@ window.submitSignIn = function() {
   if (!input) return;
   const name = input.value.trim();
   if (!name) { err.textContent = 'Please enter a name.'; return; }
-  const taken = getAccounts().map(n => n.toLowerCase());
-  if (taken.includes(name.toLowerCase())) {
-    err.textContent = 'That name is already taken — sign in above or choose another.';
-    return;
-  }
+  const existing = getAccounts().find(n => n.toLowerCase() === name.toLowerCase());
+  if (existing) { window.signInAs(existing); return; }
   _saveAccount(name);
   G.playerName = name;
   G.screen = 'title';
@@ -8214,6 +9540,952 @@ fullRender();
     if (btn) tip.style.display = 'none';
   });
 })();
+
+// ─────────────────────────────────────────────
+// MULTIPLAYER — PeerJS P2P
+// ─────────────────────────────────────────────
+const MP = {
+  // HTTP-polling multiplayer — no PeerJS, no third-party connections
+  peer: null,        // legacy compat (unused)
+  masterConn: null,  // legacy compat (unused)
+  role: null,        // 'master' | 'customer'
+  roomCode: '',
+  myName: '',
+  myGuestId: null,
+  peers: {},         // guestId → { name, guestId }
+  myOrder: null,
+  myOrderStatus: 'none',
+  _wasInWaitQueue: false,
+  stateData: null,
+  _pollTimer: null,
+  _broadcastTimer: null,
+  _patTimer: null,
+  _pollSince: 0,
+  _chatLog: [],
+  _dialogLog: [],
+  _pendingServed: {},
+  _pendingChat: [],
+  _lastOrderTs: {},    // guestId → ts of last processed order (dedup guard)
+  _seenOrderIds: {},   // orderId → true, absolute dedup by unique nonce per order
+  _selectedItem: null, // item tapped but not yet confirmed
+  _confirmLock: false, // true for 700ms after selection to block ghost clicks
+  _subtitleSeq: 0,
+  _lastSubtitleSeq: 0,
+  _subtitleQueue: [],
+  _subtitlePlaying: false,
+
+  _randCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let s = '';
+    for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  },
+
+  async _post(code, body) {
+    try {
+      const r = await fetch('/api/room?code=' + code, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      return await r.json();
+    } catch(e) { return { ok: false, error: e.message }; }
+  },
+
+  async _get(code, since) {
+    try {
+      const r = await fetch('/api/room?code=' + code + '&since=' + (since || 0));
+      return await r.json();
+    } catch(e) { return { ok: false }; }
+  },
+
+  // ── MASTER ──
+  async initMaster(roomCode) {
+    this.role = 'master';
+    this.roomCode = roomCode;
+    this.myName = G.playerName || 'Master';
+    this.peers = {};
+    this._pendingServed = {};
+    this._pendingChat = [];
+    this._lastOrderTs = {};
+    this._seenOrderIds = {};
+    this._pollSince = Date.now();
+    const res = await this._post(roomCode, { type: 'create', name: this.myName });
+    if (!res.ok) { toast('Failed to create room', 'err'); G.screen = 'multilobby'; fullRender(); return; }
+    G.screen = 'multihost'; fullRender();
+    this._pollTimer = setInterval(() => this._masterPoll(), 1000);
+  },
+
+  async _masterPoll() {
+    const data = await this._get(this.roomCode, this._pollSince);
+    if (!data.ok) return;
+    const newSince = data.ts || Date.now();
+    // Use max of room.ts and any message ts so _pollSince always covers all delivered messages
+    let maxMsgTs = newSince;
+    for (const msg of (data.messages || [])) { if (msg.ts > maxMsgTs) maxMsgTs = msg.ts; }
+    console.error('[HOST POLL]', 'msgs:', (data.messages||[]).length, 'since:', this._pollSince, 'types:', (data.messages||[]).map(m=>m.type+':'+m.ts).join(','));
+    for (const msg of (data.messages || [])) {
+      if (msg.ts <= this._pollSince) { console.error('[HOST SKIP TS]', msg.type, 'ts:', msg.ts, '<= since:', this._pollSince); continue; }
+      if (msg.type === 'join') {
+        if (!this.peers[msg.guestId]) {
+          this.peers[msg.guestId] = { name: msg.name, guestId: msg.guestId };
+          toast(`${msg.name} joined!`);
+          if (G.isOpen) this._spawnRealCustomer(msg.guestId, msg.name);
+          try { if (window._seatSelf) window._seatSelf(msg.guestId, msg.name); } catch(_) {}
+        }
+      } else if (msg.type === 'leave') {
+        const p = this.peers[msg.guestId];
+        if (p) {
+          delete this.peers[msg.guestId];
+          toast(`${p.name} left`, 'warn');
+          const idx = G.customers.findIndex(c => c.peerId === msg.guestId);
+          if (idx !== -1) G.customers.splice(idx, 1);
+          try { if (window._unseatGuestPlayer) window._unseatGuestPlayer(msg.guestId); } catch(_) {}
+        }
+      } else if (msg.type === 'order') {
+        console.error('[HOST RECV ORDER]', JSON.stringify(msg));
+        if (!G.isOpen) { console.error('[HOST ORDER DROP] stall not open'); continue; }
+        const peer = this.peers[msg.guestId];
+        if (!peer) { console.error('[HOST ORDER DROP] no peer for guestId', msg.guestId, 'peers:', Object.keys(this.peers)); continue; }
+        const item = MENU.find(m => m.id === msg.itemId);
+        if (!item) { console.error('[HOST ORDER DROP] unknown itemId', msg.itemId); continue; }
+        // Nonce-based absolute dedup: each order has a unique orderId
+        if (msg.orderId && this._seenOrderIds[msg.orderId]) { console.error('[HOST ORDER DEDUP skip]', msg.orderId); continue; }
+        if (msg.orderId) this._seenOrderIds[msg.orderId] = true;
+        // Timestamp dedup fallback (for orders sent before nonce was added)
+        const _prevOrderTs = this._lastOrderTs[msg.guestId] || 0;
+        if (!msg.orderId && msg.ts <= _prevOrderTs) { continue; }
+        if (!msg.orderId) this._lastOrderTs[msg.guestId] = msg.ts;
+        let c = G.customers.find(cu => cu.peerId === msg.guestId);
+        if (!c) c = this._spawnRealCustomer(msg.guestId, peer.name);
+        if (c) {
+          c.order = item; c.state = 'wait';
+          toast(`${peer.name} ordered ${item.icon} ${item.en}!`, 'info');
+          try { const mg = document.getElementById('menu-grid'); if (mg) mg.innerHTML = buildMenuItems(); } catch(_) {}
+          try { const cl = document.getElementById('customer-list'); if (cl) cl.innerHTML = buildCustList(); } catch(_) {}
+          // Serve immediately if a matching ready slot already exists
+          for (let _si = 0; _si < G.cookSlots.length; _si++) {
+            const _s = G.cookSlots[_si];
+            if (_s && _s.item && _s.state === 'ready' && _s.item.id === item.id) { autoServe(_si); break; }
+          }
+        }
+      } else if (msg.type === 'chat') {
+        if (window._logDialog) window._logDialog(`${msg.name}: ${msg.text}`, 'cust');
+        this._pendingChat.push({ from: msg.name, text: msg.text });
+      } else if (msg.type === 'ct') {
+        // Guest sent their own clothing — store it so all views match
+        if (msg.guestId && msg.data && msg.data.ct) {
+          try { if (window._setGuestCt) window._setGuestCt(msg.guestId, msg.data.ct); } catch(_) {}
+        }
+      }
+    }
+    this._pollSince = maxMsgTs;
+    // Catch any guests registered in the room that we missed
+    for (const g of (data.guests || [])) {
+      if (!this.peers[g.guestId]) {
+        this.peers[g.guestId] = { name: g.name, guestId: g.guestId };
+        if (G.isOpen) this._spawnRealCustomer(g.guestId, g.name);
+        try { if (window._seatSelf) window._seatSelf(g.guestId, g.name); } catch(_) {}
+      }
+    }
+    // Always keep the roster current
+    this._renderHostPlayers();
+  },
+
+  startBroadcastLoop() {
+    clearInterval(this._broadcastTimer);
+    this._broadcastTimer = setInterval(() => {
+      if (!G.isOpen) return;
+      // Keep all known guest figures alive on the host canvas
+      for (const p of Object.values(this.peers)) {
+        try { if (window._seatSelf) window._seatSelf(p.guestId, p.name); } catch(_) {}
+      }
+      const chat = this._pendingChat.splice(0);
+      const served = Object.assign({}, this._pendingServed);
+      // _pendingServed is cleared by notifyServed's own 6s timeout — don't clear here
+      const _subtitlesSnap = window._takeSubtitles ? window._takeSubtitles() : [];
+      if (_subtitlesSnap.length) this._subtitleSeq++;
+      const state = {
+        customers: G.customers.map(c => ({
+          id: c.id, jp: c.jp, en: c.en, icon: c.icon, peerId: c.peerId || null,
+          order: c.order ? { en: c.order.en, icon: c.order.icon, name: c.order.name } : null,
+          patLeft: Math.round(c.patLeft), patMax: c.patMax, state: c.state,
+        })),
+        cookSlots: G.cookSlots.map(s => s && s.item ? { en: s.item.en, icon: s.item.icon, progress: s.progress, state: s.state } : null),
+        menu: (G.unlockedMenu || []).map(item => {
+          const si = (typeof SHOP !== 'undefined' ? SHOP : []).find(s => s.forItem === item.id);
+          const stock = si ? (G.inv[si.id] || 0) : 0;
+          const w = G.customers.filter(c => c.state === 'wait' && c.order && c.order.id === item.id).length;
+          return { id: item.id, en: item.en, name: item.name, icon: item.icon, price: item.price, stock, waiting: w };
+        }),
+        money: G.money, timeStr: G.timeStr, isOpen: G.isOpen, day: G.day,
+        hostName: G.playerName || '夜台',
+        timePct: (G.gameTime - SERVICE_START) / (SERVICE_END - SERVICE_START),
+        rep: G.rep, stars: G.stars,
+        stats: { served: G.todayServed, earned: G.todayEarned, lost: G.todayLost },
+        weather: G.weather ? { icon: G.weather.icon, name: G.weather.name } : null,
+        tvOn: window._tvGetOn ? window._tvGetOn() : false,
+        subtitlesOn: (() => { const cb = document.getElementById('subtitle-cb'); return cb ? cb.checked : false; })(),
+        activeEvents: window._getEventState ? window._getEventState() : null,
+        slotState: window._getSlotState ? window._getSlotState() : [],
+        speech: window._takePendingSpeech ? window._takePendingSpeech() : [],
+        events: window._takeEvents ? window._takeEvents() : [],
+        dialog: (G.dialogLog || []).slice(-30),
+        dialogDelta: window._takeDialogDelta ? window._takeDialogDelta() : [],
+        subtitles: _subtitlesSnap,
+        subtitleSeq: this._subtitleSeq,
+        peers: Object.values(this.peers).map(p => ({ name: p.name, guestId: p.guestId })),
+        served, chat,
+      };
+      this._post(this.roomCode, { type: 'state', data: state });
+    }, 2000);
+  },
+
+  stopBroadcastLoop() { clearInterval(this._broadcastTimer); },
+
+  notifyServed(peerId, itemId) {
+    if (peerId && itemId) {
+      this._pendingServed[peerId] = itemId;
+      setTimeout(() => { delete this._pendingServed[peerId]; }, 6000);
+    }
+  },
+
+  _renderHostPlayers() {
+    const ps = Object.values(this.peers);
+    const rowHtml = ps.map(p => `<div class="multi-player-row"><span class="mp-icon">🧑</span><span>${p.name}</span><span class="mp-role">Customer</span></div>`).join('');
+    const emptyHtml = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:8px 0">Waiting for players…</div>';
+    const lobby = document.getElementById('multi-host-players');
+    if (lobby) lobby.innerHTML = ps.length ? rowHtml : emptyHtml;
+    const roster = document.getElementById('player-roster');
+    if (roster) {
+      roster.innerHTML = ps.length
+        ? `<div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Players Online</div>${rowHtml}`
+        : '';
+    }
+    const codeEl = document.getElementById('mp-room-code-hud');
+    if (codeEl) codeEl.textContent = this.roomCode;
+  },
+
+  _spawnRealCustomer(peerId, name) {
+    const existing = G.customers.find(cu => cu.peerId === peerId);
+    if (existing) return existing;
+    const pat = 320 + Math.random() * 80;
+    const c = { id: G.nextId++, type: 'player', jp: name, en: name, icon: '🧑', order: null, patMax: pat, patLeft: pat, state: 'seated', isPlayer: true, peerId };
+    G.customers.push(c);
+    return c;
+  },
+
+  // ── CUSTOMER ──
+  async joinRoom(roomCode, myName) {
+    this.role = 'customer';
+    this.roomCode = roomCode;
+    this.myName = myName;
+    this.myOrder = null;
+    this.myOrderStatus = 'none';
+    this._chatLog = [];
+    this._dialogLog = [];
+    this._lastSubtitleSeq = 0;
+    this._subtitleQueue = [];
+    this._subtitlePlaying = false;
+    this._pollSince = Date.now();
+    const el = document.getElementById('multi-join-status');
+    if (el) el.innerHTML = '<div class="multi-connecting"><span>⏳</span> Connecting…</div>';
+    const res = await this._post(roomCode, { type: 'join', name: myName });
+    if (!res.ok) {
+      const errEl = document.getElementById('multi-join-err');
+      const msg = res.error === 'room not found' ? 'Room not found — check the code.' : 'Failed: ' + (res.error || 'unknown');
+      if (errEl) errEl.textContent = msg; else toast(msg, 'err');
+      return;
+    }
+    this.myGuestId = res.guestId;
+    window.stallOpen = true;
+    try { if (window._freezeSpawning) window._freezeSpawning(); } catch(_) {}
+    try { if (window._seatSelf) window._seatSelf(res.guestId, myName); } catch(_) {}
+    // Tell the host our clothing so everyone sees the same appearance
+    try {
+      const selfCt = window._getGuestCt && window._getGuestCt(res.guestId);
+      if (selfCt) this._post(roomCode, { type: 'msg', guestId: res.guestId, data: { type: 'ct', ct: selfCt } });
+    } catch(_) {}
+    G.screen = 'customer'; fullRender();
+    this._pollTimer = setInterval(() => this._customerPoll(), 1500);
+    this._startPatTicker();
+    this._startCookTicker();
+  },
+
+  _triggerServed(itemId) {
+    if (this.myOrderStatus === 'served' || !this.myOrder) return;
+    this.myOrderStatus = 'served';
+    this._wasInWaitQueue = false;
+    this._renderCustomerOrder();
+    toast('Your order is ready! いただきます！');
+    try { AUDIO.init(); AUDIO.playArrive && AUDIO.playArrive(); } catch(_) {}
+    // Show food animation on the guest's own canvas character
+    const _dishId = itemId || (this.myOrder && this.myOrder.id);
+    try { if (window._iifeServeGuest && this.myGuestId) window._iifeServeGuest(this.myGuestId, _dishId); } catch(_) {}
+    const _orderId = this.myOrder && this.myOrder.id;
+    setTimeout(() => {
+      // Only clear if no new order has been placed since we were served
+      if (this.myOrder && this.myOrder.id === _orderId) {
+        this.myOrder = null; this.myOrderStatus = 'none'; this._orderSentAt = null; this._wasInWaitQueue = false; this._selectedItem = null;
+        window._custOrderLock = true;
+        setTimeout(() => { window._custOrderLock = false; }, 2000);
+        this._renderCustomerOrder();
+        if (this.stateData) this._renderCustomerState();
+      }
+    }, 8000);
+  },
+
+  async _customerPoll() {
+    const data = await this._get(this.roomCode, this._pollSince);
+    if (!data.ok) return;
+    // Use server timestamp (same as host) so messages posted during response transit aren't missed
+    const newSince = data.ts || Date.now();
+    // Check messages first — durable served notifications live here
+    for (const msg of (data.messages || [])) {
+      if (msg.type === 'served' && msg.guestId === this.myGuestId) {
+        this._triggerServed(msg.itemId);
+      }
+    }
+    this._pollSince = newSince;
+    if (data.state) {
+      this.stateData = data.state;
+      this._renderCustomerState();
+      // Fallback: served flag in broadcast state (only if order is still active)
+      if (data.state.served && data.state.served[this.myGuestId] && this.myOrder) {
+        this._triggerServed(data.state.served[this.myGuestId]);
+      }
+      // Chat from broadcast
+      for (const m of (data.state.chat || [])) {
+        this._chatLog.push(m);
+        if (this._chatLog.length > 20) this._chatLog.shift();
+      }
+      this._renderCustomerChat();
+      this._renderCustomerPeers(data.guests || []);
+    }
+  },
+
+  sendOrder(itemId) {
+    if (!this.myGuestId) return;
+    this.myOrderStatus = 'waiting';
+    this._orderSentAt = Date.now();
+    this._wasInWaitQueue = false;
+    this._renderCustomerOrder();
+    const orderId = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 8);
+    console.error('[SEND ORDER] itemId:', itemId, 'guestId:', this.myGuestId, 'orderId:', orderId, new Error().stack);
+    this._post(this.roomCode, { type: 'msg', guestId: this.myGuestId, data: { type: 'order', itemId, name: this.myName, orderId } });
+  },
+
+  sendChat(text) {
+    if (!this.myGuestId) return;
+    this._chatLog.push({ from: 'You', text });
+    if (this._chatLog.length > 20) this._chatLog.shift();
+    this._renderCustomerChat();
+    this._post(this.roomCode, { type: 'msg', guestId: this.myGuestId, data: { type: 'chat', text, name: this.myName } });
+  },
+
+  _renderCustomerState() {
+    if (!this.stateData) return;
+    const { timeStr, timePct } = this.stateData;
+    if (timePct != null) window._serviceTimePct = Math.min(1, Math.max(0, timePct));
+    if (this.stateData.tvOn != null && window._tvSetOn) window._tvSetOn(this.stateData.tvOn);
+    if (this.stateData.subtitlesOn != null) { const sel = document.getElementById('subtitle'); if (sel) sel.style.display = this.stateData.subtitlesOn ? '' : 'none'; }
+    if (window._applyEventState) try { window._applyEventState(this.stateData.activeEvents || null); } catch(_) {}
+    // When the host ends service, evict all NPC slots and clear speech/order state
+    if (this.stateData.isOpen === false && this._wasOpen) {
+      if (window._syncSlots) window._syncSlots(new Array(8).fill(null));
+      if (window._clearBubbles) window._clearBubbles();
+      this.myOrder = null; this.myOrderStatus = 'none';
+      this._wasInWaitQueue = false; this._orderSentAt = null;
+      if (this._cookTickerRaf) { cancelAnimationFrame(this._cookTickerRaf); this._cookTickerRaf = null; }
+      if (this._patTimer) { clearInterval(this._patTimer); this._patTimer = null; }
+      // Turn off TV and clear night-dimming
+      if (window._tvSetOn) window._tvSetOn(false);
+      window._serviceTimePct = 0;
+      this._renderCustomerOrder();
+    }
+    this._wasOpen = !!this.stateData.isOpen;
+    // Sync canvas stall with host, then guarantee our own seat is visible
+    if (this.stateData.isOpen !== false && this.stateData.slotState && window._syncSlots) {
+      window._syncSlots(this.stateData.slotState);
+      if (this.myGuestId && window._seatSelf) window._seatSelf(this.myGuestId, this.myName || '');
+    }
+    if (this.stateData.speech && window._replaySpeechBubble) {
+      for (const s of this.stateData.speech) window._replaySpeechBubble(s.xFrac != null ? s.xFrac : (s.x || 0.5), s.text, s.pitch, s.rate, s.voiceIdx);
+    }
+    if (this.stateData.events) {
+      for (const e of this.stateData.events) toast(e.msg, e.type);
+    }
+    if (this.stateData.subtitles && this.stateData.subtitles.length &&
+        this.stateData.subtitleSeq !== undefined &&
+        this.stateData.subtitleSeq !== this._lastSubtitleSeq) {
+      this._lastSubtitleSeq = this.stateData.subtitleSeq;
+      for (const t of this.stateData.subtitles) this._enqueueSubtitle(t);
+    }
+    // HUD
+    // hud-master shows the guest's own name — don't overwrite it with the host's name
+    const dayEl = document.getElementById('hud-day');
+    if (dayEl && this.stateData.day != null) dayEl.textContent = 'Day ' + this.stateData.day;
+    const timeEl = document.getElementById('hud-time');
+    if (timeEl && timeStr) timeEl.textContent = timeStr;
+    const moneyEl = document.getElementById('hud-money');
+    if (moneyEl && this.stateData.money != null) moneyEl.textContent = '¥' + Number(this.stateData.money).toLocaleString();
+    const repEl = document.getElementById('hud-rep');
+    if (repEl && this.stateData.stars != null) repEl.textContent = '⭐'.repeat(this.stateData.stars) + '☆'.repeat(5 - this.stateData.stars);
+    // Time bar
+    const bar = document.getElementById('time-bar-fill');
+    if (bar && timePct != null) bar.style.width = (Math.min(1, Math.max(0, timePct)) * 100) + '%';
+    // Menu grid from broadcast — only rebuild when data actually changes to avoid mobile ghost taps
+    const menuEl = document.getElementById('menu-grid');
+    if (menuEl && this.stateData.menu && this.stateData.menu.length) {
+      const hasOrder = !!this.myOrder;
+      const menuKey = (hasOrder ? '1' : '0') + '|' + this.stateData.menu.map(i => `${i.id}:${i.stock}:${i.waiting}`).join(',');
+      if (menuEl._menuKey !== menuKey) {
+        menuEl._menuKey = menuKey;
+        menuEl.innerHTML = this.stateData.menu.map(item => {
+          const noStock = item.stock <= 0;
+          const cls = noStock ? 'no-stock' : '';
+          const isSelected = MP._selectedItem && MP._selectedItem.id === item.id;
+        const selCls = isSelected ? ' selected-item' : '';
+        return `<button class="menu-btn cmi-btn ${cls}${selCls}" onclick="window.custSelect('${item.id}','${item.icon}','${item.en}')" ${hasOrder || noStock ? 'disabled' : ''}>
+            <div class="icon">${item.icon}</div>
+            <div class="en">${item.en}</div>
+            <div class="jp">${item.name}</div>
+            <div class="price">¥${item.price}</div>
+            <div class="stock">${item.stock > 0 ? item.stock + ' left' : 'Out of stock'}</div>
+            ${item.waiting > 0 ? `<div style="font-size:10px;font-weight:700;color:var(--red-l);margin-top:1px">${item.waiting} waiting</div>` : ''}
+          </button>`;
+        }).join('');
+      }
+    }
+    // Customer waiting list — identical to host buildCustList()
+    const custBox = document.getElementById('customer-list');
+    if (custBox) {
+      const allWaiting = (this.stateData.customers || []).filter(c => c.state === 'wait' && c.order);
+      const myEntry = allWaiting.find(c => c.peerId === this.myGuestId);
+      const others  = allWaiting.filter(c => c.peerId !== this.myGuestId);
+      const myCard = myEntry ? (() => {
+        const orderStr = `${myEntry.order.icon} ${myEntry.order.en} <span style="color:var(--dim);font-size:11px">${myEntry.order.name||''}</span>`;
+        return `<div class="cust-card" style="border-color:rgba(255,200,80,.5);background:rgba(255,200,80,.07)">
+          <div class="cust-icon">⭐</div>
+          <div class="cust-info">
+            <div class="cust-type" style="color:var(--gold)">Your order</div>
+            <div class="cust-order">${orderStr}</div>
+          </div>
+          <div class="pat-wrap"><div style="font-size:10px;color:var(--teal)">⏳ In queue</div></div>
+        </div>`;
+      })() : '';
+      if (!myCard && !others.length) {
+        custBox.innerHTML = '<div class="no-cust">No customers right now</div>';
+      } else {
+        custBox.innerHTML = myCard + others.map(c => {
+          const pct = (c.patLeft / c.patMax) * 100;
+          const col = pct > 55 ? '#27ae60' : pct > 28 ? '#f39c12' : '#e74c3c';
+          const urgent = pct < 25 ? 'urgent' : '';
+          const orderStr = c.order ? `${c.order.icon} ${c.order.en} <span style="color:var(--dim);font-size:11px">${c.order.name||''}</span>` : '—';
+          return `<div class="cust-card ${urgent}">
+            <div class="cust-icon">${c.icon}</div>
+            <div class="cust-info">
+              <div class="cust-type">${c.jp || c.en}${c.jp && c.jp !== c.en ? ' · ' + c.en : ''}</div>
+              <div class="cust-order">${orderStr}</div>
+            </div>
+            <div class="pat-wrap">
+              <div class="pat-bar"><div class="pat-fill" style="width:${pct}%;background:${col}"></div></div>
+              <div class="pat-time">${Math.ceil(c.patLeft)}s</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+    // Stats row — identical to host buildStatsRow()
+    const statsEl = document.getElementById('stats-row');
+    if (statsEl && this.stateData.stats) {
+      const s = this.stateData.stats;
+      const w = this.stateData.weather || {};
+      statsEl.innerHTML = `
+        <div class="stat-cell"><div class="stat-val" style="color:var(--gold)">¥${Number(s.earned).toLocaleString()}</div><div class="stat-lbl">Earned</div></div>
+        <div class="stat-cell"><div class="stat-val" style="color:var(--green)">${s.served}</div><div class="stat-lbl">Served</div></div>
+        <div class="stat-cell"><div class="stat-val" style="color:var(--red-l)">${s.lost}</div><div class="stat-lbl">Left</div></div>
+        <div class="stat-cell"><div class="stat-val" style="color:var(--teal)">${w.icon||'🌙'}</div><div class="stat-lbl">${w.name||''}</div></div>`;
+    }
+    // Seed from snapshot on first join; append delta entries on subsequent polls
+    if (!this._dialogLog.length && this.stateData.dialog && this.stateData.dialog.length) {
+      this._dialogLog = this.stateData.dialog.slice();
+    }
+    if (this.stateData.dialogDelta && this.stateData.dialogDelta.length) {
+      this._dialogLog.push(...this.stateData.dialogDelta);
+      if (this._dialogLog.length > 60) this._dialogLog = this._dialogLog.slice(-60);
+      this._renderCustomerChat();
+    }
+    // Secondary served detection: watch for our customer state changing or disappearing
+    if (this.myOrderStatus === 'waiting' && this.myOrder && this.myGuestId && this.stateData.customers) {
+      const myCustomer = this.stateData.customers.find(c => c.peerId === this.myGuestId);
+      if (myCustomer && myCustomer.state === 'wait') {
+        this._wasInWaitQueue = true;
+      }
+      if (myCustomer && myCustomer.state === 'served') {
+        // Customer explicitly marked served — fire regardless of _wasInWaitQueue
+        this._triggerServed(this.myOrder && this.myOrder.id);
+      } else if (this._wasInWaitQueue && !myCustomer) {
+        // Was in queue, customer now gone from server list
+        this._triggerServed(this.myOrder && this.myOrder.id);
+      }
+    }
+    // Safety: if order has been waiting >45s with no response, unblock so guest can retry
+    if (this.myOrderStatus === 'waiting' && this._orderSentAt && Date.now() - this._orderSentAt > 45000) {
+      this.myOrder = null; this.myOrderStatus = 'none'; this._orderSentAt = null; this._wasInWaitQueue = false; this._selectedItem = null;
+      window._custOrderLock = true;
+      setTimeout(() => { window._custOrderLock = false; }, 2000);
+      this._renderCustomerOrder();
+      toast('No response from kitchen — try ordering again', 'warn');
+    }
+    if (this.stateData.peers) this._renderCustomerPeers(this.stateData.peers);
+    // Always refresh order status box so it stays in sync with myOrder/myOrderStatus
+    this._renderCustomerOrder();
+  },
+
+  _renderCustomerOrder() {
+    const box = document.getElementById('cp-order-status');
+    if (!box) return;
+    // Active order takes priority
+    if (this.myOrder) {
+      const configs = {
+        waiting: { icon: '⏳', label: 'Order sent — waiting for kitchen…', bg: 'rgba(255,255,255,.06)', border: 'rgba(255,255,255,.12)', color: 'var(--dim)' },
+        served:  { icon: '🎉', label: 'Served! いただきます！',            bg: 'rgba(255,200,80,.10)', border: 'rgba(255,200,80,.35)', color: 'var(--gold)' },
+      };
+      const cfg = configs[this.myOrderStatus] || configs.waiting;
+      box.innerHTML = `<div style="background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:28px">${this.myOrder.icon}</span>
+        <div style="flex:1"><div style="font-weight:700;font-size:14px">${this.myOrder.en}</div>
+        <div style="color:${cfg.color};font-size:12px;margin-top:2px">${cfg.icon} ${cfg.label}</div></div>
+      </div>`;
+      return;
+    }
+    // Item selected — modal is handled separately; show a small indicator here
+    if (this._selectedItem) {
+      box.innerHTML = `<div style="background:rgba(80,200,120,.10);border:1.5px solid rgba(80,200,120,.4);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px">${this._selectedItem.icon}</span>
+        <div style="flex:1;font-size:13px;font-weight:600;color:rgba(80,220,130,.9)">${this._selectedItem.en} selected</div>
+        <button onclick="window.custShowOrderModal()" style="background:rgba(80,200,120,.25);border:1.5px solid rgba(80,200,120,.6);border-radius:7px;color:#7fffb0;font-weight:700;font-size:12px;padding:6px 12px;cursor:pointer;font-family:inherit">Order →</button>
+        <button onclick="window.custCancelSelect()" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:7px;color:var(--dim);font-size:12px;padding:6px 10px;cursor:pointer;font-family:inherit">✕</button>
+      </div>`;
+      return;
+    }
+    box.innerHTML = `<div style="font-size:12px;color:var(--dim);text-align:center;padding:6px 0 10px;letter-spacing:.3px">Tap a menu item to select</div>`;
+  },
+
+  _renderCustomerChat() {
+    const feed = document.getElementById('dialog-feed');
+    if (!feed) return;
+    const dialogHtml = (this._dialogLog || []).map(m => {
+      const icon = m.speaker === 'master' ? '🧑‍🍳' : m.speaker === 'player' ? '🎙️' : '👤';
+      return `<div class="dialog-msg dm-${m.speaker}"><span class="dm-icon">${icon}</span><span class="dm-text">${m.text}</span></div>`;
+    }).join('');
+    const chatHtml = this._chatLog.map(m => `<div class="dialog-msg"><span class="dm-icon">${m.from === 'You' ? '🎙️' : '🧑'}</span><span class="dm-text"><b>${m.from}:</b> ${m.text}</span></div>`).join('');
+    feed.innerHTML = dialogHtml + chatHtml;
+    feed.scrollTop = feed.scrollHeight;
+  },
+
+  _renderCustomerPeers(players) {
+    const el = document.getElementById('cp-peers');
+    if (!el) return;
+    const list = players || [];
+    if (!list.length) { el.innerHTML = '<div style="color:var(--dim);font-size:12px">No other players yet</div>'; return; }
+    el.innerHTML = list.map(p => {
+      const isSelf = p.guestId === this.myGuestId;
+      return `<div style="font-size:12px;display:flex;align-items:center;gap:6px;padding:3px 0${isSelf ? ';color:var(--teal)' : ''}"><span>🧑</span><span>${p.name}${isSelf ? ' <span style="font-size:10px;opacity:.7">(you)</span>' : ''}</span></div>`;
+    }).join('');
+    const title = el.closest('.card')?.querySelector('.card-title');
+    if (title) title.textContent = `🧑 Players (${list.length})`;
+  },
+
+  _enqueueSubtitle(text) {
+    this._subtitleQueue.push(text);
+    if (!this._subtitlePlaying) this._drainSubtitleQueue();
+  },
+
+  _drainSubtitleQueue() {
+    if (!this._subtitleQueue.length) { this._subtitlePlaying = false; return; }
+    this._subtitlePlaying = true;
+    const text = this._subtitleQueue.shift();
+    if (window._showSubtitle) window._showSubtitle(text);
+    const dur = Math.min(6000, 2800 + text.length * 52) + 200;
+    setTimeout(() => this._drainSubtitleQueue(), dur);
+  },
+
+  _startCookTicker() {
+    if (this._cookTickerRaf) cancelAnimationFrame(this._cookTickerRaf);
+    let last = performance.now();
+    const tick = (now) => {
+      if (this.role !== 'customer') return;
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      const slots = this.stateData?.cookSlots;
+      if (slots) {
+        slots.forEach((s, i) => {
+          if (s && s.state === 'cooking') {
+            s.progress = Math.min(1, (s.progress || 0) + dt / 30);
+            const fill = document.querySelector(`#cook-area .cook-slot:nth-child(${i+1}) .prog-fill`);
+            if (fill) fill.style.width = Math.round(s.progress * 100) + '%';
+          }
+        });
+      }
+      this._cookTickerRaf = requestAnimationFrame(tick);
+    };
+    this._cookTickerRaf = requestAnimationFrame(tick);
+  },
+
+  _startPatTicker() {
+    clearInterval(this._patTimer);
+    this._patTimer = setInterval(() => {
+      if (!this.stateData || !this.stateData.customers) return;
+      let changed = false;
+      for (const c of this.stateData.customers) {
+        if (c.state === 'wait' && c.patLeft > 0) { c.patLeft = Math.max(0, c.patLeft - 1); changed = true; }
+      }
+      if (!changed) return;
+      const custBox = document.getElementById('customer-list');
+      if (!custBox) return;
+      const waiting = this.stateData.customers.filter(c => c.state === 'wait' && c.order);
+      custBox.querySelectorAll('.cust-card').forEach((card, i) => {
+        const c = waiting[i]; if (!c) return;
+        const pct = (c.patLeft / c.patMax) * 100;
+        const col = pct > 55 ? '#27ae60' : pct > 28 ? '#f39c12' : '#e74c3c';
+        const fill = card.querySelector('.pat-fill'); if (fill) { fill.style.width = pct + '%'; fill.style.background = col; }
+        const tim = card.querySelector('.pat-time'); if (tim) tim.textContent = Math.ceil(c.patLeft) + 's';
+        card.classList.toggle('urgent', pct < 25);
+      });
+    }, 1000);
+  },
+
+  destroy() {
+    clearInterval(this._pollTimer);
+    clearInterval(this._broadcastTimer);
+    clearInterval(this._patTimer);
+    if (this._cookTickerRaf) cancelAnimationFrame(this._cookTickerRaf);
+    this._pollTimer = null; this._broadcastTimer = null; this._patTimer = null; this._cookTickerRaf = null;
+    if (this.role === 'master') this._post(this.roomCode, { type: 'close' }).catch(() => {});
+    else if (this.role === 'customer' && this.myGuestId) this._post(this.roomCode, { type: 'leave', guestId: this.myGuestId }).catch(() => {});
+    try { if (window._unfreezeSpawning) window._unfreezeSpawning(); } catch(_) {}
+    if (G.screen !== 'service') window.stallOpen = false;
+    this.role = null; this.roomCode = ''; this.myGuestId = null; this.peers = {};
+    this.peer = null; this.masterConn = null; this._lastOrderTs = {}; this._seenOrderIds = {}; this._selectedItem = null; this._confirmLock = false;
+    this.stateData = null;
+  },
+};
+
+// ── MULTIPLAYER SCREENS ──
+function buildMultiLobby() {
+  const icon = G.playerName ? _playerIcon(G.playerName) : '👤';
+  const nameChip = G.playerName
+    ? `<div style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,140,58,.12);border:1.5px solid rgba(255,140,58,.4);border-radius:10px;padding:10px 14px;margin-bottom:22px">
+        <span style="font-size:22px">${icon}</span>
+        <span style="font-weight:700;font-size:15px;color:var(--cream);flex:1;text-align:left">${G.playerName}</span>
+        <button onclick="G.screen='signin';fullRender()" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.22);border-radius:6px;color:var(--cream);cursor:pointer;font-size:12px;font-family:inherit;padding:5px 11px;font-weight:600;letter-spacing:.5px;flex-shrink:0">Switch ↻</button>
+       </div>`
+    : `<div style="margin-bottom:22px">
+        <button onclick="G.screen='signin';fullRender()" class="btn btn-primary btn-full" style="font-size:14px">👤 Sign In to Play</button>
+       </div>`;
+  return `<div class="screen"><div class="multi-screen">
+    <div class="multi-title">🌐 Multiplayer</div>
+    <div class="multi-sub">Host a yatai stall or join as a hungry customer</div>
+    ${nameChip}
+    <div class="role-cards">
+      <div class="role-card" onclick="window.multiHostStart()">
+        <span class="role-icon">🧑‍🍳</span>
+        <div class="role-name">Host Game</div>
+        <div class="role-desc">Run the stall, cook food, serve real players</div>
+      </div>
+      <div class="role-card" onclick="window.goMultiJoin()" style="border-color:rgba(255,200,80,.45);background:rgba(255,200,80,.07)">
+        <span class="role-icon">🪑</span>
+        <div class="role-name" style="color:var(--gold)">Join Game</div>
+        <div class="role-desc">Sit down as a customer, order food, chat</div>
+      </div>
+    </div>
+    <button class="btn" onclick="if(confirm('Restart from Day 1? This erases your save.'))window.resetGame()" style="font-size:12px;padding:6px 14px;opacity:.5">🔄 Restart</button>
+  </div></div>`;
+}
+
+function buildMultiHost() {
+  const ps = Object.values(MP.peers);
+  return `<div class="screen"><div class="multi-screen">
+    <div class="multi-title">🧑‍🍳 ${G.playerName || 'Host'}'s Stall</div>
+    <div class="room-code-box">
+      <div class="room-code-label">Room Code</div>
+      <div class="room-code-val">${MP.roomCode}</div>
+      <div class="room-code-share">Share this code with your customers</div>
+      <button class="room-code-copy" id="copy-code-btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${MP.roomCode}').then(()=>{const b=document.getElementById('copy-code-btn');if(b){b.textContent='✓ Copied!';setTimeout(()=>b.textContent='📋 Copy Code',1500);}})">📋 Copy Code</button>
+    </div>
+    <div class="multi-players">
+      <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Connected Players</div>
+      <div id="multi-host-players">
+        ${ps.length ? ps.map(p => `<div class="multi-player-row"><span class="mp-icon">🧑</span><span>${p.name}</span><span class="mp-role">Customer</span></div>`).join('') : '<div style="color:var(--dim);font-size:12px;text-align:center;padding:8px 0">Waiting for players…</div>'}
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="window.multiStartGame()">🍜 Open the Stall</button>
+    <button class="btn" onclick="window.leaveMulti()" style="margin-top:8px;font-size:12px;opacity:.6;width:100%">Cancel</button>
+  </div></div>`;
+}
+
+function buildMultiJoin() {
+  return `<div class="screen"><div class="multi-screen">
+    <div class="multi-title">🪑 Join a Stall</div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:24px">Ask the host for their 6-letter room code</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:8px;opacity:.8">Room Code</div>
+    <input class="multi-input" id="multi-join-code" placeholder="— — — — — —" maxlength="6"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(this.value.length===6)window.multiJoinSubmit()">
+    <button class="btn btn-primary btn-full" onclick="window.multiJoinSubmit()" style="font-size:16px;padding:13px;letter-spacing:1px">Join →</button>
+    <div id="multi-join-status"></div>
+    <div id="multi-join-err" class="multi-error"></div>
+    <button class="btn" onclick="G.screen='multilobby';fullRender()" style="margin-top:12px;font-size:12px;opacity:.6;width:100%">← Back</button>
+  </div></div>`;
+}
+
+function buildCustomerView() {
+  return `
+    <div id="hud">
+      <div class="hud-brand">🏮 <span id="hud-master">${G.playerName || '夜台'}</span></div>
+      <div class="hud-stats">
+        <div class="hud-stat">
+          <span class="hud-val orange" id="hud-time">--:--</span>
+          <span class="hud-label">Time</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hud-val" id="hud-day">—</span>
+          <span class="hud-label">Day</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hud-val gold" id="hud-money">¥—</span>
+          <span class="hud-label">Money</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hud-val" id="hud-rep">—</span>
+          <span class="hud-label">Rep</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hud-val" style="font-size:11px;letter-spacing:1px">${MP.roomCode}</span>
+          <span class="hud-label">Room</span>
+        </div>
+        <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
+        <button class="btn" onclick="window.leaveMulti()" style="font-size:10px;padding:3px 10px;opacity:.6">Leave</button>
+      </div>
+    </div>
+
+    <div id="time-bar-wrap"><div id="time-bar-fill" style="width:0%"></div></div>
+
+    <div id="game-wrap">
+      <div class="card" id="card-menu">
+        <div class="card-title">🍜 Order Food</div>
+        <div id="cp-order-status"></div>
+        <div id="menu-grid"><div class="no-cust">Waiting for stall to open…</div></div>
+      </div>
+
+      <div class="card" id="card-custs">
+        <div class="card-title">👥 Waiting</div>
+        <div id="customer-list"><div class="no-cust">Waiting…</div></div>
+      </div>
+
+      <div class="card" id="card-stats">
+        <div class="card-title">📊 Tonight</div>
+        <div id="stats-row" style="display:flex;gap:8px;flex-wrap:wrap"><div style="color:var(--dim)">—</div></div>
+      </div>
+
+      <div class="card" id="card-peers" style="min-height:0">
+        <div class="card-title">🧑 Players</div>
+        <div id="cp-peers" style="font-size:12px;color:var(--dim)">—</div>
+      </div>
+
+      <div class="card" id="card-chat">
+        <div class="card-title">💬 Chat</div>
+        <div id="dialog-feed"></div>
+        <div id="chat-input-row">
+          <input id="cp-chat-input" type="text" placeholder="Say something…" maxlength="80" onkeydown="if(event.key==='Enter')window.custChat()">
+          <button id="chat-send-btn" onclick="window.custChat()">Send</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── WINDOW ACTIONS ──
+window.goMultiplayer = function() { G.screen = 'multilobby'; fullRender(); };
+window.goMultiJoin = function() { G.screen = 'multijoin'; fullRender(); };
+
+window.multiHostStart = function() {
+  if (window._joiningLock) return;
+  window._joiningLock = true;
+  setTimeout(() => { window._joiningLock = false; }, 5000);
+  MP.destroy();
+  const code = MP._randCode();
+  MP.initMaster(code);
+};
+
+window.multiStartGame = function() {
+  MP.startBroadcastLoop();
+  startGame();
+  setTimeout(() => MP._renderHostPlayers(), 300);
+};
+
+window.multiJoinSubmit = function() {
+  if (window._joiningLock) return;
+  const codeEl = document.getElementById('multi-join-code');
+  const errEl = document.getElementById('multi-join-err');
+  const code = (codeEl?.value || '').trim().toUpperCase();
+  if (code.length < 4) { if (errEl) errEl.textContent = 'Enter a valid room code.'; return; }
+  if (errEl) errEl.textContent = '';
+  window._joiningLock = true;
+  setTimeout(() => { window._joiningLock = false; }, 5000);
+  MP.destroy();
+  MP.joinRoom(code, G.playerName || 'Guest');
+};
+
+window.custOrder = function(itemId, icon, name) {
+  console.trace('[custOrder] called:', itemId, 'myOrder:', MP.myOrder, 'lock:', !!window._custOrderLock);
+  if (MP.myOrder || window._custOrderLock) return;
+  window._custOrderLock = true;
+  setTimeout(() => { window._custOrderLock = false; }, 1500);
+  MP.myOrder = { id: itemId, icon, en: name };
+  MP.myOrderStatus = 'waiting';
+  MP._selectedItem = null;
+  MP.sendOrder(itemId);
+  toast(`${icon} ${name} — order sent!`, 'info');
+  document.querySelectorAll('.cmi-btn').forEach(b => b.disabled = true);
+  const mg = document.getElementById('menu-grid'); if (mg) mg._menuKey = '';
+  MP._renderCustomerOrder();
+};
+
+window.custSelect = function(itemId, icon, name) {
+  if (MP.myOrder || window._custOrderLock) return;
+  const item = (MP.stateData && MP.stateData.menu || []).find(m => m.id === itemId);
+  if (!item || item.stock <= 0) return;
+  MP._selectedItem = { id: itemId, icon, en: name };
+  MP._confirmLock = true;
+  setTimeout(() => { MP._confirmLock = false; }, 750);
+  const mg = document.getElementById('menu-grid'); if (mg) mg._menuKey = '';
+  MP._renderCustomerOrder();
+  MP._renderCustomerState && MP._renderCustomerState();
+};
+
+// Shows the order confirmation modal — deliberately separate from the menu area
+window.custShowOrderModal = function() {
+  if (!MP._selectedItem || MP.myOrder || window._custOrderLock) return;
+  const sel = MP._selectedItem;
+  // Remove existing modal if any
+  const old = document.getElementById('order-confirm-modal');
+  if (old) old.remove();
+  const modal = document.createElement('div');
+  modal.id = 'order-confirm-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:#1a1a2e;border:2px solid rgba(80,200,120,.5);border-radius:14px;padding:28px 24px;max-width:300px;width:90%;text-align:center;">
+      <div style="font-size:52px;margin-bottom:12px">${sel.icon}</div>
+      <div style="font-weight:700;font-size:20px;margin-bottom:6px">${sel.en}</div>
+      <div style="color:var(--dim);font-size:13px;margin-bottom:24px">Place this order?</div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button id="modal-cancel-btn" onclick="window.custCancelSelect()" style="flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);border-radius:10px;color:var(--dim);font-size:15px;padding:13px;cursor:pointer;font-family:inherit">Cancel</button>
+        <button id="modal-confirm-btn" onclick="window.custConfirmOrder()" style="flex:1;background:rgba(80,200,120,.18);border:1.5px solid rgba(80,200,120,.4);border-radius:10px;color:rgba(100,220,140,.6);font-weight:700;font-size:15px;padding:13px;cursor:not-allowed;font-family:inherit;pointer-events:none" disabled>Order!</button>
+      </div>
+      <div id="modal-countdown" style="color:var(--dim);font-size:11px;margin-top:10px">Confirming in 1s…</div>
+    </div>`;
+  document.body.appendChild(modal);
+  // Tap outside to cancel
+  modal.addEventListener('click', e => { if (e.target === modal) window.custCancelSelect(); });
+  // Enable confirm after 1s — gives user time to abort accidental opens
+  setTimeout(() => {
+    if (MP._selectedItem !== sel) return;
+    const btn = document.getElementById('modal-confirm-btn');
+    const cd = document.getElementById('modal-countdown');
+    if (btn) { btn.disabled = false; btn.style.pointerEvents = ''; btn.style.cursor = 'pointer'; btn.style.background = 'rgba(80,200,120,.3)'; btn.style.borderColor = 'rgba(80,200,120,.7)'; btn.style.color = '#7fffb0'; }
+    if (cd) cd.textContent = 'Tap Order to confirm';
+  }, 1000);
+};
+
+window.custConfirmOrder = function() {
+  if (!MP._selectedItem || MP.myOrder || window._custOrderLock || MP._confirmLock) return;
+  const { id, icon, en } = MP._selectedItem;
+  const modal = document.getElementById('order-confirm-modal');
+  if (modal) modal.remove();
+  window.custOrder(id, icon, en);
+};
+
+window.custCancelSelect = function() {
+  MP._selectedItem = null;
+  MP._confirmLock = false;
+  const modal = document.getElementById('order-confirm-modal');
+  if (modal) modal.remove();
+  const mg = document.getElementById('menu-grid'); if (mg) mg._menuKey = '';
+  MP._renderCustomerOrder();
+  MP._renderCustomerState && MP._renderCustomerState();
+};
+
+window.custChat = function() {
+  const inp = document.getElementById('cp-chat-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  MP.sendChat(text);
+};
+
+window.leaveMulti = function() {
+  if (MP.masterConn) { try { MP.masterConn.send(JSON.stringify({ type: 'leave' })); } catch(_) {} }
+  MP.destroy();
+  G.screen = 'title'; fullRender();
+};
+
+// ── HOOK INTO SERVE FLOW ──
+// When master serves a real player customer, notify them
+const _origServe = window.serveCustomer;
+if (typeof serveCustomer === 'function') {
+  const _wrappedServe = function(idx) {
+    const result = serveCustomer(idx);
+    // Find if there's a real player customer whose order was served
+    G.customers.forEach(c => {
+      if (c.peerId && c.state === 'served') MP.notifyServed(c.peerId, c.order?.id);
+    });
+    return result;
+  };
+  window.serveCustomer = _wrappedServe;
+}
+
+// ── SCREEN SWITCH ──
+// Override fullRender to handle multiplayer screens (this declaration wins over the earlier one)
+
+
+// Single canonical fullRender — handles all screens + YouTube TV overlay
+function fullRender() {
+  stopLoop();
+  const root = document.getElementById('root');
+  if (!root) return;
+  switch (G.screen) {
+    case 'signin':     root.innerHTML = buildSignIn(); setTimeout(() => { const el = document.getElementById('signin-input'); if (el) el.focus(); }, 80); break;
+    case 'title':      root.innerHTML = buildMultiLobby(); break;
+    case 'prep':       root.innerHTML = buildPrepShell(); break;
+    case 'service':    root.innerHTML = buildServiceShell();
+      setTimeout(() => VOICE_SYS.updateBtn(), 0);
+      break;
+    case 'review':     root.innerHTML = buildReview(); break;
+    case 'multilobby': root.innerHTML = buildMultiLobby(); break;
+    case 'multihost':  root.innerHTML = buildMultiHost(); break;
+    case 'multijoin':  root.innerHTML = buildMultiJoin(); setTimeout(() => { const el = document.getElementById('multi-join-code'); if (el) el.focus(); }, 80); break;
+    case 'customer':   root.innerHTML = buildCustomerView(); break;
+    default:           root.innerHTML = buildTitle();
+  }
+}
+</script>
+<script>
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  (function() {
+    var _lrFails = 0;
+    function connect() {
+      var es = new EventSource('/api/livereload');
+      es.onmessage = function(e) { if (e.data === 'reload') location.reload(); };
+      es.onerror = function() {
+        es.close();
+        _lrFails++;
+        if (_lrFails > 2) return; // stop retrying if endpoint is absent
+        setTimeout(connect, 3000);
+      };
+    }
+    connect();
+  })();
+}
 </script>
 </body>
 </html>
