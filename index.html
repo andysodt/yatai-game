@@ -929,6 +929,13 @@ try {
     },
   ];
 
+  // Static PERMANENT_NPCS plus any ambient customers the player has "earned" by making
+  // them happy — those are saved per-player in G.earnedNPCs (see the happy-departure
+  // check in the eating-loop below) and persist across days/sessions.
+  function _allPermanentNPCs() {
+    return PERMANENT_NPCS.concat(G.earnedNPCs || []);
+  }
+
   // weighted dish pool — use same IDs as outer game MENU
   const CUST_NAMES = [
     '田中','鈴木','佐藤','山本','中村','小林','加藤','吉田','渡辺','伊藤',
@@ -2806,7 +2813,7 @@ try {
     // right now. Falls through to the normal random pool once used/unavailable.
     G._permanentSeenToday = G._permanentSeenToday || {};
     const seated = new Set(SLOTS.filter(s => s.cu && s.cu.permanentId).map(s => s.cu.permanentId));
-    const permanent = PERMANENT_NPCS.find(p => !G._permanentSeenToday[p.id] && !seated.has(p.id));
+    const permanent = _allPermanentNPCs().find(p => !G._permanentSeenToday[p.id] && !seated.has(p.id));
 
     const ct = permanent ? permanent.ct : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
     if (permanent) G._permanentSeenToday[permanent.id] = true;
@@ -2847,7 +2854,7 @@ try {
     // Pre-seat 2 customers
     G._permanentSeenToday = G._permanentSeenToday || {};
     [SLOTS[0], SLOTS[2], SLOTS[4]].forEach(slot => {
-      const permanent = PERMANENT_NPCS.find(p => !G._permanentSeenToday[p.id]);
+      const permanent = _allPermanentNPCs().find(p => !G._permanentSeenToday[p.id]);
       const ct = permanent ? permanent.ct : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
       if (permanent) G._permanentSeenToday[permanent.id] = true;
       slot.cu = {
@@ -3200,6 +3207,17 @@ try {
             setTimeout(() => spawnMasterBubble(cu.dish), 700);
           } else {
             cu.state = 'walk_out';
+            // A happy customer who finished their whole visit without complaint has a
+            // chance to become a recurring regular — capped so "permanent" stays meaningful.
+            if (!cu.permanentId && !cu.isPlayer && !cu.unhappy) {
+              G.earnedNPCs = G.earnedNPCs || [];
+              if (G.earnedNPCs.length < 6 && Math.random() < 0.15) {
+                const id = 'earned_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+                G.earnedNPCs.push({ id, name: cu.name, ct: cu.ct });
+                try { savePlayerState(); } catch(_) {}
+                toast(`${cu.name} loved tonight — they'll be back as a regular!`, 'info');
+              }
+            }
           }
         }
       } else if (cu.state === 'walk_out') {
@@ -5748,14 +5766,15 @@ try {
 
       g.restore(); // end head-turn transform
 
-      // Name tag above head — always for human players, else only for 10s after click
-      if (cu.name && !cu.falling && (cu.isPlayer || T < (cu.nameShownUntil || 0))) {
+      // Name tag above head — always for human players and permanent/recurring NPCs,
+      // else only for 10s after click
+      if (cu.name && !cu.falling && (cu.isPlayer || cu.permanentId || T < (cu.nameShownUntil || 0))) {
         const _nY = shldrY - H*0.14;
         g.font = `bold ${Math.round(W*0.018)}px sans-serif`;
         g.textAlign = 'center';
         g.fillStyle = 'rgba(0,0,0,0.55)';
         g.fillText(cu.name, 1, _nY + 1);
-        g.fillStyle = cu.isPlayer ? 'rgba(80,220,255,0.95)' : ((cu.alcoholCount||0) > 7 ? 'rgba(255,160,120,0.95)' : 'rgba(255,240,200,0.92)');
+        g.fillStyle = cu.isPlayer ? 'rgba(80,220,255,0.95)' : (cu.permanentId ? 'rgba(255,200,90,0.95)' : ((cu.alcoholCount||0) > 7 ? 'rgba(255,160,120,0.95)' : 'rgba(255,240,200,0.92)'));
         g.fillText(cu.name, 0, _nY);
         if (cu.isPlayer) {
           // small crown above the name
@@ -7848,6 +7867,7 @@ const G = {
   money: 5000,
   rep: 8,
   _permanentSeenToday: {}, // permanentId -> true, reset each day in window.nextDay
+  earnedNPCs: [], // { id, name, ct } — ambient customers who left happy, now recurring
 
   weather: null,
   gameTime: SERVICE_START,
@@ -9629,6 +9649,7 @@ function savePlayerState() {
       rep:    G.rep,
       inv:    Object.assign({}, G.inv),
       weather: G.weather ? G.weather.id : null,
+      earnedNPCs: G.earnedNPCs || [],
     };
     localStorage.setItem('yatai_save_' + G.playerName, JSON.stringify(state));
   } catch(_) {}
@@ -9644,6 +9665,7 @@ function loadPlayerState(name) {
     G.rep    = state.rep    ?? 8;
     SHOP.forEach(s => { G.inv[s.id] = state.inv ? (state.inv[s.id] ?? 0) : 0; });
     if (state.weather) G.weather = WEATHER.find(w => w.id === state.weather) || WEATHER[0];
+    G.earnedNPCs = Array.isArray(state.earnedNPCs) ? state.earnedNPCs : [];
     return true;
   } catch(_) { return false; }
 }
