@@ -2831,7 +2831,7 @@ try {
       interest: _randInt(),
       smoker: Math.random() < 0.28,
       eatTimer: 0,
-      eatMax: ct.sumo ? _repEatMax(22400 + Math.floor(Math.random()*9600)) : _repEatMax(19200 + Math.floor(Math.random()*12800)),
+      eatMax: ct.sumo ? _repEatMax(35000 + Math.floor(Math.random()*15000)) : _repEatMax(30000 + Math.floor(Math.random()*20000)),
       roundsLeft: ct.sumo ? 30 + Math.floor(Math.random() * 20) + _repRoundsBonus() : 18 + Math.floor(Math.random() * 14) + _repRoundsBonus(),
       unhappy: Math.random() < 0.12,
       alcoholCount: ct.sumo ? 2 : 0,
@@ -2863,7 +2863,7 @@ try {
         interest: _randInt(),
         smoker: Math.random() < 0.28,
         eatTimer: Math.floor(Math.random()*300),
-        eatMax: 28800 + Math.floor(Math.random()*16800),
+        eatMax: 45000 + Math.floor(Math.random()*27000),
         roundsLeft: 14 + Math.floor(Math.random() * 10),
         unhappy: Math.random() < 0.25,
         alcoholCount: 0,
@@ -3184,7 +3184,7 @@ try {
             cu.roundsLeft--;
             cu.dish = _pickDish();
             cu.eatTimer = 0;
-            cu.eatMax = _repEatMax(12800 + Math.floor(Math.random() * 10240));
+            cu.eatMax = _repEatMax(20000 + Math.floor(Math.random() * 16000));
             cu.served = false;
             cu.emptyTimer = 0;
             cu.serveAt = 60 + Math.floor(Math.random() * 40);
@@ -7833,7 +7833,7 @@ const TIME_SPEED    = 0.6; // game-minutes per real second
     }
     clearTimeout(_subTimer);
     _subTimer = setTimeout(() => el.classList.remove('visible'),
-      Math.min(6000, 2800 + text.length * 52));
+      Math.min(12000, 5600 + text.length * 104));
     if (typeof _pendingSubtitles !== 'undefined' && MP && MP.role === 'master') _pendingSubtitles.push(text);
   };
 }
@@ -8064,7 +8064,7 @@ function doServe(cust, slotIdx) {
     }
     const idx = G.customers.indexOf(cust);
     if (idx !== -1) G.customers.splice(idx, 1);
-  }, 3500);
+  }, 9000);
 }
 
 function spawnCust() {
@@ -10454,7 +10454,7 @@ const MP = {
     this._subtitlePlaying = true;
     const text = this._subtitleQueue.shift();
     if (window._showSubtitle) window._showSubtitle(text);
-    const dur = Math.min(6000, 2800 + text.length * 52) + 200;
+    const dur = Math.min(12000, 5600 + text.length * 104) + 200;
     setTimeout(() => this._drainSubtitleQueue(), dur);
   },
 
