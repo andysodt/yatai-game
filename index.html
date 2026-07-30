@@ -47,6 +47,13 @@ html, body {
   z-index: 0;
   background: url('sakurajima.jpg') center 85%/cover no-repeat;
 }
+#street-canvas {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  display: none;
+  background: url('sakurajima.jpg') center 85%/cover no-repeat;
+}
 
 /* ── SUBTITLES ── */
 #subtitle {
@@ -65,6 +72,15 @@ html, body {
   padding: 8px 28px; border-radius: 4px;
   letter-spacing: 0.3px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+/* Floating mode — centered on the chest of whichever customer is speaking, instead of
+   the fixed top banner (which stays reserved for the master's own lines). */
+#subtitle.subtitle-floating {
+  top: 0; left: 0; transform: translate(-50%, -50%);
+  white-space: normal; max-width: 640px;
+}
+#subtitle.subtitle-floating .subtitle-inner {
+  font-size: 44px; padding: 10px 28px;
 }
 
 /* ── SCREENS ── */
@@ -464,6 +480,13 @@ html, body {
 .hud-btn.hud-btn-muted { color: #f66; border-color: rgba(255,80,80,.35); background: rgba(255,80,80,.06); }
 .hud-btn.hud-btn-muted:hover { background: rgba(255,80,80,.12); }
 
+/* ── VOICE CHAT MIC TOGGLE ── */
+.vc-btn.vc-live { color: #6f6; border-color: rgba(100,255,120,.55); background: rgba(100,255,120,.12); }
+.vc-btn.vc-live:hover { background: rgba(100,255,120,.2); }
+.vc-btn.vc-live.vc-speaking { box-shadow: 0 0 0 2px rgba(120,255,140,.65); }
+@keyframes vc-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(120,255,140,.5); } 50% { box-shadow: 0 0 0 4px rgba(120,255,140,.25); } }
+.vc-avatar-speaking { animation: vc-pulse 0.9s ease-in-out infinite; border-radius: 50%; }
+
 /* ── CHAT FEED ── */
 #card-chat { flex: 0 0 170px; display: flex; flex-direction: column; overflow: hidden; }
 #dialog-feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding: 2px 0; }
@@ -485,6 +508,26 @@ html, body {
 .cp-btn { display: block; width: 100%; text-align: left; padding: 6px 14px; font-size: 12px; color: var(--cream); background: none; border: none; cursor: pointer; font-family: inherit; transition: background .12s; }
 .cp-btn:hover { background: rgba(255,255,255,.08); }
 .cp-btn.danger { color: #ff6060; }
+
+/* ── PACHINKO MODAL ── */
+#pachinko-modal { position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  background: rgba(10,14,28,0.97); border: 1px solid rgba(255,200,80,.4); border-radius: 12px;
+  padding: 18px 22px; width: 300px; box-shadow: 0 8px 40px rgba(0,0,0,.8); display: none; text-align: center; }
+#pachinko-modal.visible { display: block; }
+.pk-title { font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.pk-money { font-size: 12px; color: var(--dim); margin-bottom: 12px; }
+.pk-stage { position: relative; height: 110px; background: rgba(0,0,0,.35); border-radius: 8px;
+  margin-bottom: 12px; overflow: hidden; }
+.pk-ball { position: absolute; top: 6px; left: calc(50% - 7px); width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #ffcf5c 60%, #d98c00); transition: top 1.1s cubic-bezier(.3,.6,.3,1), left 1.1s cubic-bezier(.3,.6,.3,1); }
+.pk-slots { position: absolute; bottom: 0; left: 0; right: 0; display: flex; height: 26px; }
+.pk-slot { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+  border-left: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
+.pk-slot.pk-win { color: #fdf0de; }
+.pk-result { font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 10px; }
+.pk-result.pk-lose { color: #ff8080; }
+.pk-result.pk-win { color: #8cffa0; }
+.pk-actions { display: flex; gap: 8px; justify-content: center; }
 .cp-btn.success { color: #60e880; }
 .cp-sep { border: none; border-top: 1px solid rgba(255,255,255,.06); margin: 3px 0; }
 
@@ -569,6 +612,7 @@ html, body {
 <div id="subtitle"><span class="subtitle-inner"></span></div>
 <script src="/peerjs.min.js"></script>
 <canvas id="stars-canvas"></canvas>
+<canvas id="street-canvas"></canvas>
 <div id="root"></div>
 <div id="cust-popup">
   <div class="cp-header" id="cp-name">お客様</div>
@@ -578,6 +622,22 @@ html, body {
   <button class="cp-btn danger" onclick="window._custPopupAction('kickout')">🚪 Kick Out</button>
   <button class="cp-btn danger" onclick="window._custPopupAction('86')">🚫 86 (Ban Today)</button>
 </div>
+
+<div id="pachinko-modal">
+  <div class="pk-title" id="pk-machine-name">🎰 Machine</div>
+  <div class="pk-money">Your money: <span id="pk-money">¥0</span></div>
+  <div class="pk-stage">
+    <div class="pk-ball" id="pk-ball" style="display:none"></div>
+    <div class="pk-slots" id="pk-slots"></div>
+  </div>
+  <div class="pk-result" id="pk-result"></div>
+  <div class="pk-actions">
+    <button class="btn btn-primary" id="pk-play-btn" onclick="window._pachinkoPlay()">Play — ¥100</button>
+    <button class="btn" onclick="window._closePachinkoModal()" style="font-size:12px;opacity:.7">Close</button>
+  </div>
+</div>
+
+<div id="voice-audio-container" style="display:none"></div>
 
 <script>
 // Polyfill roundRect for browsers that don't support it (Safari <15.4, older Chrome)
@@ -852,6 +912,21 @@ try {
     { type:'shirt', jacket:'#c01860', jacketD:'#881040', pants:'#f8b0d8', shirt:'#f8b0d8', cuff:'#fcd8ec', skin:'#f0d090', skinD:'#d0b070', hair:'#060404', hairStyle:'long', hostess:true, female:true },
     { type:'shirt', jacket:'#5808a8', jacketD:'#380678', pants:'#e8d0f8', shirt:'#e8d0f8', cuff:'#f4e8fc', skin:'#eee0c0', skinD:'#d0c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
     { type:'shirt', jacket:'#181030', jacketD:'#0e0820', pants:'#f0ecf8', shirt:'#f0ecf8', cuff:'#faf6fc', skin:'#f2e0c0', skinD:'#d8c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
+  ];
+
+  // ── PERMANENT NPCS ── named, recurring characters with a fixed identity — distinct
+  // from the randomly-generated ambient pool above. Guaranteed to appear once per day
+  // (see spawnCustomer's PERMANENT_NPCS check) rather than left to random chance.
+  const PERMANENT_NPCS = [
+    {
+      id: 'gondo_razor',
+      name: 'Gondō「剃刀」',
+      ct: {
+        type: 'tee', jacket: '#141414', jacketD: '#0a0a0a', pants: '#1a1a1a', shirt: '#141414', cuff: '#141414',
+        skin: '#b88060', skinD: '#906040', hair: '#0c0808', hairStyle: 'long',
+        missingRightHand: true, punkGodfather: true,
+      },
+    },
   ];
 
   // weighted dish pool — use same IDs as outer game MENU
@@ -1213,6 +1288,9 @@ try {
   function _loadVoices() {
     _jaVoices = (window.speechSynthesis ? window.speechSynthesis.getVoices() : [])
                 .filter(v => v.lang.startsWith('ja'));
+    if (!_jaVoices.length && window.speechSynthesis && window.speechSynthesis.getVoices().length) {
+      console.warn('[yatai] No Japanese TTS voice found on this system — NPC speech will be silent. Install a Japanese voice/language pack in your OS or browser settings.');
+    }
   }
   if (window.speechSynthesis) {
     window.speechSynthesis.addEventListener('voiceschanged', _loadVoices);
@@ -1235,6 +1313,11 @@ try {
     return _jaVoices.length ? _jaVoices[_jaVoices.length - 1] : null;
   }
 
+  function _canvasToScreen(x, y) {
+    const rect = c.getBoundingClientRect();
+    return { x: rect.left + (x / G.W) * rect.width, y: rect.top + (y / G.H) * rect.height };
+  }
+
   function spawnBubble(x, y, text, opts = {}) {
     const _talkDur = 1.2 + text.length * 0.08;
     const _talkEnd = performance.now() / 1000 + _talkDur;
@@ -1248,7 +1331,7 @@ try {
     }
     if (_bestSlot && _bestDist < G.W * 0.18) _bestSlot.cu.talkUntil = _talkEnd;
     try { if (window._logDialog) window._logDialog(text, 'cust'); } catch(_) {}
-    const _enC = TRANSLATIONS[text]; if (_enC) { try { if (window._showSubtitle) window._showSubtitle(_enC); } catch(_) {} }
+    const _enC = TRANSLATIONS[text]; if (_enC) { try { if (window._showSubtitle) window._showSubtitle(_enC, _canvasToScreen(x, y + G.H * 0.20)); } catch(_) {} }
     if (!window._npcVoiceMuted && window.speechSynthesis && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang   = 'ja-JP';
@@ -1356,6 +1439,16 @@ try {
     for (const sl of SLOTS) {
       if (sl.cu && sl.cu.guestId === guestId) { sl.cu.ct = ct; sl.cu._ctLocked = true; }
     }
+  };
+  // Returns the stable appearance for guestId, generating+storing one via the
+  // private CTYPES/randomCtype closure if none exists yet. Lets code outside this
+  // IIFE (e.g. the street hangout feature) get a consistent ct without needing
+  // its own access to CTYPES/randomCtype.
+  window._ensureGuestCt = (guestId) => {
+    if (!_guestSelfCt[guestId]) {
+      _guestSelfCt[guestId] = randomCtype(CTYPES[Math.floor(Math.random() * CTYPES.length)]);
+    }
+    return _guestSelfCt[guestId];
   };
 
   // ── CANVAS SYNC FOR GUESTS ───────────────────
@@ -2689,7 +2782,7 @@ try {
     };
   }
 
-  const ALCOHOL_PICKS = ['beer','beer','beer','beer','beer','beer','sake','sake','sake','sake','sake','sake','shochu','shochu','shochu','shochu','highball','highball','highball','highball','oolong','oolong','yakisoba','yakisoba','flan','pocky','osenbe','osenbe'];
+  const ALCOHOL_PICKS = ['beer','beer','beer','beer','beer','beer','sake','sake','sake','sake','sake','sake','shochu','shochu','shochu','shochu','highball','highball','highball','highball','oolong','oolong','yakisoba','yakisoba','flan','pocky','osenbe'];
 
   function _pickDish() {
     const waiting = window._gameG?.customers?.filter(c => c.state === 'wait' && c.order && ALCOHOL_DISHES.has(c.order.id)) || [];
@@ -2708,13 +2801,22 @@ try {
     const free = SLOTS.filter(s => !s.cu);
     if (!free.length) return;
     const slot = free[Math.floor(Math.random()*free.length)];
-    const ct = randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
+
+    // Permanent NPCs — guaranteed once per day, skipped if already seated elsewhere
+    // right now. Falls through to the normal random pool once used/unavailable.
+    G._permanentSeenToday = G._permanentSeenToday || {};
+    const seated = new Set(SLOTS.filter(s => s.cu && s.cu.permanentId).map(s => s.cu.permanentId));
+    const permanent = PERMANENT_NPCS.find(p => !G._permanentSeenToday[p.id] && !seated.has(p.id));
+
+    const ct = permanent ? permanent.ct : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
+    if (permanent) G._permanentSeenToday[permanent.id] = true;
     if (ct.type === 'kimono' && !ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playYakuzaSting(); } catch(_) {} }
     if (ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playGeishaMusic(); } catch(_) {} }
     if (ct.sumo) { try { if (window.AUDIO_REF) window.AUDIO_REF.playSumoEntrance(); } catch(_) {} }
     if (ct.police) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliceSiren(); } catch(_) {} }
     if (ct.politician) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPoliticianFanfare(); } catch(_) {} }
     if (ct.hostess) { try { if (window.AUDIO_REF) window.AUDIO_REF.playHostessMusic(); } catch(_) {} }
+    if (ct.punkGodfather) { try { if (window.AUDIO_REF) window.AUDIO_REF.playPunkAnthem(); } catch(_) {} }
     const tx = slotX(slot);
     slot.cu = {
       state: 'walk_in',
@@ -2723,12 +2825,13 @@ try {
       ct,
       dish: _pickDish(),
       phase: Math.random()*Math.PI*2,
-      name: _randName(),
+      name: permanent ? permanent.name : _randName(),
+      permanentId: permanent ? permanent.id : null,
       prof: _randProf(),
       interest: _randInt(),
       smoker: Math.random() < 0.28,
       eatTimer: 0,
-      eatMax: ct.sumo ? _repEatMax(14000 + Math.floor(Math.random()*6000)) : _repEatMax(12000 + Math.floor(Math.random()*8000)),
+      eatMax: ct.sumo ? _repEatMax(22400 + Math.floor(Math.random()*9600)) : _repEatMax(19200 + Math.floor(Math.random()*12800)),
       roundsLeft: ct.sumo ? 30 + Math.floor(Math.random() * 20) + _repRoundsBonus() : 18 + Math.floor(Math.random() * 14) + _repRoundsBonus(),
       unhappy: Math.random() < 0.12,
       alcoholCount: ct.sumo ? 2 : 0,
@@ -2742,8 +2845,11 @@ try {
   function initCustomers() {
     SLOTS.forEach(s => s.cu = null);
     // Pre-seat 2 customers
+    G._permanentSeenToday = G._permanentSeenToday || {};
     [SLOTS[0], SLOTS[2], SLOTS[4]].forEach(slot => {
-      const ct = randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
+      const permanent = PERMANENT_NPCS.find(p => !G._permanentSeenToday[p.id]);
+      const ct = permanent ? permanent.ct : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
+      if (permanent) G._permanentSeenToday[permanent.id] = true;
       slot.cu = {
         state: 'sit',
         x: slotX(slot),
@@ -2751,12 +2857,13 @@ try {
         ct,
         dish: _pickDish(),
         phase: Math.random()*Math.PI*2,
-        name: _randName(),
+        name: permanent ? permanent.name : _randName(),
+        permanentId: permanent ? permanent.id : null,
         prof: _randProf(),
         interest: _randInt(),
         smoker: Math.random() < 0.28,
         eatTimer: Math.floor(Math.random()*300),
-        eatMax: 18000 + Math.floor(Math.random()*10500),
+        eatMax: 28800 + Math.floor(Math.random()*16800),
         roundsLeft: 14 + Math.floor(Math.random() * 10),
         unhappy: Math.random() < 0.25,
         alcoholCount: 0,
@@ -3019,8 +3126,8 @@ try {
             cu.roundsLeft = 0;
             return;
           }
-          // Osenbe choking — 10% chance of death
-          if (cu.dish === 'osenbe' && Math.random() < 0.10) {
+          // Osenbe choking — rare mishap, not a routine hazard
+          if (cu.dish === 'osenbe' && Math.random() < 0.03) {
             cu.dead = true;
             cu.deathTimer = 0;
             cu.roundsLeft = 0;
@@ -3077,7 +3184,7 @@ try {
             cu.roundsLeft--;
             cu.dish = _pickDish();
             cu.eatTimer = 0;
-            cu.eatMax = _repEatMax(8000 + Math.floor(Math.random() * 6400));
+            cu.eatMax = _repEatMax(12800 + Math.floor(Math.random() * 10240));
             cu.served = false;
             cu.emptyTimer = 0;
             cu.serveAt = 60 + Math.floor(Math.random() * 40);
@@ -4591,12 +4698,25 @@ try {
       const frArmA = stride*0.38;
       const frElbX = Math.sin(frArmA)*bH*0.20 - W*0.012;
       const frElbY = shldrY + bH*0.20;
-      g.strokeStyle = armCol; g.lineWidth = W*0.016; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(-W*0.014, shldrY+H*0.006); g.lineTo(frElbX, frElbY); g.stroke();
-      g.lineWidth = W*0.013;
-      g.beginPath(); g.moveTo(frElbX, frElbY);
-      g.lineTo(frElbX+Math.sin(frArmA*0.5)*bH*0.18-W*0.004, Math.min(frElbY+bH*0.18, waistY+H*0.02));
-      g.stroke();
+      if (!ct.missingRightHand) {
+        g.strokeStyle = armCol; g.lineWidth = W*0.016; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(-W*0.014, shldrY+H*0.006); g.lineTo(frElbX, frElbY); g.stroke();
+        g.lineWidth = W*0.013;
+        g.beginPath(); g.moveTo(frElbX, frElbY);
+        g.lineTo(frElbX+Math.sin(frArmA*0.5)*bH*0.18-W*0.004, Math.min(frElbY+bH*0.18, waistY+H*0.02));
+        g.stroke();
+      } else {
+        // This side of the profile rig has no fixed left/right handedness (it's
+        // mirrored per walk direction), so a missing hand always renders on whichever
+        // arm is "front" — reads as "an arm is missing" either way. Upper arm draws
+        // normally; instead of a forearm, a short bandaged stump caps it at the elbow.
+        g.strokeStyle = armCol; g.lineWidth = W*0.016; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(-W*0.014, shldrY+H*0.006); g.lineTo(frElbX, frElbY); g.stroke();
+        g.strokeStyle = '#e8e0d0'; g.lineWidth = W*0.020; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(frElbX, frElbY);
+        g.lineTo(frElbX + Math.sin(frArmA*0.5)*bH*0.03, frElbY + bH*0.03);
+        g.stroke();
+      }
 
       // ── NECK ───────────────────────────────────────
       g.fillStyle = ct.skin;
@@ -5153,42 +5273,59 @@ try {
         }
       }
 
-      // Right upper arm
-      g.fillStyle = slvC;
-      g.beginPath();
-      g.moveTo(W*0.054, shldrY+H*0.025);
-      g.quadraticCurveTo(W*0.068, shldrY+H*0.075, W*0.064, armY);
-      g.lineTo(W*0.046, armY);
-      g.quadraticCurveTo(W*0.040, shldrY+H*0.072, W*0.030, shldrY+H*0.030);
-      g.closePath(); g.fill();
-      if (ct.type === 'tee') {
-        g.strokeStyle = ct.jacketD; g.lineWidth = 1;
-        g.beginPath(); g.moveTo(W*0.064, armY); g.lineTo(W*0.046, armY); g.stroke();
+      if (!ct.missingRightHand) {
+        // Right upper arm
+        g.fillStyle = slvC;
+        g.beginPath();
+        g.moveTo(W*0.054, shldrY+H*0.025);
+        g.quadraticCurveTo(W*0.068, shldrY+H*0.075, W*0.064, armY);
+        g.lineTo(W*0.046, armY);
+        g.quadraticCurveTo(W*0.040, shldrY+H*0.072, W*0.030, shldrY+H*0.030);
+        g.closePath(); g.fill();
+        if (ct.type === 'tee') {
+          g.strokeStyle = ct.jacketD; g.lineWidth = 1;
+          g.beginPath(); g.moveTo(W*0.064, armY); g.lineTo(W*0.046, armY); g.stroke();
+        }
+        // Right forearm (lifts when eating)
+        const _rAY = armY - _eatY;
+        g.fillStyle = frmC;
+        g.beginPath();
+        g.moveTo(W*0.064, _rAY-H*0.006); g.lineTo(W*0.064, _rAY+H*0.016);
+        g.lineTo(-W*0.004, _rAY+H*0.016); g.lineTo(-W*0.004, _rAY-H*0.006);
+        g.closePath(); g.fill();
+        if (ct.type === 'suit') {
+          g.fillStyle = ct.cuff;
+          g.fillRect(-W*0.018, _rAY-H*0.006, W*0.016, H*0.022);
+        } else if (ct.type === 'hoodie') {
+          g.fillStyle = ct.jacketD;
+          g.fillRect(W*0.054, _rAY-H*0.006, W*0.010, H*0.022);
+        } else if (ct.type === 'shirt') {
+          g.fillStyle = ct.jacketD;
+          g.fillRect(-W*0.014, _rAY-H*0.006, W*0.012, H*0.022);
+        }
+        // Right hand
+        g.fillStyle = ct.skin;
+        g.beginPath(); g.ellipse(-W*0.016, _rAY+H*0.006, W*0.014, H*0.009, -0.08, 0, Math.PI*2); g.fill();
+        g.strokeStyle = ct.skinD; g.lineWidth = 0.5;
+        [-W*0.010, -W*0.003, W*0.004].forEach(kx => {
+          g.beginPath(); g.moveTo(kx, _rAY+H*0.002); g.lineTo(kx, _rAY+H*0.012); g.stroke();
+        });
+      } else {
+        // Right arm ends in a bandaged stump partway down the upper arm — no forearm,
+        // no hand, and (deliberately) no eat-lift animation on this side.
+        g.fillStyle = slvC;
+        g.beginPath();
+        g.moveTo(W*0.054, shldrY+H*0.025);
+        g.quadraticCurveTo(W*0.062, shldrY+H*0.050, W*0.052, shldrY+H*0.062);
+        g.lineTo(W*0.038, shldrY+H*0.062);
+        g.quadraticCurveTo(W*0.036, shldrY+H*0.048, W*0.030, shldrY+H*0.030);
+        g.closePath(); g.fill();
+        g.fillStyle = '#e8e0d0';
+        g.beginPath(); g.ellipse(W*0.045, shldrY+H*0.062, W*0.012, H*0.008, 0, 0, Math.PI*2); g.fill();
+        g.strokeStyle = '#c8bca8'; g.lineWidth = 0.6;
+        g.beginPath(); g.moveTo(W*0.036, shldrY+H*0.058); g.lineTo(W*0.054, shldrY+H*0.058); g.stroke();
+        g.beginPath(); g.moveTo(W*0.036, shldrY+H*0.066); g.lineTo(W*0.054, shldrY+H*0.066); g.stroke();
       }
-      // Right forearm (lifts when eating)
-      const _rAY = armY - _eatY;
-      g.fillStyle = frmC;
-      g.beginPath();
-      g.moveTo(W*0.064, _rAY-H*0.006); g.lineTo(W*0.064, _rAY+H*0.016);
-      g.lineTo(-W*0.004, _rAY+H*0.016); g.lineTo(-W*0.004, _rAY-H*0.006);
-      g.closePath(); g.fill();
-      if (ct.type === 'suit') {
-        g.fillStyle = ct.cuff;
-        g.fillRect(-W*0.018, _rAY-H*0.006, W*0.016, H*0.022);
-      } else if (ct.type === 'hoodie') {
-        g.fillStyle = ct.jacketD;
-        g.fillRect(W*0.054, _rAY-H*0.006, W*0.010, H*0.022);
-      } else if (ct.type === 'shirt') {
-        g.fillStyle = ct.jacketD;
-        g.fillRect(-W*0.014, _rAY-H*0.006, W*0.012, H*0.022);
-      }
-      // Right hand
-      g.fillStyle = ct.skin;
-      g.beginPath(); g.ellipse(-W*0.016, _rAY+H*0.006, W*0.014, H*0.009, -0.08, 0, Math.PI*2); g.fill();
-      g.strokeStyle = ct.skinD; g.lineWidth = 0.5;
-      [-W*0.010, -W*0.003, W*0.004].forEach(kx => {
-        g.beginPath(); g.moveTo(kx, _rAY+H*0.002); g.lineTo(kx, _rAY+H*0.012); g.stroke();
-      });
 
       // ── COLLAR ─────────────────────────────────────
       if (ct.type === 'suit') {
@@ -5806,7 +5943,7 @@ try {
           const line = _typhoonShouts[Math.floor(Math.random() * _typhoonShouts.length)];
           bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.2 });
           cu.talkUntil = performance.now() / 1000 + 2.0;
-          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_e) {}
+          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
           if (!window._npcVoiceMuted && window.speechSynthesis) {
             const _u = new SpeechSynthesisUtterance(line);
             _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.1; _u.pitch = (cu.voicePitch || 1) * 1.1;
@@ -5948,7 +6085,7 @@ try {
           const line = _eqShouts[Math.floor(Math.random() * _eqShouts.length)];
           bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 2.8 });
           cu.talkUntil = performance.now() / 1000 + 1.5;
-          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_) {}
+          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_) {}
           if (!window._npcVoiceMuted && window.speechSynthesis) {
             const _u = new SpeechSynthesisUtterance(line);
             _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.15; _u.pitch = (cu.voicePitch || 1) * 1.1;
@@ -6030,7 +6167,7 @@ try {
             const fleeLine = _kimonoFlee[Math.floor(Math.random() * _kimonoFlee.length)];
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: fleeLine, born: performance.now() / 1000, life: 2.5 });
             cu.talkUntil = performance.now() / 1000 + 1.2;
-            try { if (window._showSubtitle && TRANSLATIONS[fleeLine]) window._showSubtitle(TRANSLATIONS[fleeLine]); } catch(_e) {}
+            try { if (window._showSubtitle && TRANSLATIONS[fleeLine]) window._showSubtitle(TRANSLATIONS[fleeLine], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
             if (!window._npcVoiceMuted && window.speechSynthesis) {
               const _u = new SpeechSynthesisUtterance(fleeLine);
               _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.4; _u.pitch = (cu.voicePitch || 1) * 1.2;
@@ -6042,7 +6179,7 @@ try {
             const line = _eruptShouts[Math.floor(Math.random() * _eruptShouts.length)];
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.0 });
             cu.talkUntil = performance.now() / 1000 + 1.8;
-            try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_e) {}
+            try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
             if (!window._npcVoiceMuted && window.speechSynthesis) {
               const _u = new SpeechSynthesisUtterance(line);
               _u.lang = 'ja-JP'; _u.rate = (cu.voiceRate || 1) * 1.2; _u.pitch = (cu.voicePitch || 1) * 1.15;
@@ -6155,7 +6292,7 @@ try {
           const line = _launchLines[Math.floor(Math.random() * _launchLines.length)];
           bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.2 });
           cu.talkUntil = performance.now() / 1000 + 2.0;
-          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line]); } catch(_) {}
+          try { if (window._showSubtitle && TRANSLATIONS[line]) window._showSubtitle(TRANSLATIONS[line], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_) {}
           if (!window._npcVoiceMuted && window.speechSynthesis) {
             const _u = new SpeechSynthesisUtterance(line);
             _u.lang = 'ja-JP'; _u.rate = cu.voiceRate * 0.92; _u.pitch = cu.voicePitch;
@@ -6545,7 +6682,7 @@ try {
         const _greetEn = [`My name is ${_name}!`, `I'm ${_name}! Nice to meet you!`, `Oh, me? I'm ${_name}!`, `${_name}. A pleasure!`];
         const _gIdx = Math.floor(Math.random() * _greets.length);
         const line = _greets[_gIdx];
-        try { if (window._showSubtitle) window._showSubtitle(_greetEn[_gIdx]); } catch(_) {}
+        try { if (window._showSubtitle) window._showSubtitle(_greetEn[_gIdx], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_) {}
         // Visual bubble + lip sync + name tag for 10s
         const _talkEnd = performance.now() / 1000 + 1.2 + line.length * 0.08;
         bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: line, born: performance.now() / 1000, life: 3.2 });
@@ -6600,7 +6737,7 @@ try {
             if (cu.state !== 'sit' && cu.state !== 'sit_in') return;
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: _typeJp, born: performance.now() / 1000, life: 3.0 });
             cu.talkUntil = performance.now() / 1000 + 1.0 + _typeJp.length * 0.08;
-            try { if (window._showSubtitle) window._showSubtitle(_typeEn); } catch(_e) {}
+            try { if (window._showSubtitle) window._showSubtitle(_typeEn, _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
             if (window.speechSynthesis) {
               const _ut = new SpeechSynthesisUtterance(_typeJp);
               _ut.lang = 'ja-JP'; _ut.rate = (cu.voiceRate || 1.0) * 0.88; _ut.pitch = cu.voicePitch || 1.0; _ut.volume = 0.90;
@@ -6617,7 +6754,7 @@ try {
             if (cu.state !== 'sit' && cu.state !== 'sit_in') return;
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: _foodJp, born: performance.now() / 1000, life: 3.0 });
             cu.talkUntil = performance.now() / 1000 + 1.0 + _foodJp.length * 0.08;
-            try { if (window._showSubtitle) window._showSubtitle(_foodEn); } catch(_) {}
+            try { if (window._showSubtitle) window._showSubtitle(_foodEn, _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_) {}
             if (window.speechSynthesis) {
               const _u2 = new SpeechSynthesisUtterance(_foodJp);
               _u2.lang = 'ja-JP'; _u2.rate = (cu.voiceRate || 1.0) * 0.88; _u2.pitch = cu.voicePitch || 1.0; _u2.volume = 0.90;
@@ -6647,7 +6784,7 @@ try {
     const _greetEn = [`My name is ${_name}!`, `I'm ${_name}! Nice to meet you!`, `${_name}. A pleasure!`];
     const _gIdx = Math.floor(Math.random() * _greets.length);
     const line = _greets[_gIdx];
-    try { if (window._showSubtitle) window._showSubtitle(_greetEn[_gIdx]); } catch(_e) {}
+    try { if (window._showSubtitle) window._showSubtitle(_greetEn[_gIdx], _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
     const _te = performance.now()/1000 + 1.2 + line.length*0.08;
     bubbles.push({ x:cu.x, y:counterY-H*0.28, text:line, born:performance.now()/1000, life:3.2 });
     cu.talkUntil = _te; cu.nameShownUntil = performance.now()/1000 + 10;
@@ -6681,6 +6818,11 @@ try {
     cu.unhappy = false;
     if (cu.eatTimer) cu.eatTimer = Math.max(0, cu.eatTimer - cu.eatMax * 0.30);
   };
+
+  // Exposes the walk_in/walk_out figure renderer for reuse by the street hangout feature.
+  // Depends on the consuming canvas always matching window.innerWidth/innerHeight exactly,
+  // same as this file's own resize() above (no devicePixelRatio scaling on either side).
+  window._drawWalkFigure = drawCustomer;
 
   window.addEventListener('resize', resize);
   resize();
@@ -7345,6 +7487,53 @@ const AUDIO = {
     crowd.start(t + 0.9); crowd.stop(t + 3.2);
   },
 
+  playPunkAnthem() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const dist = this.ctx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(x * 6); }
+    dist.curve = curve; dist.oversample = '4x';
+    const distGain = this.ctx.createGain();
+    distGain.gain.value = 0.45;
+    dist.connect(distGain); distGain.connect(this.master);
+    // Three-chord power-chord riff — root + fifth, fast eighth notes
+    const riff = [82.41, 82.41, 110.00, 82.41, 98.00, 82.41, 110.00, 73.42];
+    riff.forEach((freq, i) => {
+      const dt = t + i * 0.11;
+      [freq, freq * 1.5].forEach((f, j) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(f, dt);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(j === 0 ? 0.5 : 0.3, dt);
+        g.gain.exponentialRampToValueAtTime(0.001, dt + 0.1);
+        osc.connect(g); g.connect(dist);
+        osc.start(dt); osc.stop(dt + 0.11);
+      });
+    });
+    // Snare/hihat pattern
+    for (let i = 0; i < 8; i++) {
+      const dt = t + i * 0.11;
+      const n = this.ctx.createBufferSource(); n.buffer = this._whiteBuf(0.06);
+      const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = i % 2 === 1 ? 1800 : 4000;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(i % 2 === 1 ? 0.5 : 0.18, dt);
+      g.gain.exponentialRampToValueAtTime(0.001, dt + 0.05);
+      n.connect(f); f.connect(g); g.connect(this.master);
+      n.start(dt); n.stop(dt + 0.06);
+    }
+    // Kick on the downbeats
+    [0, 0.44].forEach(delay => {
+      const dt = t + delay;
+      const kick = this.ctx.createOscillator();
+      kick.type = 'sine'; kick.frequency.setValueAtTime(140, dt); kick.frequency.exponentialRampToValueAtTime(45, dt + 0.12);
+      const kg = this.ctx.createGain();
+      kg.gain.setValueAtTime(1.0, dt); kg.gain.exponentialRampToValueAtTime(0.001, dt + 0.15);
+      kick.connect(kg); kg.connect(this.master);
+      kick.start(dt); kick.stop(dt + 0.16);
+    });
+  },
+
   playEarthquake() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -7626,12 +7815,22 @@ const TIME_SPEED    = 0.6; // game-minutes per real second
 // ─────────────────────────────────────────────
 {
   let _subTimer = null;
-  window._showSubtitle = function(text) {
+  // pos, when given, is a screen-pixel {x,y} to float the subtitle above (a speaking
+  // customer's head) instead of the fixed top banner reserved for the master's lines.
+  window._showSubtitle = function(text, pos) {
     const el = document.getElementById('subtitle');
     if (!el) return;
     const inner = el.querySelector('.subtitle-inner');
     if (inner) inner.textContent = text;
     el.classList.add('visible');
+    if (pos) {
+      el.classList.add('subtitle-floating');
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+    } else {
+      el.classList.remove('subtitle-floating');
+      el.style.left = ''; el.style.top = '';
+    }
     clearTimeout(_subTimer);
     _subTimer = setTimeout(() => el.classList.remove('visible'),
       Math.min(6000, 2800 + text.length * 52));
@@ -7648,6 +7847,7 @@ const G = {
   day: 1,
   money: 5000,
   rep: 8,
+  _permanentSeenToday: {}, // permanentId -> true, reset each day in window.nextDay
 
   weather: null,
   gameTime: SERVICE_START,
@@ -7689,7 +7889,7 @@ SHOP.forEach(s => { G.inv[s.id] = 0; G.cart[s.id] = 0; });
 // Restore saved sign-in, or route to sign-in screen
 try {
   const _sp = localStorage.getItem('yatai_current');
-  if (_sp) { G.playerName = _sp; }
+  if (_sp) { G.playerName = _sp; _ensurePlayerMoney(_sp); }
   else { G.screen = 'signin'; }
 } catch(_) {}
 
@@ -7864,7 +8064,7 @@ function doServe(cust, slotIdx) {
     }
     const idx = G.customers.indexOf(cust);
     if (idx !== -1) G.customers.splice(idx, 1);
-  }, 700);
+  }, 3500);
 }
 
 function spawnCust() {
@@ -8626,6 +8826,9 @@ function playIntro(onDone) {
 
 window.startGame = function() {
   AUDIO.init();
+  // Chrome silently drops speak() calls that aren't rooted in a user gesture until the
+  // engine has been "unlocked" by one real gesture-triggered speak() — this is that gesture.
+  try { if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(_) {}
   SHOP.forEach(s => { G.cart[s.id] = 0; });
   const hasSave = loadPlayerState(G.playerName);
   if (!hasSave) {
@@ -8710,6 +8913,7 @@ window.toggleSubtitles = function(cb) {
 
 window.nextDay = function() {
   G.day++;
+  G._permanentSeenToday = {}; // permanent NPCs (e.g. Gondō) can appear again today
   const r = Math.random();
   if (r < 0.05 && G.day > 2) G.weather = WEATHER[3];
   else if (r < 0.20) G.weather = WEATHER[2];
@@ -8900,6 +9104,8 @@ function buildServiceShell() {
         <button id="restock-btn" class="hud-btn hud-btn-gold" onclick="window.autoRestock()" title="Restock all menu items to 10">🛒 Restock</button>
         <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
         ${MP.role === 'master' ? `<div class="hud-stat" style="cursor:pointer" title="Room code — share with guests" onclick="navigator.clipboard&&navigator.clipboard.writeText('${MP.roomCode}').then(()=>toast('Room code copied!','info'))"><span class="hud-val" style="font-size:11px;letter-spacing:2px;color:var(--teal)" id="mp-room-code-hud">${MP.roomCode}</span><span class="hud-label">Room</span></div>` : ''}
+        ${MP.role === 'master' && MP.roomCode ? `<button class="hud-btn vc-btn" onclick="window.toggleVoiceChat()" title="Live mic — everyone in this room can hear you">🎙️ Voice Chat</button>` : ''}
+        ${MP.role === 'master' && MP.roomCode ? `<button class="hud-btn" onclick="window.goStreet()" title="Hang out with connected players">🚶 Street</button>` : ''}
       </div>
     </div>
 
@@ -9256,12 +9462,15 @@ window.sendChatToCustomer = async function() {
   const ct = cu.ct || {};
 
   let persona = 'You are a customer at a Japanese yatai (late-night street food stall) near Sakurajima volcano in Kagoshima. Respond in casual Japanese. Keep it short — 1 or 2 sentences max. Be warm and in-character.';
-  if (ct.sumo) persona = 'You are a sumo wrestler enjoying a late-night meal at a yatai. You are large, jovial, enthusiastic about food. Reply in casual Japanese, short and lively.';
+  if (cu.permanentId === 'gondo_razor') persona = 'You are Gondō "The Razor," an aging godfather of the Japanese punk scene. Decades ago the yakuza cut off your right hand for crossing them, and you wear it like a badge of honor. Gruff, wry, still commands real respect. Reply in rough, blunt Japanese, short.';
+  else if (ct.sumo) persona = 'You are a sumo wrestler enjoying a late-night meal at a yatai. You are large, jovial, enthusiastic about food. Reply in casual Japanese, short and lively.';
   else if (ct.geisha) persona = 'You are a geisha relaxing at a yatai after a performance. You are graceful and cultured. Reply in polished Japanese, short and elegant.';
   else if (ct.police) persona = 'You are an off-duty police officer having a drink at a yatai. You are professional but friendly and tired. Reply in casual Japanese, short.';
   else if (ct.politician) persona = 'You are a Japanese politician at a yatai. You are a bit pompous and tend to relate everything to politics or your constituency. Reply in formal Japanese, short.';
   else if (ct.hostess) persona = 'You are a hostess (ホステス) unwinding at a yatai after a long night of work. You are charming, a little flirty, and tired. Reply in casual Japanese, short and warm.';
   else if (ct.type === 'kimono' && !ct.geisha) persona = 'You are a yakuza member eating at a yatai. You are gruff but courteous about food. Reply in terse Japanese, very short.';
+
+  persona += ' Speak with a natural Kagoshima dialect (鹿児島弁) flavor where it fits the mood — sentence endings like ～じゃっど, ～ど, ～っちょ, ～とじゃ, and words like わっぜ (very/a lot), げんね (embarrassing/awkward), よだきい (a hassle) — not every line, just enough to feel like a Kagoshima local. When it fits naturally, bring up local color as a regular would: Sakurajima\'s smoke or ash today, the weather, a local festival, shochu, the news — small talk, not a lecture.';
 
   // Show typing indicator
   const feed = document.getElementById('dialog-feed');
@@ -9438,6 +9647,15 @@ function loadPlayerState(name) {
     return true;
   } catch(_) { return false; }
 }
+
+// Ensures G.money/day/rep reflect this player's real save the moment they're signed in —
+// not just when they start hosting a stall (window.startGame's own loadPlayerState call
+// covers that path; this covers everyone else, e.g. someone who only ever joins/explores
+// as a guest and would otherwise be stuck on the raw initial-state default).
+function _ensurePlayerMoney(name) {
+  const hasSave = loadPlayerState(name);
+  if (!hasSave) { G.day = 1; G.money = 10000; G.rep = 8; }
+}
 const _PLAYER_ICONS = ['🧑','👩','👨','🧑‍💼','🧑‍🎓','🧑‍🎤','🧑‍🏫','🧑‍🚀','🧑‍🎨','🧑‍🔬'];
 function _playerIcon(name) {
   const h = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -9482,6 +9700,7 @@ function buildSignIn() {
 window.signInAs = function(name) {
   try { localStorage.setItem('yatai_current', name); } catch(_) {}
   G.playerName = name;
+  _ensurePlayerMoney(name);
   G.screen = 'title';
   fullRender();
 };
@@ -9496,6 +9715,7 @@ window.submitSignIn = function() {
   if (existing) { window.signInAs(existing); return; }
   _saveAccount(name);
   G.playerName = name;
+  _ensurePlayerMoney(name);
   G.screen = 'title';
   fullRender();
 };
@@ -9544,6 +9764,15 @@ fullRender();
 // ─────────────────────────────────────────────
 // MULTIPLAYER — PeerJS P2P
 // ─────────────────────────────────────────────
+// Reserved code for the shared, ownerless "street" hangout — auto-created server-side
+// on first join. Must match PLAZA_CODE in api/room.js and server.js.
+const PLAZA_CODE = 'PLAZA1';
+// Reserved code for the shared, ownerless Pachinko Palace. Must match PACHINKO_CODE
+// in api/room.js and server.js.
+const PACHINKO_CODE = 'PACHIN1';
+// Reserved code for the shared, ownerless Beach. Must match BEACH_CODE in
+// api/room.js and server.js.
+const BEACH_CODE = 'BEACH1';
 const MP = {
   // HTTP-polling multiplayer — no PeerJS, no third-party connections
   peer: null,        // legacy compat (unused)
@@ -9573,6 +9802,8 @@ const MP = {
   _lastSubtitleSeq: 0,
   _subtitleQueue: [],
   _subtitlePlaying: false,
+  _peerPositions: {},  // guestId → {xFrac, facing, moving, ts} — street hangout, from room GET
+  _hostStreetPos: null, // host's own street position, set by the street IIFE when role==='master'
 
   _randCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -9655,6 +9886,7 @@ const MP = {
         if (!msg.orderId && msg.ts <= _prevOrderTs) { continue; }
         if (!msg.orderId) this._lastOrderTs[msg.guestId] = msg.ts;
         let c = G.customers.find(cu => cu.peerId === msg.guestId);
+        if (c && c.state === 'served') { console.error('[HOST ORDER DROP] still finishing previous dish', msg.guestId); continue; }
         if (!c) c = this._spawnRealCustomer(msg.guestId, peer.name);
         if (c) {
           c.order = item; c.state = 'wait';
@@ -9669,15 +9901,24 @@ const MP = {
         }
       } else if (msg.type === 'chat') {
         if (window._logDialog) window._logDialog(`${msg.name}: ${msg.text}`, 'cust');
-        this._pendingChat.push({ from: msg.name, text: msg.text });
+        this._pendingChat.push({ from: msg.name, text: msg.text, guestId: msg.guestId });
+        if (window._streetHandleChat) { try { window._streetHandleChat(msg.guestId, msg.name, msg.text); } catch(_) {} }
       } else if (msg.type === 'ct') {
         // Guest sent their own clothing — store it so all views match
         if (msg.guestId && msg.data && msg.data.ct) {
           try { if (window._setGuestCt) window._setGuestCt(msg.guestId, msg.data.ct); } catch(_) {}
         }
+      } else if (msg.type === 'rtc-signal' && msg.to === '__host__') {
+        // Voice chat signaling addressed to the host specifically — peer-to-peer,
+        // bypasses the state broadcast entirely.
+        if (window._vcHandleSignal) { try { window._vcHandleSignal(msg.guestId, msg.kind, msg.payload); } catch(_) {} }
       }
     }
     this._pollSince = maxMsgTs;
+    // Voice chat — sync connections against everyone currently known to be in the room.
+    if (window._vcSyncRoster) {
+      try { window._vcSyncRoster(['__host__', ...Object.keys(this.peers)]); } catch(_) {}
+    }
     // Catch any guests registered in the room that we missed
     for (const g of (data.guests || [])) {
       if (!this.peers[g.guestId]) {
@@ -9686,19 +9927,53 @@ const MP = {
         try { if (window._seatSelf) window._seatSelf(g.guestId, g.name); } catch(_) {}
       }
     }
+    // Street hangout — latest known position per guest, folded into the next broadcast
+    this._peerPositions = data.positions || {};
+    if (window._streetSyncPlayers) { try { window._streetSyncPlayers(this._streetPlayers()); } catch(_) {} }
     // Always keep the roster current
     this._renderHostPlayers();
+  },
+
+  // Street hangout — host + all known guest positions/appearance, folded into every
+  // broadcast so guests (and the host's own street render) can draw everyone. Cheap to
+  // compute even when nobody's on the street screen.
+  _streetPlayers() {
+    const players = [];
+    if (this._hostStreetPos) {
+      players.push({
+        id: '__host__', name: G.playerName || 'Host',
+        ct: window._getGuestCt ? window._getGuestCt('__host__') : null,
+        ...this._hostStreetPos,
+      });
+    }
+    for (const [gid, p] of Object.entries(this._peerPositions || {})) {
+      players.push({
+        id: gid, name: (this.peers[gid] && this.peers[gid].name) || 'Guest',
+        ct: window._getGuestCt ? window._getGuestCt(gid) : null,
+        ...p,
+      });
+    }
+    return players;
   },
 
   startBroadcastLoop() {
     clearInterval(this._broadcastTimer);
     this._broadcastTimer = setInterval(() => {
-      if (!G.isOpen) return;
+      const chat = this._pendingChat.splice(0);
+      const players = this._streetPlayers();
+      if (!G.isOpen) {
+        // Stall not open yet — still let street hangout work pre-open.
+        this._post(this.roomCode, { type: 'state', data: {
+          isOpen: false, hostName: G.playerName || '夜台',
+          peers: Object.values(this.peers).map(p => ({ name: p.name, guestId: p.guestId })),
+          players, chat,
+        }});
+        return;
+      }
       // Keep all known guest figures alive on the host canvas
       for (const p of Object.values(this.peers)) {
         try { if (window._seatSelf) window._seatSelf(p.guestId, p.name); } catch(_) {}
       }
-      const chat = this._pendingChat.splice(0);
       const served = Object.assign({}, this._pendingServed);
       // _pendingServed is cleared by notifyServed's own 6s timeout — don't clear here
       const _subtitlesSnap = window._takeSubtitles ? window._takeSubtitles() : [];
@@ -9733,10 +10008,10 @@ const MP = {
         subtitles: _subtitlesSnap,
         subtitleSeq: this._subtitleSeq,
         peers: Object.values(this.peers).map(p => ({ name: p.name, guestId: p.guestId })),
-        served, chat,
+        served, chat, players,
       };
       this._post(this.roomCode, { type: 'state', data: state });
-    }, 2000);
+    }, G.screen === 'street' ? 500 : 2000);
   },
 
   stopBroadcastLoop() { clearInterval(this._broadcastTimer); },
@@ -9810,6 +10085,26 @@ const MP = {
     this._startCookTicker();
   },
 
+  // ── SHARED VENUES (Plaza, Pachinko Palace, ...) ── lighter sibling of joinRoom(): no
+  // stall to seat into, no cook/patience tickers — these are ownerless shared spaces,
+  // ordinary yatai rooms are unaffected. Any reserved venue room code works here.
+  async joinVenue(code) {
+    this.role = 'customer';
+    this.roomCode = code;
+    this.myName = G.playerName || 'Guest';
+    this._chatLog = [];
+    this._dialogLog = [];
+    this._pollSince = Date.now();
+    const res = await this._post(code, { type: 'join', name: this.myName });
+    if (!res.ok) { toast('Could not reach the street — try again.', 'err'); return; }
+    this.myGuestId = res.guestId;
+    try {
+      const selfCt = window._ensureGuestCt && window._ensureGuestCt(res.guestId);
+      if (selfCt) this._post(code, { type: 'msg', guestId: res.guestId, data: { type: 'ct', ct: selfCt } });
+    } catch(_) {}
+    G.screen = 'street'; fullRender();
+  },
+
   _triggerServed(itemId) {
     if (this.myOrderStatus === 'served' || !this.myOrder) return;
     this.myOrderStatus = 'served';
@@ -9842,6 +10137,9 @@ const MP = {
     for (const msg of (data.messages || [])) {
       if (msg.type === 'served' && msg.guestId === this.myGuestId) {
         this._triggerServed(msg.itemId);
+      } else if (msg.type === 'rtc-signal' && msg.to === this.myGuestId) {
+        // Voice chat signaling addressed to us — peer-to-peer, same in every room type.
+        if (window._vcHandleSignal) { try { window._vcHandleSignal(msg.guestId, msg.kind, msg.payload); } catch(_) {} }
       }
     }
     this._pollSince = newSince;
@@ -9856,9 +10154,52 @@ const MP = {
       for (const m of (data.state.chat || [])) {
         this._chatLog.push(m);
         if (this._chatLog.length > 20) this._chatLog.shift();
+        // Street hangout — skip our own relayed echo (already shown optimistically on send)
+        if (window._streetHandleChat && m.guestId !== this.myGuestId) {
+          try { window._streetHandleChat(m.guestId, m.from, m.text); } catch(_) {}
+        }
       }
       this._renderCustomerChat();
       this._renderCustomerPeers(data.guests || []);
+      // Street hangout — sync everyone's positions (no-op when not on the street screen)
+      if (window._streetSyncPlayers) { try { window._streetSyncPlayers(data.state.players); } catch(_) {} }
+      // Voice chat — the host is a real human participant in a private yatai room.
+      if (window._vcSyncRoster) {
+        try { window._vcSyncRoster(['__host__', ...(data.guests || []).map(g => g.guestId)]); } catch(_) {}
+      }
+    } else if (this.roomCode === PLAZA_CODE || this.roomCode === PACHINKO_CODE || this.roomCode === BEACH_CODE) {
+      // Shared venues have no host, so there's no state.chat/state.players relay to read
+      // (data.state is always null here — nobody ever posts type:'state' for an ownerless
+      // room). Read the raw, master-independent copies the server already stores for every
+      // 'msg'/'pos' POST.
+      for (const msg of (data.messages || [])) {
+        if (msg.type === 'ct' && msg.guestId && msg.data && msg.data.ct) {
+          try { if (window._setGuestCt) window._setGuestCt(msg.guestId, msg.data.ct); } catch(_) {}
+        } else if (msg.type === 'chat') {
+          this._chatLog.push({ from: msg.name, text: msg.text });
+          if (this._chatLog.length > 20) this._chatLog.shift();
+          if (window._streetHandleChat && msg.guestId !== this.myGuestId) {
+            try { window._streetHandleChat(msg.guestId, msg.name, msg.text); } catch(_) {}
+          }
+        }
+      }
+      if (window._streetSyncPlayers) {
+        const guestNames = {};
+        for (const g of (data.guests || [])) guestNames[g.guestId] = g.name;
+        // Read appearance from the persistent server-side map (data.ct), not the local
+        // _getGuestCt cache — a peer who joined before you started polling would otherwise
+        // never be learned, since their one-time 'ct' message already aged out of data.messages.
+        const players = Object.entries(data.positions || {}).map(([gid, p]) => ({
+          id: gid, name: guestNames[gid] || 'Guest',
+          ct: (data.ct && data.ct[gid]) || (window._getGuestCt ? window._getGuestCt(gid) : null),
+          ...p,
+        }));
+        try { window._streetSyncPlayers(players); } catch(_) {}
+      }
+      // Voice chat — no host in a shared venue, roster is just the guest list.
+      if (window._vcSyncRoster) {
+        try { window._vcSyncRoster((data.guests || []).map(g => g.guestId)); } catch(_) {}
+      }
     }
   },
 
@@ -9879,6 +10220,13 @@ const MP = {
     if (this._chatLog.length > 20) this._chatLog.shift();
     this._renderCustomerChat();
     this._post(this.roomCode, { type: 'msg', guestId: this.myGuestId, data: { type: 'chat', text, name: this.myName } });
+  },
+
+  // Host has no incoming message path (nothing to POST-to-self) — just queue it directly
+  // for the next broadcast, same as a relayed guest chat would be by the time it reaches here.
+  hostSendChat(text) {
+    if (!text) return;
+    this._pendingChat.push({ from: this.myName || G.playerName || 'Host', text, guestId: '__host__' });
   },
 
   _renderCustomerState() {
@@ -10155,6 +10503,8 @@ const MP = {
   },
 
   destroy() {
+    try { if (window.stopStreetLoop) window.stopStreetLoop(); } catch(_) {}
+    try { if (window._vcTeardownAll) window._vcTeardownAll(); } catch(_) {}
     clearInterval(this._pollTimer);
     clearInterval(this._broadcastTimer);
     clearInterval(this._patTimer);
@@ -10197,6 +10547,11 @@ function buildMultiLobby() {
         <div class="role-name" style="color:var(--gold)">Join Game</div>
         <div class="role-desc">Sit down as a customer, order food, chat</div>
       </div>
+      <div class="role-card" onclick="window.goExploreStreet()" style="border-color:rgba(120,200,255,.4);background:rgba(120,200,255,.06)">
+        <span class="role-icon">🚶</span>
+        <div class="role-name" style="color:#8ecfff">Explore Street</div>
+        <div class="role-desc">See who's open and walk right in</div>
+      </div>
     </div>
     <button class="btn" onclick="if(confirm('Restart from Day 1? This erases your save.'))window.resetGame()" style="font-size:12px;padding:6px 14px;opacity:.5">🔄 Restart</button>
   </div></div>`;
@@ -10238,6 +10593,33 @@ function buildMultiJoin() {
   </div></div>`;
 }
 
+function buildStreetView() {
+  const header = MP.roomCode === PLAZA_CODE ? '🚶 Street — walk into any open yatai'
+    : MP.roomCode === PACHINKO_CODE ? '🎰 Pachinko Palace'
+    : MP.roomCode === BEACH_CODE ? '🏖️ Kagoshima Bay Beach'
+    : `🚶 Street — Room ${MP.roomCode || ''}`;
+  return `<div id="street-overlay" style="position:fixed;inset:0;z-index:5;pointer-events:none;
+      display:flex;flex-direction:column;justify-content:space-between;">
+    <div style="pointer-events:auto;display:flex;justify-content:space-between;align-items:center;
+        padding:10px 14px;background:linear-gradient(rgba(0,0,0,.55),transparent)">
+      <div style="font-size:13px;color:var(--cream);font-weight:700">${header}</div>
+      <div style="display:flex;gap:8px">
+        <button class="hud-btn vc-btn" onclick="window.toggleVoiceChat()" title="Live mic — everyone here can hear you" style="font-size:12px;padding:5px 12px">🎙️ Voice Chat</button>
+        <button class="btn" onclick="window.leaveStreet()" style="font-size:12px;padding:5px 12px;opacity:.85">← Back</button>
+      </div>
+    </div>
+    <div style="pointer-events:auto;display:flex;gap:8px;padding:10px 14px;
+        background:linear-gradient(transparent,rgba(0,0,0,.6))">
+      <input id="street-chat-input" type="text" placeholder="Say something…" maxlength="60"
+        style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.25);
+          background:rgba(10,14,28,.85);color:var(--cream);font-size:14px"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')window.streetSendChat()">
+      <button class="btn btn-primary" onclick="window.streetSendChat()" style="padding:9px 16px">Send</button>
+    </div>
+  </div>`;
+}
+
 function buildCustomerView() {
   return `
     <div id="hud">
@@ -10264,6 +10646,8 @@ function buildCustomerView() {
           <span class="hud-label">Room</span>
         </div>
         <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
+        <button class="hud-btn vc-btn" onclick="window.toggleVoiceChat()" title="Live mic — everyone in this room can hear you">🎙️ Voice Chat</button>
+        <button class="hud-btn" onclick="window.goExploreStreet()" title="Browse every open yatai from the shared street">🚶 Street</button>
         <button class="btn" onclick="window.leaveMulti()" style="font-size:10px;padding:3px 10px;opacity:.6">Leave</button>
       </div>
     </div>
@@ -10444,6 +10828,723 @@ if (typeof serveCustomer === 'function') {
   window.serveCustomer = _wrappedServe;
 }
 
+// ── PACHINKO MINIGAME ── entirely local: no server sync, no effect on other players in
+// the room — money changes hit this player's own G.money/save, same as normal stall
+// earnings. Ball drop is outcome-first-then-animate (no real peg-collision physics).
+(function() {
+  'use strict';
+  const BET = 100;
+  const OUTCOMES = [
+    { mult: 0,    weight: 55, label: 'Miss' },
+    { mult: 1.2,  weight: 25, label: 'Small Win' },
+    { mult: 2.5,  weight: 12, label: 'Medium Win' },
+    { mult: 6,    weight: 6,  label: 'Big Win' },
+    { mult: 20,   weight: 2,  label: 'JACKPOT' },
+  ];
+  const TOTAL_WEIGHT = OUTCOMES.reduce((a, o) => a + o.weight, 0);
+  let playing = false;
+
+  function pickOutcome() {
+    let r = Math.random() * TOTAL_WEIGHT;
+    for (const o of OUTCOMES) { if (r < o.weight) return o; r -= o.weight; }
+    return OUTCOMES[0];
+  }
+
+  function renderSlots() {
+    const el = document.getElementById('pk-slots');
+    if (el) el.innerHTML = OUTCOMES.map(o => `<div class="pk-slot">${o.mult}x</div>`).join('');
+  }
+
+  function updateMoneyDisplays() {
+    const hud = document.getElementById('hud-money');
+    if (hud) hud.textContent = '¥' + Number(G.money).toLocaleString();
+    const pk = document.getElementById('pk-money');
+    if (pk) pk.textContent = '¥' + Math.max(0, Math.round(G.money)).toLocaleString();
+  }
+
+  window._openPachinkoModal = function(machine) {
+    const modal = document.getElementById('pachinko-modal');
+    if (!modal) return;
+    const nameEl = document.getElementById('pk-machine-name');
+    if (nameEl) nameEl.textContent = '🎰 ' + ((machine && machine.name) || 'Machine');
+    const resultEl = document.getElementById('pk-result');
+    if (resultEl) { resultEl.textContent = ''; resultEl.className = 'pk-result'; }
+    const ball = document.getElementById('pk-ball');
+    if (ball) ball.style.display = 'none';
+    renderSlots();
+    updateMoneyDisplays();
+    playing = false;
+    const btn = document.getElementById('pk-play-btn');
+    if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
+    modal.classList.add('visible');
+  };
+
+  window._closePachinkoModal = function() {
+    const modal = document.getElementById('pachinko-modal');
+    if (modal) modal.classList.remove('visible');
+  };
+
+  window._pachinkoPlay = function() {
+    if (playing) return;
+    if (G.money < BET) { toast('Not enough ¥!', 'err'); return; }
+    playing = true;
+    const btn = document.getElementById('pk-play-btn');
+    if (btn) btn.disabled = true;
+    const resultEl = document.getElementById('pk-result');
+    if (resultEl) { resultEl.textContent = ''; resultEl.className = 'pk-result'; }
+
+    G.money -= BET;
+    updateMoneyDisplays();
+
+    const outcome = pickOutcome();
+    const idx = OUTCOMES.indexOf(outcome);
+    const slots = document.querySelectorAll('#pk-slots .pk-slot');
+    slots.forEach(s => s.classList.remove('pk-win'));
+
+    const ball = document.getElementById('pk-ball');
+    const stage = ball ? ball.parentElement : null;
+    if (ball && stage) {
+      ball.style.display = 'block';
+      ball.style.top = '6px';
+      ball.style.left = 'calc(50% - 7px)';
+      void ball.offsetWidth; // force reflow so the transition starts from this position
+      const slotWidth = stage.offsetWidth / OUTCOMES.length;
+      ball.style.top = (stage.offsetHeight - 20) + 'px';
+      ball.style.left = (slotWidth * idx + slotWidth / 2 - 7) + 'px';
+    }
+
+    setTimeout(() => {
+      if (slots[idx]) slots[idx].classList.add('pk-win');
+      const payout = Math.round(BET * outcome.mult);
+      G.money += payout;
+      updateMoneyDisplays();
+      savePlayerState();
+      if (resultEl) {
+        if (payout > BET) {
+          resultEl.textContent = `${outcome.label}! +¥${payout}`;
+          resultEl.className = 'pk-result pk-win';
+          toast(`🎰 ${outcome.label}! +¥${payout}`, 'info');
+        } else if (payout > 0) {
+          resultEl.textContent = `${outcome.label} — ¥${payout} back`;
+          resultEl.className = 'pk-result';
+        } else {
+          resultEl.textContent = 'Miss — try again?';
+          resultEl.className = 'pk-result pk-lose';
+        }
+      }
+      playing = false;
+      if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
+    }, 1150);
+  };
+})();
+
+// ── VOICE CHAT — real-time WebRTC audio between everyone in the current room ──
+// Signaling rides the existing room message relay (type:'msg', data:{type:'rtc-signal',...})
+// — no server changes, and no PeerJS (loaded but genuinely unused elsewhere in this file;
+// RTCPeerConnection/getUserMedia are native browser APIs needing no library). Once connected,
+// audio flows directly peer-to-peer; the only third party involved is a public STUN server
+// (address discovery only — no audio or data ever passes through it).
+(function() {
+  'use strict';
+  const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+  let localStream = null;
+  let enabled = false;
+  let audioCtx = null;
+  let speakingTimer = null;
+  const peerConnections = new Map(); // peerId -> RTCPeerConnection
+  const audioEls = new Map();        // peerId -> <audio>
+  const analysers = new Map();       // peerId -> { analyser, data }
+
+  function myId() {
+    return MP.role === 'master' ? '__host__' : MP.myGuestId;
+  }
+
+  // Deterministic initiator rule — whoever has the "greater" id always makes the offer,
+  // the other always waits to answer. Avoids both sides racing to offer at once.
+  function shouldInitiate(peerId) {
+    return myId() > peerId;
+  }
+
+  function sendSignal(to, kind, payload) {
+    try {
+      MP._post(MP.roomCode, { type: 'msg', guestId: myId(), data: { type: 'rtc-signal', to, kind, payload } });
+    } catch (_) {}
+  }
+
+  function attachRemoteAudio(peerId, stream) {
+    let el = audioEls.get(peerId);
+    if (!el) {
+      el = document.createElement('audio');
+      el.autoplay = true;
+      const container = document.getElementById('voice-audio-container');
+      if (container) container.appendChild(el);
+      audioEls.set(peerId, el);
+    }
+    el.srcObject = stream;
+  }
+
+  function setupAnalyser(key, stream) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      analysers.set(key, { analyser, data: new Uint8Array(analyser.frequencyBinCount) });
+    } catch (_) {}
+  }
+
+  function ensurePeerConnection(peerId) {
+    let pc = peerConnections.get(peerId);
+    if (pc) return pc;
+    pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    peerConnections.set(peerId, pc);
+
+    pc.onicecandidate = (e) => { if (e.candidate) sendSignal(peerId, 'ice', e.candidate.toJSON()); };
+    pc.ontrack = (e) => { attachRemoteAudio(peerId, e.streams[0]); setupAnalyser(peerId, e.streams[0]); };
+
+    if (shouldInitiate(peerId)) {
+      pc.onnegotiationneeded = async () => {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendSignal(peerId, 'offer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+        } catch (_) {}
+      };
+    }
+
+    // Add local tracks regardless of who initiates — whichever side ends up creating
+    // the offer/answer, both need their own tracks already attached beforehand for
+    // WebRTC to negotiate bidirectional audio in that single exchange.
+    if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+    return pc;
+  }
+
+  function teardownPeer(peerId) {
+    const pc = peerConnections.get(peerId);
+    if (pc) { try { pc.close(); } catch(_) {} peerConnections.delete(peerId); }
+    const el = audioEls.get(peerId);
+    if (el) { el.srcObject = null; el.remove(); audioEls.delete(peerId); }
+    analysers.delete(peerId);
+  }
+
+  function teardownAll() {
+    for (const peerId of Array.from(peerConnections.keys())) teardownPeer(peerId);
+  }
+
+  function startSpeakingMeter() {
+    if (!localStream) return;
+    setupAnalyser('self', localStream);
+    speakingTimer = setInterval(() => {
+      const entry = analysers.get('self');
+      if (!entry) return;
+      entry.analyser.getByteFrequencyData(entry.data);
+      let sum = 0;
+      for (let i = 0; i < entry.data.length; i++) sum += entry.data[i];
+      const speaking = (sum / entry.data.length) > 12;
+      document.querySelectorAll('.vc-btn').forEach(btn => btn.classList.toggle('vc-speaking', speaking));
+    }, 150);
+  }
+
+  function stopSpeakingMeter() {
+    if (speakingTimer) { clearInterval(speakingTimer); speakingTimer = null; }
+    analysers.delete('self');
+  }
+
+  function setButtonsLive(live) {
+    document.querySelectorAll('.vc-btn').forEach(btn => {
+      btn.classList.toggle('vc-live', live);
+      btn.textContent = live ? '🎙️ Voice On' : '🎙️ Voice Chat';
+    });
+  }
+
+  // Called every poll cycle (host and customer alike) with the full list of participant
+  // ids currently in the room — creates connections for anyone new, tears down anyone
+  // who's left. A no-op whenever voice chat isn't enabled.
+  window._vcSyncRoster = function(currentPeerIds) {
+    if (!enabled) return;
+    const me = myId();
+    const seen = new Set();
+    for (const peerId of currentPeerIds) {
+      if (!peerId || peerId === me) continue;
+      seen.add(peerId);
+      if (!peerConnections.has(peerId)) ensurePeerConnection(peerId);
+    }
+    for (const peerId of Array.from(peerConnections.keys())) {
+      if (!seen.has(peerId)) teardownPeer(peerId);
+    }
+  };
+
+  // Routes an incoming rtc-signal message (already filtered to ones addressed to us)
+  // to the right peer connection, creating it fresh if this is the first we've heard
+  // from this peer.
+  window._vcHandleSignal = async function(fromId, kind, payload) {
+    if (!enabled || !fromId) return;
+    if (kind === 'offer' && peerConnections.has(fromId)) {
+      // This app never renegotiates a live connection, so a fresh offer from a peer we
+      // already have one for means their side reconnected (e.g. toggled voice off/on) —
+      // our old connection is stale and won't accept a second offer cleanly. Start clean.
+      teardownPeer(fromId);
+    }
+    const pc = ensurePeerConnection(fromId);
+    try {
+      if (kind === 'offer') {
+        await pc.setRemoteDescription(payload);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal(fromId, 'answer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+      } else if (kind === 'answer') {
+        await pc.setRemoteDescription(payload);
+      } else if (kind === 'ice') {
+        await pc.addIceCandidate(payload).catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  window._vcTeardownAll = function() {
+    enabled = false;
+    stopSpeakingMeter();
+    teardownAll();
+    if (localStream) { try { localStream.getTracks().forEach(t => t.stop()); } catch(_) {} localStream = null; }
+    setButtonsLive(false);
+  };
+
+  window.toggleVoiceChat = async function() {
+    if (enabled) { window._vcTeardownAll(); return; }
+    if (!MP.roomCode) { toast('Join a room first.', 'err'); return; }
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    } catch (e) {
+      toast('Microphone access denied or unavailable.', 'err');
+      return;
+    }
+    enabled = true;
+    startSpeakingMeter();
+    setButtonsLive(true);
+    // The next poll tick (host or customer, within ~400-1500ms) will call
+    // _vcSyncRoster with the real current roster and connect to everyone already here.
+  };
+})();
+
+// ── STREET HANGOUT — shared avatar scene ──
+// Self-contained: deliberately does NOT declare its own `const G`, since a decorative
+// background IIFE earlier in this file already shadows the real global `G` (game state,
+// G.screen etc) with a local geometry object of the same name in its own scope. Reading
+// the real `G` here (this scope) is safe; a new local `G` here would NOT be.
+(function() {
+  'use strict';
+  const sc = document.getElementById('street-canvas');
+  const sctx = sc.getContext('2d');
+  let active = false, rafId = null, lastT = 0;
+  let self_ = null;                 // { id, x, targetX, facing, moving, phase, animT, ct, name }
+  let remote = {};                  // id -> same shape as self_
+  let bubbles = [];                 // { id, x, y, text, born, life } — own array, not the stall's
+  const held = { left: false, right: false };
+  let lastPosSentAt = 0, lastSentXFrac = null, lastSentMoving = null;
+  let directory = [];           // [{code, hostName, isOpen, guestCount}] — Plaza mode only
+  let directoryTimer = null;
+  const PACHINKO_MACHINES = ['Sakura Slots', 'Dragon’s Fortune', 'Lucky Cat'];
+
+  function resize() { sc.width = window.innerWidth; sc.height = window.innerHeight; }
+
+  function boundsX() { return [sc.width * 0.05, sc.width * 0.95]; }
+
+  function ensureSelf() {
+    const isHost = MP.role === 'master';
+    const key = isHost ? '__host__' : MP.myGuestId;
+    const ct = (window._ensureGuestCt && window._ensureGuestCt(key)) || null;
+    const [lo, hi] = boundsX();
+    const x = lo + (hi - lo) * 0.5;
+    self_ = {
+      id: key, x, targetX: x, facing: 'right', moving: false,
+      phase: Math.random() * Math.PI * 2, animT: 0, ct,
+      name: isHost ? (G.playerName || 'Host') : (MP.myName || 'Guest'),
+    };
+  }
+
+  function spawnStreetBubble(id, x, text) {
+    bubbles = bubbles.filter(b => b.id !== id); // one live bubble per avatar
+    bubbles.push({ id, x, y: sc.height * 0.60, text, born: performance.now() / 1000, life: 3.2 });
+  }
+
+  function updateAvatar(a, dt) {
+    const ease = a === self_ ? 0.15 : 0.08; // local = responsive, remote = smoothed over network gaps
+    a.x += (a.targetX - a.x) * ease;
+    a.moving = Math.abs(a.targetX - a.x) > 1.5;
+    if (a.moving) a.facing = a.targetX > a.x ? 'right' : 'left';
+    a.animT += dt * (a.moving ? 1 : 0.25); // slow idle sway vs. full walk-cycle speed
+  }
+
+  function drawAvatar(a) {
+    if (!a.ct || !window._drawWalkFigure) return;
+    const state = a.facing === 'right' ? 'walk_in' : 'walk_out';
+    window._drawWalkFigure(sctx, { x: a.x, ct: a.ct, phase: a.phase, state, unhappy: false, alcoholCount: 0 }, a.animT);
+    sctx.save();
+    sctx.font = `bold ${Math.round(sc.height * 0.016)}px sans-serif`;
+    sctx.textAlign = 'center';
+    sctx.fillStyle = 'rgba(255,255,255,.85)';
+    sctx.fillText(a.name || '', a.x, sc.height * 0.42);
+    sctx.restore();
+  }
+
+  // Visual technique ported from this file's stall-side drawBubbles() (rounded rect + tail
+  // + fade). Deliberately NOT calling the stall's real spawnBubble/drawBubbles — those also
+  // trigger Japanese speechSynthesis TTS and log into the stall's own dialogue system, which
+  // would speak players' typed chat aloud and pollute an unrelated log.
+  function drawStreetBubbles() {
+    const now = performance.now() / 1000;
+    bubbles = bubbles.filter(b => now - b.born < b.life);
+    bubbles.forEach(b => {
+      const owner = b.id === self_?.id ? self_ : remote[b.id];
+      const x = owner ? owner.x : b.x;
+      const age = now - b.born;
+      const t = age / b.life;
+      const alpha = t < 0.12 ? t / 0.12 : t > 0.70 ? (1 - t) / 0.30 : 1;
+      const by = sc.height * 0.34 - age * sc.height * 0.018;
+
+      sctx.save();
+      sctx.globalAlpha = alpha;
+      sctx.font = `bold ${Math.round(sc.height * 0.022)}px serif`;
+      const tw = sctx.measureText(b.text).width;
+      const pad = sc.width * 0.012, bh = sc.height * 0.038;
+
+      sctx.fillStyle = 'rgba(10,8,20,0.88)';
+      sctx.beginPath();
+      sctx.roundRect(x - tw / 2 - pad, by - bh, tw + pad * 2, bh, sc.height * 0.012);
+      sctx.fill();
+      sctx.strokeStyle = 'rgba(255,200,80,0.55)';
+      sctx.lineWidth = 1;
+      sctx.stroke();
+
+      sctx.fillStyle = 'rgba(10,8,20,0.88)';
+      sctx.beginPath();
+      sctx.moveTo(x - sc.width * 0.006, by);
+      sctx.lineTo(x + sc.width * 0.006, by);
+      sctx.lineTo(x, by + sc.height * 0.012);
+      sctx.closePath(); sctx.fill();
+
+      sctx.fillStyle = '#fdf0de';
+      sctx.textAlign = 'center'; sctx.textBaseline = 'middle';
+      sctx.fillText(b.text, x, by - bh / 2);
+      sctx.restore();
+    });
+  }
+
+  // Entrance markers, evenly spaced along the sidewalk — Plaza mode only. Each yatai in the
+  // directory gets a fixed slot rather than trying to route/collide-detect around avatars.
+  function entranceX(i, n) {
+    const [lo, hi] = boundsX();
+    return lo + (hi - lo) * ((i + 1) / (n + 1));
+  }
+
+  const ENTRANCE_ICONS = { pachinko: '🎰', beach: '🏖️', yatai: '🏮' };
+
+  function drawEntrances() {
+    if (MP.roomCode !== PLAZA_CODE) return;
+    const y = sc.height * 0.55;
+    directory.forEach((r, i) => {
+      const x = entranceX(i, directory.length);
+      sctx.save();
+      sctx.globalAlpha = r.isOpen ? 1 : 0.45;
+      sctx.font = `${Math.round(sc.height * 0.05)}px sans-serif`;
+      sctx.textAlign = 'center';
+      sctx.fillText(ENTRANCE_ICONS[r.type] || '🏮', x, y);
+      sctx.font = `bold ${Math.round(sc.height * 0.016)}px sans-serif`;
+      sctx.fillStyle = '#fdf0de';
+      sctx.fillText(r.hostName, x, y + sc.height * 0.035);
+      sctx.font = `${Math.round(sc.height * 0.013)}px sans-serif`;
+      sctx.fillStyle = r.isOpen ? 'rgba(140,255,160,.85)' : 'rgba(255,255,255,.5)';
+      sctx.fillText(r.isOpen ? `Open · ${r.guestCount} inside` : 'Preparing…', x, y + sc.height * 0.058);
+      sctx.restore();
+    });
+  }
+
+  // entranceHitTest(cx) → matching directory entry, or null. Generous horizontal hit box
+  // since entrances are just text/emoji, not a hard-edged sprite.
+  function entranceHitTest(cx) {
+    if (MP.roomCode !== PLAZA_CODE || !directory.length) return null;
+    const hitW = sc.width * 0.06;
+    for (let i = 0; i < directory.length; i++) {
+      const x = entranceX(i, directory.length);
+      if (Math.abs(cx - x) <= hitW) return directory[i];
+    }
+    return null;
+  }
+
+  // Pachinko machine props — Palace mode only, same evenly-spaced-slot idea as entrances.
+  function machineX(i) {
+    const [lo, hi] = boundsX();
+    return lo + (hi - lo) * ((i + 1) / (PACHINKO_MACHINES.length + 1));
+  }
+
+  function drawMachines() {
+    if (MP.roomCode !== PACHINKO_CODE) return;
+    const y = sc.height * 0.55;
+    PACHINKO_MACHINES.forEach((name, i) => {
+      const x = machineX(i);
+      sctx.save();
+      sctx.font = `${Math.round(sc.height * 0.05)}px sans-serif`;
+      sctx.textAlign = 'center';
+      sctx.fillText('🎰', x, y);
+      sctx.font = `bold ${Math.round(sc.height * 0.016)}px sans-serif`;
+      sctx.fillStyle = '#fdf0de';
+      sctx.fillText(name, x, y + sc.height * 0.035);
+      sctx.font = `${Math.round(sc.height * 0.013)}px sans-serif`;
+      sctx.fillStyle = 'rgba(255,200,80,.8)';
+      sctx.fillText('Tap to play', x, y + sc.height * 0.058);
+      sctx.restore();
+    });
+  }
+
+  function machineHitTest(cx) {
+    if (MP.roomCode !== PACHINKO_CODE) return null;
+    const hitW = sc.width * 0.06;
+    for (let i = 0; i < PACHINKO_MACHINES.length; i++) {
+      if (Math.abs(cx - machineX(i)) <= hitW) return { index: i, name: PACHINKO_MACHINES[i] };
+    }
+    return null;
+  }
+
+  // Purely decorative — a sand band along the bottom (over the same Kagoshima Bay/
+  // Sakurajima photo every street scene already uses) plus a few umbrella/palm props,
+  // so the Beach reads distinctly from the Plaza without needing a new background asset.
+  const BEACH_PROPS = ['🏖️', '🌴', '⛱️', '🌴', '🏖️'];
+  function drawBeachProps() {
+    if (MP.roomCode !== BEACH_CODE) return;
+    sctx.save();
+    const sandY = sc.height * 0.82;
+    const grad = sctx.createLinearGradient(0, sandY, 0, sc.height);
+    grad.addColorStop(0, 'rgba(230,205,150,0)');
+    grad.addColorStop(0.25, 'rgba(230,205,150,.55)');
+    grad.addColorStop(1, 'rgba(200,170,110,.7)');
+    sctx.fillStyle = grad;
+    sctx.fillRect(0, sandY, sc.width, sc.height - sandY);
+    sctx.restore();
+    const y = sc.height * 0.30;
+    sctx.save();
+    sctx.font = `${Math.round(sc.height * 0.06)}px sans-serif`;
+    sctx.textAlign = 'center';
+    sctx.globalAlpha = 0.9;
+    BEACH_PROPS.forEach((icon, i) => {
+      const x = entranceX(i, BEACH_PROPS.length);
+      sctx.fillText(icon, x, y);
+    });
+    sctx.restore();
+  }
+
+  window._streetRefreshDirectory = async function() {
+    if (MP.roomCode !== PLAZA_CODE) return;
+    try {
+      const r = await fetch('/api/room?list=1');
+      const data = await r.json();
+      if (data.ok) directory = (data.rooms || []).sort((a, b) => a.code < b.code ? -1 : 1);
+    } catch (_) {}
+  };
+
+  function sendSelfPos() {
+    if (MP.role !== 'customer') return; // host's own pos is folded into its own broadcast instead
+    const now = performance.now();
+    const xFrac = self_.x / sc.width;
+    if (now - lastPosSentAt < 200) return;
+    if (lastSentXFrac !== null && Math.abs(xFrac - lastSentXFrac) < 0.005 && self_.moving === lastSentMoving) return;
+    lastPosSentAt = now; lastSentXFrac = xFrac; lastSentMoving = self_.moving;
+    try {
+      MP._post(MP.roomCode, { type: 'pos', guestId: MP.myGuestId, xFrac, facing: self_.facing, moving: self_.moving });
+    } catch (_) {}
+  }
+
+  function loop(ts) {
+    if (!active) return;
+    const T = ts / 1000;
+    const dt = Math.min(0.1, T - (lastT || T));
+    lastT = T;
+    if (held.left) self_.targetX = Math.max(boundsX()[0], self_.x - 60);
+    if (held.right) self_.targetX = Math.min(boundsX()[1], self_.x + 60);
+    updateAvatar(self_, dt);
+    for (const a of Object.values(remote)) updateAvatar(a, dt);
+    sctx.clearRect(0, 0, sc.width, sc.height);
+    drawEntrances();
+    drawMachines();
+    drawBeachProps();
+    for (const a of Object.values(remote)) drawAvatar(a);
+    drawAvatar(self_);
+    drawStreetBubbles();
+    sendSelfPos();
+    if (MP.role === 'master') {
+      MP._hostStreetPos = { xFrac: self_.x / sc.width, facing: self_.facing, moving: self_.moving };
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  window.startStreetLoop = function() {
+    if (active) return;
+    resize();
+    ensureSelf();
+    active = true;
+    sc.style.display = 'block';
+    lastT = 0;
+    if (MP.role === 'master') {
+      clearInterval(MP._pollTimer);
+      MP._pollTimer = setInterval(() => MP._masterPoll(), 400);
+      if (MP.startBroadcastLoop) MP.startBroadcastLoop();
+    }
+    if (MP.role === 'customer') {
+      clearInterval(MP._pollTimer);
+      MP._pollTimer = setInterval(() => MP._customerPoll(), 450);
+    }
+    if (MP.roomCode === PLAZA_CODE) {
+      directory = [];
+      window._streetRefreshDirectory();
+      directoryTimer = setInterval(() => window._streetRefreshDirectory(), 3000);
+    }
+    rafId = requestAnimationFrame(loop);
+  };
+
+  window.stopStreetLoop = function() {
+    if (!active) return;
+    active = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    sc.style.display = 'none';
+    remote = {};
+    bubbles = [];
+    if (directoryTimer) { clearInterval(directoryTimer); directoryTimer = null; }
+    if (MP.role === 'master') {
+      clearInterval(MP._pollTimer);
+      MP._pollTimer = setInterval(() => MP._masterPoll(), 1000);
+      if (MP.startBroadcastLoop) MP.startBroadcastLoop();
+    }
+    if (MP.role === 'customer') {
+      clearInterval(MP._pollTimer);
+      MP._pollTimer = setInterval(() => MP._customerPoll(), 1500);
+    }
+  };
+
+  // Called from MP._masterPoll / MP._customerPoll with the latest `players` array from the
+  // room broadcast. No-op (harmless) when the street screen isn't active.
+  window._streetSyncPlayers = function(players) {
+    if (!active || !players) return;
+    const seen = {};
+    const [lo, hi] = boundsX();
+    for (const p of players) {
+      if (self_ && p.id === self_.id) continue; // never let network echo override local control
+      seen[p.id] = true;
+      const x = lo + (hi - lo) * Math.min(1, Math.max(0, p.xFrac ?? 0.5));
+      let a = remote[p.id];
+      if (!a) {
+        a = remote[p.id] = {
+          id: p.id, x, targetX: x, facing: p.facing || 'right', moving: false,
+          phase: Math.random() * Math.PI * 2, animT: 0, ct: p.ct, name: p.name,
+        };
+      }
+      a.targetX = x;
+      a.facing = p.facing || a.facing;
+      if (p.ct) a.ct = p.ct;
+      if (p.name) a.name = p.name;
+    }
+    for (const id of Object.keys(remote)) if (!seen[id]) delete remote[id]; // player left
+  };
+
+  window._streetHandleChat = function(id, name, text) {
+    if (!active) return;
+    const owner = (self_ && id === self_.id) ? self_ : remote[id];
+    if (owner) spawnStreetBubble(id, owner.x, text);
+  };
+
+  window.streetSendChat = function() {
+    const inp = document.getElementById('street-chat-input');
+    if (!inp || !self_) return;
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    try {
+      if (MP.role === 'master') { if (MP.hostSendChat) MP.hostSendChat(text); }
+      else if (MP.sendChat) MP.sendChat(text);
+    } catch (_) {}
+    spawnStreetBubble(self_.id, self_.x, text); // optimistic local echo
+  };
+
+  window.goStreet = function() {
+    if (!MP.roomCode) return; // only meaningful inside an active room session
+    MP._preStreetScreen = G.screen;
+    G.screen = 'street';
+    fullRender();
+  };
+
+  // Leave whatever room you're currently in (if any — MP.destroy() is a safe no-op
+  // otherwise) and join the shared Plaza to browse every open yatai.
+  window.goExploreStreet = function() {
+    MP.destroy();
+    MP.joinVenue(PLAZA_CODE);
+  };
+
+  // Leave the Plaza and join a specific yatai's room — reuses joinRoom() completely
+  // unchanged, so seating, screen switch, and normal stall polling all just work.
+  window._enterYatai = function(code) {
+    MP.destroy();
+    MP.joinRoom(code, MP.myName || G.playerName || 'Guest');
+  };
+  // Leave the Plaza and join the Pachinko Palace — another shared venue, same pattern.
+  window._enterPachinko = function() {
+    MP.destroy();
+    MP.joinVenue(PACHINKO_CODE);
+  };
+  // Leave the Plaza and join the Beach — another shared venue, same pattern.
+  window._enterBeach = function() {
+    MP.destroy();
+    MP.joinVenue(BEACH_CODE);
+  };
+  window.leaveStreet = function() {
+    if (MP.roomCode === PLAZA_CODE) {
+      // Leaving the shared directory doesn't preserve "wherever you came from" — you
+      // fully left that room's session already (see goExploreStreet/_enterYatai).
+      MP.destroy();
+      G.screen = 'multilobby';
+      fullRender();
+      return;
+    }
+    if (MP.roomCode === PACHINKO_CODE || MP.roomCode === BEACH_CODE) {
+      // You got here from the Plaza, so leaving returns you there too.
+      MP.destroy();
+      MP.joinVenue(PLAZA_CODE);
+      return;
+    }
+    G.screen = MP._preStreetScreen || (MP.role === 'master' ? 'service' : 'customer');
+    fullRender();
+  };
+
+  window.addEventListener('resize', () => { if (active) resize(); });
+
+  window.addEventListener('keydown', e => {
+    if (G.screen !== 'street') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') held.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') held.right = true;
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') held.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') held.right = false;
+  });
+  window.addEventListener('click', e => {
+    if (G.screen !== 'street' || !self_) return;
+    if (e.target.closest && e.target.closest('#street-overlay')) return; // don't walk when tapping chat/back
+    if (e.target.closest && e.target.closest('#pachinko-modal')) return; // don't let clicks inside the play modal fall through to the canvas beneath
+    const rect = sc.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (sc.width / rect.width);
+    const hit = entranceHitTest(cx);
+    if (hit) {
+      if (hit.type === 'pachinko') window._enterPachinko();
+      else if (hit.type === 'beach') window._enterBeach();
+      else window._enterYatai(hit.code);
+      return;
+    }
+    const mHit = machineHitTest(cx);
+    if (mHit) { window._openPachinkoModal(mHit); return; }
+    const [lo, hi] = boundsX();
+    self_.targetX = Math.min(hi, Math.max(lo, cx));
+  });
+})();
+
 // ── SCREEN SWITCH ──
 // Override fullRender to handle multiplayer screens (this declaration wins over the earlier one)
 
@@ -10451,6 +11552,7 @@ if (typeof serveCustomer === 'function') {
 // Single canonical fullRender — handles all screens + YouTube TV overlay
 function fullRender() {
   stopLoop();
+  try { if (window.stopStreetLoop) window.stopStreetLoop(); } catch(_) {} // safe no-op if street wasn't active
   const root = document.getElementById('root');
   if (!root) return;
   switch (G.screen) {
@@ -10465,6 +11567,7 @@ function fullRender() {
     case 'multihost':  root.innerHTML = buildMultiHost(); break;
     case 'multijoin':  root.innerHTML = buildMultiJoin(); setTimeout(() => { const el = document.getElementById('multi-join-code'); if (el) el.focus(); }, 80); break;
     case 'customer':   root.innerHTML = buildCustomerView(); break;
+    case 'street':     root.innerHTML = buildStreetView(); if (window.startStreetLoop) window.startStreetLoop(); break;
     default:           root.innerHTML = buildTitle();
   }
 }

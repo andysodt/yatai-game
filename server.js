@@ -5,10 +5,22 @@ const url = require('url');
 
 // In-memory room store (mirrors api/room.js logic)
 const rooms = new Map();
+// Reserved code for the shared, ownerless "street" hangout — auto-created on first join,
+// never explicitly created by a client. Excluded from the directory listing.
+const PLAZA_CODE = 'PLAZA1';
+// Reserved code for the shared, ownerless Pachinko Palace — same auto-create pattern as
+// the Plaza, but shown IN the directory as a synthetic always-present entry.
+const PACHINKO_CODE = 'PACHIN1';
+// Reserved code for the shared, ownerless Beach — same pattern as the Palace.
+const BEACH_CODE = 'BEACH1';
 setInterval(() => {
   const cutoff = Date.now() - 3 * 60 * 60 * 1000;
   for (const [code, room] of rooms) { if (room.ts < cutoff) rooms.delete(code); }
 }, 10 * 60 * 1000);
+
+function emptyRoom(hostName) {
+  return { host: hostName, guests: {}, state: null, messages: [], positions: {}, ct: {}, ts: Date.now() };
+}
 
 // ── LIVE RELOAD ───────────────────────────────
 const reloadClients = new Set();
@@ -74,6 +86,31 @@ function roomHandler(req, res, parsedUrl) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
+  if (req.method === 'GET' && parsedUrl.query.list === '1') {
+    const list = [];
+    for (const [code, room] of rooms) {
+      if (code === PLAZA_CODE || code === PACHINKO_CODE || code === BEACH_CODE) continue;
+      list.push({
+        code, hostName: room.host, type: 'yatai',
+        isOpen: !!(room.state && room.state.isOpen),
+        guestCount: Object.keys(room.guests).length,
+      });
+    }
+    // Synthetic, always-present entries — these auto-create lazily on first join
+    // (like the Plaza), so they may not exist in `rooms` yet.
+    const pachinko = rooms.get(PACHINKO_CODE);
+    list.push({
+      code: PACHINKO_CODE, hostName: 'Pachinko Palace', type: 'pachinko',
+      isOpen: true, guestCount: pachinko ? Object.keys(pachinko.guests).length : 0,
+    });
+    const beach = rooms.get(BEACH_CODE);
+    list.push({
+      code: BEACH_CODE, hostName: 'Beach', type: 'beach',
+      isOpen: true, guestCount: beach ? Object.keys(beach.guests).length : 0,
+    });
+    res.end(JSON.stringify({ ok: true, rooms: list })); return;
+  }
+
   const code = ((parsedUrl.query.code || '') + '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!code) { res.writeHead(400); res.end(JSON.stringify({ ok: false, error: 'no code' })); return; }
 
@@ -83,13 +120,20 @@ function roomHandler(req, res, parsedUrl) {
     req.on('end', () => {
       let parsed = {};
       try { parsed = JSON.parse(body); } catch(_) {}
-      const { type, name, guestId, data } = parsed;
+      const { type, name, guestId, data, xFrac, facing, moving } = parsed;
 
       if (type === 'create') {
-        rooms.set(code, { host: name || 'Host', guests: {}, state: null, messages: [], ts: Date.now() });
+        rooms.set(code, emptyRoom(name || 'Host'));
         res.end(JSON.stringify({ ok: true })); return;
       }
-      if (!rooms.has(code)) { res.end(JSON.stringify({ ok: false, error: 'room not found' })); return; }
+      if (!rooms.has(code)) {
+        // The Plaza and Palace are shared, ownerless spaces — auto-create on first join
+        // rather than requiring some client to explicitly POST type:'create' for them.
+        if (type === 'join' && code === PLAZA_CODE) rooms.set(code, emptyRoom('Street'));
+        else if (type === 'join' && code === PACHINKO_CODE) rooms.set(code, emptyRoom('Pachinko Palace'));
+        else if (type === 'join' && code === BEACH_CODE) rooms.set(code, emptyRoom('Beach'));
+        else { res.end(JSON.stringify({ ok: false, error: 'room not found' })); return; }
+      }
       const room = rooms.get(code);
       room.ts = Date.now();
 
@@ -100,15 +144,30 @@ function roomHandler(req, res, parsedUrl) {
         res.end(JSON.stringify({ ok: true, guestId: gid })); return;
       }
       if (type === 'state') { room.state = data; res.end(JSON.stringify({ ok: true })); return; }
+      if (type === 'pos') {
+        if (guestId) {
+          room.positions[guestId] = {
+            xFrac: typeof xFrac === 'number' ? Math.min(1, Math.max(0, xFrac)) : 0.5,
+            facing: facing === 'left' ? 'left' : 'right',
+            moving: !!moving,
+            ts: room.ts,
+          };
+        }
+        res.end(JSON.stringify({ ok: true })); return;
+      }
       if (type === 'msg') {
         const msg = { ...(data || {}), guestId: guestId || null, ts: room.ts };
         if (msg.type === 'order') console.log('[SERVER ORDER]', JSON.stringify(msg));
         room.messages.push(msg);
         if (room.messages.length > 120) room.messages = room.messages.slice(-80);
+        // Appearance needs to persist like positions do — a message-only relay means anyone
+        // who joins after it was sent (i.e. after it ages out of the since-filtered window)
+        // never learns an existing peer's ct at all.
+        if (guestId && data && data.type === 'ct' && data.ct) room.ct[guestId] = data.ct;
         res.end(JSON.stringify({ ok: true })); return;
       }
       if (type === 'leave') {
-        if (guestId) { delete room.guests[guestId]; room.messages.push({ type: 'leave', guestId, ts: room.ts }); }
+        if (guestId) { delete room.guests[guestId]; delete room.positions[guestId]; delete room.ct[guestId]; room.messages.push({ type: 'leave', guestId, ts: room.ts }); }
         res.end(JSON.stringify({ ok: true })); return;
       }
       if (type === 'close') { rooms.delete(code); res.end(JSON.stringify({ ok: true })); return; }
@@ -126,6 +185,8 @@ function roomHandler(req, res, parsedUrl) {
       guests: Object.values(room.guests),
       state: room.state,
       messages: room.messages.filter(m => m.ts > since),
+      positions: room.positions || {},
+      ct: room.ct || {},
       ts: room.ts,
     }));
   }
