@@ -30,6 +30,44 @@ fs.watch(__dirname, { recursive: false }, (event, filename) => {
   }, 120); // debounce rapid saves
 });
 
+function chatHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+  if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+
+  let body = '';
+  req.on('data', d => body += d);
+  req.on('end', async () => {
+    let parsed = {};
+    try { parsed = JSON.parse(body); } catch(_) {}
+    const { message, systemPrompt } = parsed;
+    if (!message) { res.writeHead(400); res.end(JSON.stringify({ error: 'missing message' })); return; }
+
+    try {
+      const r = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'qwen2.5:3b',
+          messages: [
+            { role: 'system', content: systemPrompt || 'You are a customer at a Japanese yatai food stall. Respond in Japanese, keep it short and natural (1-2 sentences).' },
+            { role: 'user', content: message },
+          ],
+          stream: false,
+        }),
+      });
+      const data = await r.json();
+      const reply = data?.message?.content || '…';
+      res.end(JSON.stringify({ reply }));
+    } catch (e) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: e.message }));
+    }
+  });
+}
+
 function roomHandler(req, res, parsedUrl) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -116,6 +154,7 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', 'application/json');
 
   if (parsed.pathname === '/api/room') return roomHandler(req, res, parsed);
+  if (parsed.pathname === '/api/chat') return chatHandler(req, res);
 
   // Static file server
   let filePath = path.join(__dirname, parsed.pathname === '/' ? 'index.html' : parsed.pathname);
