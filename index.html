@@ -2809,6 +2809,50 @@ try {
   function _repEatMax(base)   { return Math.floor(base * 1.2 * (1 - (_curRep / 100) * 0.75)); }
   function _repRoundsBonus()  { return Math.floor((_curRep / 100) * 18); }
 
+  // ── LLM-GENERATED OUTFITS ── a slow-growing pool of AI-designed ct objects,
+  // refreshed periodically while the stall is open (see window._requestLlmOutfit,
+  // triggered from openStall/endService). Every field is validated before it's
+  // accepted — the canvas renderer expects specific enums/hex colors, and a small
+  // local model won't always follow the schema — so a bad response is just discarded
+  // rather than risking a broken render. Falls back entirely to the existing
+  // procedural randomCtype() pool whenever empty or a request fails.
+  const _VALID_CTYPE_TYPES = new Set(['tee', 'shirt', 'suit', 'kimono', 'hoodie']);
+  const _VALID_HAIR_STYLES = new Set(['buzz', 'medium', 'long', 'thin', 'ponytail']);
+  const LLM_OUTFIT_POOL_MAX = 12;
+  let _llmOutfitPool = [];
+  function _isHexColor(s) { return typeof s === 'string' && /^#[0-9a-fA-F]{6}$/.test(s); }
+  function _validateLlmOutfit(o) {
+    if (!o || typeof o !== 'object' || !_VALID_CTYPE_TYPES.has(o.type)) return null;
+    for (const f of ['jacket', 'jacketD', 'pants', 'shirt', 'cuff', 'skin', 'skinD', 'hair']) {
+      if (!_isHexColor(o[f])) return null;
+    }
+    return {
+      type: o.type, jacket: o.jacket, jacketD: o.jacketD, pants: o.pants,
+      shirt: o.shirt, cuff: o.cuff, skin: o.skin, skinD: o.skinD, hair: o.hair,
+      hairStyle: _VALID_HAIR_STYLES.has(o.hairStyle) ? o.hairStyle : 'medium',
+      female: !!o.female, llmGenerated: true,
+    };
+  }
+  window._requestLlmOutfit = async function() {
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Generate one now.',
+          systemPrompt: 'You generate JSON describing a fictional customer\'s outfit for a Japanese yatai (street food stall) character generator. Respond with ONLY a single valid JSON object — no markdown code fences, no explanation, no extra text before or after. Schema: {"type": one of "tee"|"shirt"|"suit"|"kimono"|"hoodie", "jacket": "#rrggbb" (main outer garment color), "jacketD": "#rrggbb" (darker shade of jacket, for shading), "pants": "#rrggbb", "shirt": "#rrggbb" (inner shirt color), "cuff": "#rrggbb", "skin": "#rrggbb", "skinD": "#rrggbb" (darker skin shade), "hair": "#rrggbb", "hairStyle": one of "buzz"|"medium"|"long"|"thin"|"ponytail", "female": true or false}. Colors MUST be hex codes like #a0522d, never color names. Example of a correctly formatted response: {"type":"suit","jacket":"#2a3b4c","jacketD":"#1a2530","pants":"#14202c","shirt":"#e0e4d8","cuff":"#eaeedc","skin":"#c09870","skinD":"#9a7850","hair":"#0c0808","hairStyle":"buzz","female":false}. Be creative and varied with the palette, type, and hairstyle combination each time — invent a plausible, interesting-looking customer different from the example.',
+        }),
+      });
+      const data = await resp.json();
+      let raw = (data.reply || '').trim();
+      raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      const outfit = _validateLlmOutfit(JSON.parse(raw));
+      if (outfit) {
+        _llmOutfitPool.push(outfit);
+        if (_llmOutfitPool.length > LLM_OUTFIT_POOL_MAX) _llmOutfitPool.shift();
+      }
+    } catch (_) { /* discard — procedural pool is always the fallback */ }
+  };
+
   function spawnCustomer() {
     const free = SLOTS.filter(s => !s.cu);
     if (!free.length) return;
@@ -2820,7 +2864,12 @@ try {
     const seated = new Set(SLOTS.filter(s => s.cu && s.cu.permanentId).map(s => s.cu.permanentId));
     const permanent = _allPermanentNPCs().find(p => !G._permanentSeenToday[p.id] && !seated.has(p.id));
 
-    const ct = permanent ? permanent.ct : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
+    // ~35% chance to use an AI-generated outfit instead of the procedural randomizer,
+    // whenever the pool has anything in it yet.
+    const useLlmOutfit = !permanent && _llmOutfitPool.length > 0 && Math.random() < 0.35;
+    const ct = permanent ? permanent.ct
+      : useLlmOutfit ? _llmOutfitPool[Math.floor(Math.random() * _llmOutfitPool.length)]
+      : randomCtype(CTYPES[Math.floor(Math.random()*CTYPES.length)]);
     if (permanent) G._permanentSeenToday[permanent.id] = true;
     if (ct.type === 'kimono' && !ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playYakuzaSting(); } catch(_) {} }
     if (ct.geisha) { try { if (window.AUDIO_REF) window.AUDIO_REF.playGeishaMusic(); } catch(_) {} }
@@ -8491,6 +8540,7 @@ function endService() {
   window._serviceTimePct = 0;
   stopLoop();
   AUDIO.stopService();
+  clearInterval(window._llmOutfitTimer);
   savePlayerState();
   // Clear host canvas bubbles, turn off TV
   if (window._clearBubbles) window._clearBubbles();
@@ -8967,6 +9017,12 @@ window.openStall = function() {
   // the final "stall closed" broadcast said, forever, even though the host is actively
   // serving. Safe to call every day: startBroadcastLoop() clears any existing timer first.
   if (typeof MP !== 'undefined' && MP.roomCode && MP.startBroadcastLoop) MP.startBroadcastLoop();
+  // Seed the AI-outfit pool right away, then keep it topped up while open.
+  if (window._requestLlmOutfit) {
+    window._requestLlmOutfit();
+    clearInterval(window._llmOutfitTimer);
+    window._llmOutfitTimer = setInterval(() => window._requestLlmOutfit(), 25000);
+  }
 };
 
 window.cookItem = function(id) {
