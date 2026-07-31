@@ -512,18 +512,13 @@ html, body {
 /* ── PACHINKO MODAL ── */
 #pachinko-modal { position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%,-50%);
   background: rgba(10,14,28,0.97); border: 1px solid rgba(255,200,80,.4); border-radius: 12px;
-  padding: 18px 22px; width: 300px; box-shadow: 0 8px 40px rgba(0,0,0,.8); display: none; text-align: center; }
+  padding: 18px 22px; width: 380px; box-shadow: 0 8px 40px rgba(0,0,0,.8); display: none; text-align: center; }
 #pachinko-modal.visible { display: block; }
 .pk-title { font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
 .pk-money { font-size: 12px; color: var(--dim); margin-bottom: 12px; }
-.pk-stage { position: relative; height: 110px; background: rgba(0,0,0,.35); border-radius: 8px;
+.pk-stage { position: relative; height: 460px; background: rgba(0,0,0,.35); border-radius: 8px;
   margin-bottom: 12px; overflow: hidden; }
-.pk-ball { position: absolute; top: 6px; left: calc(50% - 7px); width: 14px; height: 14px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #ffcf5c 60%, #d98c00); transition: top 1.1s cubic-bezier(.3,.6,.3,1), left 1.1s cubic-bezier(.3,.6,.3,1); }
-.pk-slots { position: absolute; bottom: 0; left: 0; right: 0; display: flex; height: 26px; }
-.pk-slot { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
-  border-left: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
-.pk-slot.pk-win { color: #fdf0de; }
+#pk-canvas { display: block; width: 100%; height: 100%; }
 .pk-result { font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 10px; }
 .pk-result.pk-lose { color: #ff8080; }
 .pk-result.pk-win { color: #8cffa0; }
@@ -627,8 +622,7 @@ html, body {
   <div class="pk-title" id="pk-machine-name">🎰 Machine</div>
   <div class="pk-money">Your money: <span id="pk-money">¥0</span></div>
   <div class="pk-stage">
-    <div class="pk-ball" id="pk-ball" style="display:none"></div>
-    <div class="pk-slots" id="pk-slots"></div>
+    <canvas id="pk-canvas"></canvas>
   </div>
   <div class="pk-result" id="pk-result"></div>
   <div class="pk-actions">
@@ -9908,7 +9902,7 @@ const MP = {
         if (!msg.orderId && msg.ts <= _prevOrderTs) { continue; }
         if (!msg.orderId) this._lastOrderTs[msg.guestId] = msg.ts;
         let c = G.customers.find(cu => cu.peerId === msg.guestId);
-        if (c && c.state === 'served') { console.error('[HOST ORDER DROP] still finishing previous dish', msg.guestId); continue; }
+        if (c && (c.state === 'wait' || c.state === 'served')) { console.error('[HOST ORDER DROP] still working through current order', msg.guestId, c.state); continue; }
         if (!c) c = this._spawnRealCustomer(msg.guestId, peer.name);
         if (c) {
           c.order = item; c.state = 'wait';
@@ -10852,29 +10846,156 @@ if (typeof serveCustomer === 'function') {
 
 // ── PACHINKO MINIGAME ── entirely local: no server sync, no effect on other players in
 // the room — money changes hit this player's own G.money/save, same as normal stall
-// earnings. Ball drop is outcome-first-then-animate (no real peg-collision physics).
+// earnings. Real ball-drop physics: gravity, a staggered pin field, and genuine
+// circle-circle collision resolve which pocket the ball lands in — the outcome isn't
+// picked in advance, it falls out of the simulation.
 (function() {
   'use strict';
   const BET = 100;
-  const OUTCOMES = [
-    { mult: 0,    weight: 55, label: 'Miss' },
-    { mult: 1.2,  weight: 25, label: 'Small Win' },
-    { mult: 2.5,  weight: 12, label: 'Medium Win' },
-    { mult: 6,    weight: 6,  label: 'Big Win' },
-    { mult: 20,   weight: 2,  label: 'JACKPOT' },
+  // Pockets sized by relative weight, not equal width — like a real machine's start
+  // chucker, the jackpot gate is a small physical target flanked by wide "out" lanes.
+  // Weights tuned against a 20,000-drop simulation of this exact physics (see
+  // scratchpad/pachinko_rebalance.js) to land on ~2% jackpot rate and ~84% RTP — the
+  // naive first pass (equal-ish weights) let the ball's natural center-bunching produce
+  // a 7% jackpot rate and a 260% RTP, which would pay players more than they bet on average.
+  const POCKETS = [
+    { mult: 0,   label: 'MISS',    w: 30 },
+    { mult: 0.5, label: '0.5x',    w: 14 },
+    { mult: 1.5, label: '1.5x',    w: 4.5 },
+    { mult: 4,   label: '4x',      w: 1.5 },
+    { mult: 20,  label: 'JACKPOT', tag: '★', w: 2 },
+    { mult: 4,   label: '4x',      w: 1.5 },
+    { mult: 1.5, label: '1.5x',    w: 4.5 },
+    { mult: 0.5, label: '0.5x',    w: 14 },
+    { mult: 0,   label: 'MISS',    w: 30 },
   ];
-  const TOTAL_WEIGHT = OUTCOMES.reduce((a, o) => a + o.weight, 0);
-  let playing = false;
+  const TOTAL_W = POCKETS.reduce((a, p) => a + p.w, 0);
 
-  function pickOutcome() {
-    let r = Math.random() * TOTAL_WEIGHT;
-    for (const o of OUTCOMES) { if (r < o.weight) return o; r -= o.weight; }
-    return OUTCOMES[0];
+  const BALL_R = 6, PIN_R = 4, GRAVITY = 0.32, RESTITUTION = 0.42, WALL_RESTITUTION = 0.7;
+  const POCKET_H = 34, MAX_FRAMES = 900, STUCK_LIMIT = 90;
+
+  let canvas = null, ctx = null, cw = 0, ch = 0, pins = [];
+  let ball = null, playing = false, rafId = null, frameCount = 0;
+  let lastProgressY = 0, stuckFrames = 0;
+
+  function buildPins() {
+    pins = [];
+    const rows = 9;
+    const topMargin = 40;
+    const rowGap = (ch - POCKET_H - topMargin - 16) / rows;
+    const colGap = 28;
+    for (let r = 0; r < rows; r++) {
+      const y = topMargin + r * rowGap;
+      const offset = (r % 2 === 0) ? 0 : colGap / 2;
+      const cols = Math.floor((cw - 20) / colGap);
+      for (let c = 0; c <= cols; c++) {
+        // A tiny random offset per pin breaks the grid's perfect symmetry — without it
+        // a ball landing dead-center on a pin has nothing to deflect it sideways and can
+        // bounce vertically on the same pin indefinitely instead of falling past it.
+        const x = 10 + offset + c * colGap + (Math.random() - 0.5) * 3;
+        if (x > 12 && x < cw - 12) pins.push({ x, y: y + (Math.random() - 0.5) * 3 });
+      }
+    }
   }
 
-  function renderSlots() {
-    const el = document.getElementById('pk-slots');
-    if (el) el.innerHTML = OUTCOMES.map(o => `<div class="pk-slot">${o.mult}x</div>`).join('');
+  function pocketBounds() {
+    let x = 0;
+    return POCKETS.map(p => {
+      const width = (p.w / TOTAL_W) * cw;
+      const b = { x0: x, x1: x + width, mult: p.mult, label: p.label, tag: p.tag };
+      x += width;
+      return b;
+    });
+  }
+
+  function resizeCanvas() {
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    cw = canvas.width = Math.max(1, Math.round(rect.width));
+    ch = canvas.height = Math.max(1, Math.round(rect.height));
+    buildPins();
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, cw, ch);
+    const bounds = pocketBounds();
+    bounds.forEach(b => {
+      const isJackpot = b.mult === 20;
+      ctx.fillStyle = isJackpot ? 'rgba(255,200,60,.28)' : (b.mult === 0 ? 'rgba(255,255,255,.02)' : 'rgba(255,255,255,.06)');
+      ctx.fillRect(b.x0, ch - POCKET_H, b.x1 - b.x0, POCKET_H);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.beginPath(); ctx.moveTo(b.x0, ch - POCKET_H); ctx.lineTo(b.x0, ch); ctx.stroke();
+      ctx.fillStyle = isJackpot ? '#ffd35c' : 'rgba(255,255,255,.65)';
+      ctx.font = isJackpot ? 'bold 9px sans-serif' : '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.tag || b.label, (b.x0 + b.x1) / 2, ch - POCKET_H / 2 + 3);
+    });
+    ctx.fillStyle = 'rgba(220,220,230,.85)';
+    pins.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, PIN_R, 0, Math.PI * 2); ctx.fill(); });
+    if (ball) {
+      const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_R);
+      grad.addColorStop(0, '#fff'); grad.addColorStop(0.55, '#ffcf5c'); grad.addColorStop(1, '#d98c00');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Two half-gravity substeps per frame for collision stability at this ball speed/pin
+  // spacing — a single full step could tunnel through a pin at higher fall speeds.
+  function stepPhysics() {
+    for (let sub = 0; sub < 2; sub++) {
+      ball.vy += GRAVITY * 0.5;
+      ball.vy = Math.max(-8, Math.min(8, ball.vy));
+      ball.vx = Math.max(-6, Math.min(6, ball.vx));
+      ball.x += ball.vx * 0.5;
+      ball.y += ball.vy * 0.5;
+      if (ball.x - BALL_R < 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION; }
+      if (ball.x + BALL_R > cw) { ball.x = cw - BALL_R; ball.vx = -Math.abs(ball.vx) * WALL_RESTITUTION; }
+      for (const p of pins) {
+        const dx = ball.x - p.x, dy = ball.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = BALL_R + PIN_R;
+        if (dist < minDist && dist > 0.001) {
+          const nx = dx / dist, ny = dy / dist;
+          ball.x += nx * (minDist - dist);
+          ball.y += ny * (minDist - dist);
+          const dot = ball.vx * nx + ball.vy * ny;
+          ball.vx -= (1 + RESTITUTION) * dot * nx;
+          ball.vy -= (1 + RESTITUTION) * dot * ny;
+          // Real pin contacts aren't perfectly specular — a firm sideways kick keeps
+          // every drop genuinely unpredictable and stops a near-dead-center hit from
+          // just bouncing straight up and down on the same pin forever.
+          ball.vx += (Math.random() - 0.5) * 2.4;
+        }
+      }
+    }
+    frameCount++;
+    // Belt-and-suspenders: if the ball hasn't made downward progress in a while (e.g.
+    // trapped bouncing between two pins), give it a firm shove rather than let it hang.
+    if (ball.y > lastProgressY + 2) { lastProgressY = ball.y; stuckFrames = 0; }
+    else if (++stuckFrames > STUCK_LIMIT) {
+      ball.vy += 2.5; ball.vx += (Math.random() - 0.5) * 5;
+      stuckFrames = 0;
+    }
+    return (ball.y + BALL_R >= ch - POCKET_H) || frameCount > MAX_FRAMES;
+  }
+
+  function settledPocket() {
+    const bounds = pocketBounds();
+    return bounds.find(b => ball.x >= b.x0 && ball.x < b.x1) || bounds[bounds.length - 1];
+  }
+
+  function loop() {
+    const landed = stepPhysics();
+    draw();
+    if (landed) {
+      ball.vx = 0; ball.vy = 0; ball.y = ch - POCKET_H + BALL_R - 2;
+      draw();
+      setTimeout(() => finishPlay(settledPocket()), 500);
+      return;
+    }
+    rafId = requestAnimationFrame(loop);
   }
 
   function updateMoneyDisplays() {
@@ -10884,6 +11005,32 @@ if (typeof serveCustomer === 'function') {
     if (pk) pk.textContent = '¥' + Math.max(0, Math.round(G.money)).toLocaleString();
   }
 
+  function finishPlay(pocket) {
+    const payout = Math.round(BET * pocket.mult);
+    G.money += payout;
+    updateMoneyDisplays();
+    savePlayerState();
+    const resultEl = document.getElementById('pk-result');
+    if (resultEl) {
+      if (payout > BET) {
+        resultEl.textContent = `${pocket.label}! +¥${payout}`;
+        resultEl.className = 'pk-result pk-win';
+        toast(`🎰 ${pocket.label}! +¥${payout}`, 'info');
+      } else if (payout > 0) {
+        resultEl.textContent = `${pocket.label} — ¥${payout} back`;
+        resultEl.className = 'pk-result';
+      } else {
+        resultEl.textContent = 'Miss — try again?';
+        resultEl.className = 'pk-result pk-lose';
+      }
+    }
+    playing = false;
+    ball = null;
+    const btn = document.getElementById('pk-play-btn');
+    if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
+    draw();
+  }
+
   window._openPachinkoModal = function(machine) {
     const modal = document.getElementById('pachinko-modal');
     if (!modal) return;
@@ -10891,19 +11038,23 @@ if (typeof serveCustomer === 'function') {
     if (nameEl) nameEl.textContent = '🎰 ' + ((machine && machine.name) || 'Machine');
     const resultEl = document.getElementById('pk-result');
     if (resultEl) { resultEl.textContent = ''; resultEl.className = 'pk-result'; }
-    const ball = document.getElementById('pk-ball');
-    if (ball) ball.style.display = 'none';
-    renderSlots();
-    updateMoneyDisplays();
+    if (rafId) cancelAnimationFrame(rafId);
+    ball = null;
     playing = false;
+    modal.classList.add('visible');
+    if (!canvas) { canvas = document.getElementById('pk-canvas'); ctx = canvas.getContext('2d'); }
+    resizeCanvas();
+    draw();
+    updateMoneyDisplays();
     const btn = document.getElementById('pk-play-btn');
     if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
-    modal.classList.add('visible');
   };
 
   window._closePachinkoModal = function() {
     const modal = document.getElementById('pachinko-modal');
     if (modal) modal.classList.remove('visible');
+    if (rafId) cancelAnimationFrame(rafId);
+    playing = false;
   };
 
   window._pachinkoPlay = function() {
@@ -10914,49 +11065,14 @@ if (typeof serveCustomer === 'function') {
     if (btn) btn.disabled = true;
     const resultEl = document.getElementById('pk-result');
     if (resultEl) { resultEl.textContent = ''; resultEl.className = 'pk-result'; }
-
     G.money -= BET;
     updateMoneyDisplays();
-
-    const outcome = pickOutcome();
-    const idx = OUTCOMES.indexOf(outcome);
-    const slots = document.querySelectorAll('#pk-slots .pk-slot');
-    slots.forEach(s => s.classList.remove('pk-win'));
-
-    const ball = document.getElementById('pk-ball');
-    const stage = ball ? ball.parentElement : null;
-    if (ball && stage) {
-      ball.style.display = 'block';
-      ball.style.top = '6px';
-      ball.style.left = 'calc(50% - 7px)';
-      void ball.offsetWidth; // force reflow so the transition starts from this position
-      const slotWidth = stage.offsetWidth / OUTCOMES.length;
-      ball.style.top = (stage.offsetHeight - 20) + 'px';
-      ball.style.left = (slotWidth * idx + slotWidth / 2 - 7) + 'px';
-    }
-
-    setTimeout(() => {
-      if (slots[idx]) slots[idx].classList.add('pk-win');
-      const payout = Math.round(BET * outcome.mult);
-      G.money += payout;
-      updateMoneyDisplays();
-      savePlayerState();
-      if (resultEl) {
-        if (payout > BET) {
-          resultEl.textContent = `${outcome.label}! +¥${payout}`;
-          resultEl.className = 'pk-result pk-win';
-          toast(`🎰 ${outcome.label}! +¥${payout}`, 'info');
-        } else if (payout > 0) {
-          resultEl.textContent = `${outcome.label} — ¥${payout} back`;
-          resultEl.className = 'pk-result';
-        } else {
-          resultEl.textContent = 'Miss — try again?';
-          resultEl.className = 'pk-result pk-lose';
-        }
-      }
-      playing = false;
-      if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
-    }, 1150);
+    // Launch point varies each play — with a symmetric pin field a fixed center drop
+    // would statistically favor the middle far too strongly (binomial bunching).
+    const launchX = cw * (0.3 + Math.random() * 0.4);
+    ball = { x: launchX, y: 14, vx: (Math.random() - 0.5) * 1.5, vy: 0 };
+    frameCount = 0; lastProgressY = ball.y; stuckFrames = 0;
+    loop();
   };
 })();
 
