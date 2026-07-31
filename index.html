@@ -2895,8 +2895,8 @@ try {
     // Spawn cadence — faster at higher reputation
     _curRep = window._gameG?.rep ?? 8;
     const _rep = _curRep;
-    const _spawnBase   = Math.max(4,  16 - _rep * 0.12);
-    const _spawnJitter = Math.max(2,   6 - _rep * 0.04);
+    const _spawnBase   = Math.max(12, 48 - _rep * 0.36);
+    const _spawnJitter = Math.max(6,  18 - _rep * 0.12);
     if (!_isFrozen && T - lastSpawn > _spawnBase + Math.random() * _spawnJitter) {
       spawnCustomer();
       lastSpawn = T;
@@ -7970,7 +7970,7 @@ function updateService(dt) {
   // spawn customers
   G.spawnTimer -= dt;
   if (G.spawnTimer <= 0) {
-    const base = 4 + Math.random() * 8;
+    const base = 12 + Math.random() * 24;
     G.spawnTimer = base / (G.weather?.custMult || 1);
     try { spawnCust(); } catch(e) { console.error('spawn err', e); }
   }
