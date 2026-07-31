@@ -8896,6 +8896,11 @@ window.openStall = function() {
   if (_subEl) _subEl.style.display = 'none';
   startLoop();
   AUDIO.startService(G.weather?.id === 'rainy');
+  // endService() stops the host's broadcast loop when the night ends (MP.stopBroadcastLoop)
+  // and nothing else restarts it — without this, day 2+ guests are stuck seeing whatever
+  // the final "stall closed" broadcast said, forever, even though the host is actively
+  // serving. Safe to call every day: startBroadcastLoop() clears any existing timer first.
+  if (typeof MP !== 'undefined' && MP.roomCode && MP.startBroadcastLoop) MP.startBroadcastLoop();
 };
 
 window.cookItem = function(id) {
