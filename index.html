@@ -515,15 +515,23 @@ html, body {
 .cp-btn:hover { background: rgba(255,255,255,.08); }
 .cp-btn.danger { color: #ff6060; }
 
-/* ── PACHINKO MODAL ── */
+/* ── PACHINKO MODAL — styled like a real arcade cabinet ── */
 #pachinko-modal { position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%,-50%);
-  background: rgba(10,14,28,0.97); border: 1px solid rgba(255,200,80,.4); border-radius: 12px;
-  padding: 18px 22px; width: 380px; box-shadow: 0 8px 40px rgba(0,0,0,.8); display: none; text-align: center; }
+  background: linear-gradient(160deg, #3a3f4a 0%, #1c1f26 45%, #101318 100%);
+  border: 3px solid; border-image: linear-gradient(135deg, #e8e8ee, #8a8d96 30%, #45474e 55%, #d8d8e0 75%, #6a6d74) 1;
+  border-radius: 16px;
+  padding: 16px 18px 18px; width: 380px; box-shadow: 0 12px 50px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.15); display: none; text-align: center; }
 #pachinko-modal.visible { display: block; }
-.pk-title { font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
-.pk-money { font-size: 12px; color: var(--dim); margin-bottom: 12px; }
-.pk-stage { position: relative; height: 460px; background: rgba(0,0,0,.35); border-radius: 8px;
-  margin-bottom: 12px; overflow: hidden; }
+.pk-title { font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 4px; text-shadow: 0 0 8px rgba(255,200,80,.6); }
+.pk-money { font-size: 12px; color: var(--dim); margin-bottom: 10px; }
+.pk-led-row { display: flex; justify-content: space-between; padding: 0 4px 8px; }
+.pk-led { width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #ff5252 60%, #a00); box-shadow: 0 0 4px rgba(255,80,80,.8); animation: pk-blink 1.4s ease-in-out infinite; }
+.pk-led:nth-child(3n+2) { background: radial-gradient(circle at 35% 30%, #fff, #4fc3f7 60%, #0277bd); box-shadow: 0 0 4px rgba(79,195,247,.8); animation-delay: .3s; }
+.pk-led:nth-child(3n+3) { background: radial-gradient(circle at 35% 30%, #fff, #ffd54f 60%, #f57f17); box-shadow: 0 0 4px rgba(255,213,79,.8); animation-delay: .6s; }
+@keyframes pk-blink { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+.pk-stage { position: relative; height: 452px; border-radius: 6px;
+  margin-bottom: 12px; overflow: hidden;
+  border: 4px solid #16181c; box-shadow: inset 0 0 24px rgba(0,0,0,.9), inset 0 2px 6px rgba(0,0,0,.8); }
 #pk-canvas { display: block; width: 100%; height: 100%; }
 .pk-result { font-size: 13px; font-weight: 700; min-height: 18px; margin-bottom: 10px; }
 .pk-result.pk-lose { color: #ff8080; }
@@ -627,6 +635,7 @@ html, body {
 <div id="pachinko-modal">
   <div class="pk-title" id="pk-machine-name">🎰 Machine</div>
   <div class="pk-money">Your money: <span id="pk-money">¥0</span></div>
+  <div class="pk-led-row"><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span><span class="pk-led"></span></div>
   <div class="pk-stage">
     <canvas id="pk-canvas"></canvas>
   </div>
@@ -11060,6 +11069,7 @@ if (typeof serveCustomer === 'function') {
   let canvas = null, ctx = null, cw = 0, ch = 0, pins = [];
   let ball = null, playing = false, rafId = null, frameCount = 0;
   let lastProgressY = 0, stuckFrames = 0;
+  let ballTrail = [];
 
   function buildPins() {
     pins = [];
@@ -11102,26 +11112,86 @@ if (typeof serveCustomer === 'function') {
   function draw() {
     if (!ctx) return;
     ctx.clearRect(0, 0, cw, ch);
+
+    // Board — deep green felt with a vignette, like a real machine's playing field
+    const bg = ctx.createRadialGradient(cw / 2, ch * 0.4, 10, cw / 2, ch * 0.5, ch * 0.75);
+    bg.addColorStop(0, '#0f2418'); bg.addColorStop(0.7, '#081712'); bg.addColorStop(1, '#020604');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, cw, ch);
+    // Faint concentric guide rings, like the etched lanes on a real board
+    ctx.strokeStyle = 'rgba(255,255,255,.035)';
+    for (let ring = 1; ring <= 3; ring++) {
+      ctx.beginPath(); ctx.arc(cw / 2, ch * 0.42, ring * 46, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Decorative "start chucker" tulip marker above the jackpot pocket
     const bounds = pocketBounds();
+    const jackpotB = bounds.find(b => b.mult === 20);
+    if (jackpotB) {
+      const jx = (jackpotB.x0 + jackpotB.x1) / 2, jy = ch - POCKET_H - 26;
+      const glow = ctx.createRadialGradient(jx, jy, 2, jx, jy, 22);
+      glow.addColorStop(0, 'rgba(255,210,90,.55)'); glow.addColorStop(1, 'rgba(255,210,90,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(jx, jy, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3a2c10'; ctx.strokeStyle = '#ffd35c'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
+        const r = i % 2 === 0 ? 9 : 5;
+        const px = jx + Math.cos(a) * r, py = jy + Math.sin(a) * r;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+
+    // Pockets — chrome dividers instead of thin lines, gold glow under the jackpot
     bounds.forEach(b => {
       const isJackpot = b.mult === 20;
-      ctx.fillStyle = isJackpot ? 'rgba(255,200,60,.28)' : (b.mult === 0 ? 'rgba(255,255,255,.02)' : 'rgba(255,255,255,.06)');
+      ctx.fillStyle = isJackpot ? 'rgba(255,200,60,.30)' : (b.mult === 0 ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.05)');
       ctx.fillRect(b.x0, ch - POCKET_H, b.x1 - b.x0, POCKET_H);
-      ctx.strokeStyle = 'rgba(255,255,255,.12)';
-      ctx.beginPath(); ctx.moveTo(b.x0, ch - POCKET_H); ctx.lineTo(b.x0, ch); ctx.stroke();
-      ctx.fillStyle = isJackpot ? '#ffd35c' : 'rgba(255,255,255,.65)';
-      ctx.font = isJackpot ? 'bold 9px sans-serif' : '9px sans-serif';
+      const divGrad = ctx.createLinearGradient(b.x0 - 1.5, 0, b.x0 + 1.5, 0);
+      divGrad.addColorStop(0, 'rgba(255,255,255,0)'); divGrad.addColorStop(0.5, 'rgba(230,230,240,.9)'); divGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = divGrad;
+      ctx.fillRect(b.x0 - 1.5, ch - POCKET_H, 3, POCKET_H);
+      ctx.fillStyle = isJackpot ? '#ffe9a8' : 'rgba(255,255,255,.7)';
+      ctx.font = isJackpot ? 'bold 10px sans-serif' : '9px sans-serif';
       ctx.textAlign = 'center';
+      if (isJackpot) { ctx.shadowColor = 'rgba(255,200,80,.9)'; ctx.shadowBlur = 6; }
       ctx.fillText(b.tag || b.label, (b.x0 + b.x1) / 2, ch - POCKET_H / 2 + 3);
+      ctx.shadowBlur = 0;
     });
-    ctx.fillStyle = 'rgba(220,220,230,.85)';
-    pins.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, PIN_R, 0, Math.PI * 2); ctx.fill(); });
+
+    // Pins — small chrome balls with a highlight, not flat dots
+    pins.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x + 0.6, p.y + 0.8, PIN_R, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
+      const pg = ctx.createRadialGradient(p.x - 1.3, p.y - 1.3, 0.4, p.x, p.y, PIN_R);
+      pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.45, '#d8dbe2'); pg.addColorStop(1, '#7a7e88');
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.arc(p.x, p.y, PIN_R, 0, Math.PI * 2); ctx.fill();
+    });
+
     if (ball) {
+      // Fading trail behind the ball for a sense of speed
+      for (let i = 0; i < ballTrail.length; i++) {
+        const t = ballTrail[i];
+        const alpha = (i / ballTrail.length) * 0.25;
+        ctx.fillStyle = `rgba(255,207,92,${alpha.toFixed(2)})`;
+        ctx.beginPath(); ctx.arc(t.x, t.y, BALL_R * 0.7, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(ball.x + 1, ball.y + 1.5, BALL_R, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill();
       const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_R);
       grad.addColorStop(0, '#fff'); grad.addColorStop(0.55, '#ffcf5c'); grad.addColorStop(1, '#d98c00');
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
     }
+
+    // Glass sheen — a faint diagonal highlight sweep, like light off the cover glass
+    const sheen = ctx.createLinearGradient(0, 0, cw, ch);
+    sheen.addColorStop(0, 'rgba(255,255,255,.05)'); sheen.addColorStop(0.18, 'rgba(255,255,255,0)');
+    sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); sheen.addColorStop(0.62, 'rgba(255,255,255,.04)');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen; ctx.fillRect(0, 0, cw, ch);
   }
 
   // Two half-gravity substeps per frame for collision stability at this ball speed/pin
@@ -11171,6 +11241,8 @@ if (typeof serveCustomer === 'function') {
 
   function loop() {
     const landed = stepPhysics();
+    ballTrail.push({ x: ball.x, y: ball.y });
+    if (ballTrail.length > 6) ballTrail.shift();
     draw();
     if (landed) {
       ball.vx = 0; ball.vy = 0; ball.y = ch - POCKET_H + BALL_R - 2;
@@ -11254,7 +11326,7 @@ if (typeof serveCustomer === 'function') {
     // would statistically favor the middle far too strongly (binomial bunching).
     const launchX = cw * (0.3 + Math.random() * 0.4);
     ball = { x: launchX, y: 14, vx: (Math.random() - 0.5) * 1.5, vy: 0 };
-    frameCount = 0; lastProgressY = ball.y; stuckFrames = 0;
+    frameCount = 0; lastProgressY = ball.y; stuckFrames = 0; ballTrail = [];
     loop();
   };
 })();
