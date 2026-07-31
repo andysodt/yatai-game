@@ -395,15 +395,21 @@ html, body {
 .signin-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
 .signin-accounts { display: flex; flex-direction: column; gap: 6px; }
 .signin-account-btn {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 6px;
   background: rgba(255,140,58,.08); border: 1px solid rgba(255,140,58,.25);
-  border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  border-radius: 8px; padding: 10px 14px;
   color: var(--cream); font-family: inherit; font-size: 14px; font-weight: 600;
   transition: all .15s; text-align: left; width: 100%;
   touch-action: manipulation;
 }
 .signin-account-btn:hover { background: rgba(255,140,58,.18); border-color: rgba(255,140,58,.5); }
 .signin-account-btn .acct-name { flex: 1; }
+.signin-account-click { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+.signin-delete-btn {
+  background: none; border: none; color: var(--dim); font-size: 15px; line-height: 1;
+  cursor: pointer; padding: 4px 6px; border-radius: 6px; flex-shrink: 0; opacity: .55; transition: all .15s;
+}
+.signin-delete-btn:hover { opacity: 1; background: rgba(255,80,80,.15); color: #ff8080; }
 .signin-row { display: flex; gap: 8px; align-items: flex-start; }
 .signin-input {
   flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
@@ -9816,6 +9822,18 @@ function _saveAccount(name) {
   localStorage.setItem('yatai_current', name);
 }
 
+window.deleteAccount = function(name) {
+  if (!confirm(`Delete player "${name}"? Their save (money, day, progress) is gone for good.`)) return;
+  try {
+    const list = getAccounts().filter(n => n !== name);
+    localStorage.setItem('yatai_accounts', JSON.stringify(list));
+    localStorage.removeItem('yatai_save_' + name);
+    if (localStorage.getItem('yatai_current') === name) localStorage.removeItem('yatai_current');
+  } catch(_) {}
+  if (G.playerName === name) G.playerName = '';
+  fullRender();
+};
+
 window.resetGame = function() {
   if (!G.playerName) return;
   try { localStorage.removeItem('yatai_save_' + G.playerName); } catch(_) {}
@@ -9876,11 +9894,15 @@ function buildSignIn() {
   const current = G.playerName;
   const accountBtns = accounts.map(name => {
     const active = name === current;
-    return `<button class="signin-account-btn" onclick="window.signInAs('${name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" style="${active ? 'border-color:rgba(255,140,58,.7);background:rgba(255,140,58,.18)' : ''}">
-      <span style="font-size:18px">${_playerIcon(name)}</span>
-      <span class="acct-name">${name}${active ? ' <span style="font-size:10px;color:var(--lantern)">(you)</span>' : ''}</span>
-      <span class="acct-arrow">→</span>
-    </button>`;
+    const safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="signin-account-btn" style="${active ? 'border-color:rgba(255,140,58,.7);background:rgba(255,140,58,.18)' : ''}">
+      <div class="signin-account-click" onclick="window.signInAs('${safeName}')">
+        <span style="font-size:18px">${_playerIcon(name)}</span>
+        <span class="acct-name">${name}${active ? ' <span style="font-size:10px;color:var(--lantern)">(you)</span>' : ''}</span>
+        <span class="acct-arrow">→</span>
+      </div>
+      <button class="signin-delete-btn" onclick="event.stopPropagation(); window.deleteAccount('${safeName}')" title="Delete this player">🗑️</button>
+    </div>`;
   }).join('');
 
   return `<div class="screen" id="signin-screen" style="justify-content:center;padding:32px 20px">
