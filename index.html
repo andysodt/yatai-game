@@ -11894,6 +11894,17 @@ if (typeof serveCustomer === 'function') {
     const root = slot.root, g = slot.body, hg = slot.head;
     g.clear(); hg.clear();
     hg.visible = true;
+    // The walking rig positions/flips `body` directly (g.position.set(x,0),
+    // g.scale.set(±1,1)) since it doesn't use root at all. A pooled slot that
+    // rendered a walking customer last frame and a seated one this frame would
+    // otherwise leave that stale transform on `body` while `head` gets fully
+    // repositioned every frame — body and head then visibly disagree on where
+    // the customer is. All seated positioning goes through `root`, so body's
+    // own transform must stay neutral.
+    g.position.set(0, 0);
+    g.scale.set(1, 1);
+    g.pivot.set(0, 0);
+    g.rotation = 0;
 
     const seatY  = counterY + H*0.048;
     const shldrY = counterY - H*0.195;
