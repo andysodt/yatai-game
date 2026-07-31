@@ -8441,6 +8441,7 @@ function endService() {
   playOutro(() => {
     G.screen = 'review';
     fullRender();
+    if (window._startReviewAutoAdvance) window._startReviewAutoAdvance();
   });
 }
 
@@ -9323,8 +9324,25 @@ function buildReview() {
     </div>` : ''}
 
     <button class="btn btn-primary btn-full" onclick="nextDay()">🌅 Start Day ${G.day + 1}</button>
+    <div id="review-countdown" style="margin-top:8px;font-size:11px;opacity:.55;text-align:center"></div>
   </div></div>`;
 }
+
+// Auto-advances to the next day 30s after the review screen appears, so the player
+// doesn't have to sit on the summary screen — a manual click on "Start Day" (which
+// changes G.screen away from 'review') cancels it.
+window._startReviewAutoAdvance = function() {
+  let secondsLeft = 30;
+  const tick = () => {
+    const el = document.getElementById('review-countdown');
+    if (G.screen !== 'review' || !el) return; // cancelled — manually advanced or navigated away
+    if (secondsLeft <= 0) { nextDay(); return; }
+    el.textContent = `Auto-continuing in ${secondsLeft}s…`;
+    secondsLeft--;
+    setTimeout(tick, 1000);
+  };
+  tick();
+};
 
 // ─────────────────────────────────────────────
 // UI HELPERS
