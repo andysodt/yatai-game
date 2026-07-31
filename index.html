@@ -2838,7 +2838,7 @@ try {
       interest: _randInt(),
       smoker: Math.random() < 0.28,
       eatTimer: 0,
-      eatMax: ct.sumo ? _repEatMax(35000 + Math.floor(Math.random()*15000)) : _repEatMax(30000 + Math.floor(Math.random()*20000)),
+      eatMax: ct.sumo ? _repEatMax(70000 + Math.floor(Math.random()*30000)) : _repEatMax(60000 + Math.floor(Math.random()*40000)),
       roundsLeft: ct.sumo ? 30 + Math.floor(Math.random() * 20) + _repRoundsBonus() : 18 + Math.floor(Math.random() * 14) + _repRoundsBonus(),
       unhappy: Math.random() < 0.12,
       alcoholCount: ct.sumo ? 2 : 0,
@@ -2870,7 +2870,7 @@ try {
         interest: _randInt(),
         smoker: Math.random() < 0.28,
         eatTimer: Math.floor(Math.random()*300),
-        eatMax: 45000 + Math.floor(Math.random()*27000),
+        eatMax: 90000 + Math.floor(Math.random()*54000),
         roundsLeft: 14 + Math.floor(Math.random() * 10),
         unhappy: Math.random() < 0.25,
         alcoholCount: 0,
@@ -3191,7 +3191,7 @@ try {
             cu.roundsLeft--;
             cu.dish = _pickDish();
             cu.eatTimer = 0;
-            cu.eatMax = _repEatMax(20000 + Math.floor(Math.random() * 16000));
+            cu.eatMax = _repEatMax(40000 + Math.floor(Math.random() * 32000));
             cu.served = false;
             cu.emptyTimer = 0;
             cu.serveAt = 60 + Math.floor(Math.random() * 40);
@@ -8084,7 +8084,7 @@ function doServe(cust, slotIdx) {
     }
     const idx = G.customers.indexOf(cust);
     if (idx !== -1) G.customers.splice(idx, 1);
-  }, 9000);
+  }, 18000);
 }
 
 function spawnCust() {
