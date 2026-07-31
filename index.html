@@ -7822,6 +7822,7 @@ const WEATHER = [
 const SERVICE_START = 18 * 60;
 const SERVICE_END   = 23 * 60;
 const TIME_SPEED    = 0.6; // game-minutes per real second
+const COOK_TIME_MULT = 2; // multiplies every MENU item's base .cook seconds
 
 // ─────────────────────────────────────────────
 // SUBTITLE
@@ -7941,7 +7942,7 @@ function updateService(dt) {
     const s = G.cookSlots[i];
     if (s && s.state === 'cooking') {
       s.elapsed += dt;
-      s.progress = Math.min(s.elapsed / s.item.cook, 1);
+      s.progress = Math.min(s.elapsed / (s.item.cook * COOK_TIME_MULT), 1);
       if (s.progress >= 1) {
         s.state = 'ready';
         s.readyAt = s.elapsed;
@@ -9775,8 +9776,9 @@ fullRender();
     if (!btn) { tip.style.display = 'none'; return; }
     const item = MENU.find(m => m.id === btn.dataset.cook);
     if (!item) return;
+    const cookSecs = item.cook * COOK_TIME_MULT;
     const cookLabel = item.cook <= 3 ? 'Quick' : item.cook <= 9 ? 'Fast' : item.cook <= 14 ? 'Medium' : 'Slow';
-    tip.innerHTML = `<div class="tip-name">${item.icon} ${item.en} <span style="opacity:.6;font-weight:400">(${item.name})</span></div><div class="tip-desc">${item.desc}</div><div class="tip-meta"><span>¥${item.price}</span><span>${cookLabel} · ${item.cook}s</span></div>`;
+    tip.innerHTML = `<div class="tip-name">${item.icon} ${item.en} <span style="opacity:.6;font-weight:400">(${item.name})</span></div><div class="tip-desc">${item.desc}</div><div class="tip-meta"><span>¥${item.price}</span><span>${cookLabel} · ${cookSecs}s</span></div>`;
     tip.style.display = 'block';
   });
 
