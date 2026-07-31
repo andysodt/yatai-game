@@ -10609,11 +10609,6 @@ function buildMultiLobby() {
         <div class="role-name">Host Game</div>
         <div class="role-desc">Run the stall, cook food, serve real players</div>
       </div>
-      <div class="role-card" onclick="window.goMultiJoin()" style="border-color:rgba(255,200,80,.45);background:rgba(255,200,80,.07)">
-        <span class="role-icon">🪑</span>
-        <div class="role-name" style="color:var(--gold)">Join Game</div>
-        <div class="role-desc">Sit down as a customer, order food, chat</div>
-      </div>
       <div class="role-card" onclick="window.goExploreStreet()" style="border-color:rgba(120,200,255,.4);background:rgba(120,200,255,.06)">
         <span class="role-icon">🚶</span>
         <div class="role-name" style="color:#8ecfff">Explore Street</div>
@@ -10642,21 +10637,6 @@ function buildMultiHost() {
     </div>
     <button class="btn btn-primary btn-full" onclick="window.multiStartGame()">🍜 Open the Stall</button>
     <button class="btn" onclick="window.leaveMulti()" style="margin-top:8px;font-size:12px;opacity:.6;width:100%">Cancel</button>
-  </div></div>`;
-}
-
-function buildMultiJoin() {
-  return `<div class="screen"><div class="multi-screen">
-    <div class="multi-title">🪑 Join a Stall</div>
-    <div style="font-size:13px;color:var(--dim);margin-bottom:24px">Ask the host for their 6-letter room code</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:8px;opacity:.8">Room Code</div>
-    <input class="multi-input" id="multi-join-code" placeholder="— — — — — —" maxlength="6"
-      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
-      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(this.value.length===6)window.multiJoinSubmit()">
-    <button class="btn btn-primary btn-full" onclick="window.multiJoinSubmit()" style="font-size:16px;padding:13px;letter-spacing:1px">Join →</button>
-    <div id="multi-join-status"></div>
-    <div id="multi-join-err" class="multi-error"></div>
-    <button class="btn" onclick="G.screen='multilobby';fullRender()" style="margin-top:12px;font-size:12px;opacity:.6;width:100%">← Back</button>
   </div></div>`;
 }
 
@@ -10752,7 +10732,6 @@ function buildCustomerView() {
 
 // ── WINDOW ACTIONS ──
 window.goMultiplayer = function() { G.screen = 'multilobby'; fullRender(); };
-window.goMultiJoin = function() { G.screen = 'multijoin'; fullRender(); };
 
 window.multiHostStart = function() {
   if (window._joiningLock) return;
@@ -10767,19 +10746,6 @@ window.multiStartGame = function() {
   MP.startBroadcastLoop();
   startGame();
   setTimeout(() => MP._renderHostPlayers(), 300);
-};
-
-window.multiJoinSubmit = function() {
-  if (window._joiningLock) return;
-  const codeEl = document.getElementById('multi-join-code');
-  const errEl = document.getElementById('multi-join-err');
-  const code = (codeEl?.value || '').trim().toUpperCase();
-  if (code.length < 4) { if (errEl) errEl.textContent = 'Enter a valid room code.'; return; }
-  if (errEl) errEl.textContent = '';
-  window._joiningLock = true;
-  setTimeout(() => { window._joiningLock = false; }, 5000);
-  MP.destroy();
-  MP.joinRoom(code, G.playerName || 'Guest');
 };
 
 window.custOrder = function(itemId, icon, name) {
@@ -11759,7 +11725,6 @@ function fullRender() {
     case 'review':     root.innerHTML = buildReview(); break;
     case 'multilobby': root.innerHTML = buildMultiLobby(); break;
     case 'multihost':  root.innerHTML = buildMultiHost(); break;
-    case 'multijoin':  root.innerHTML = buildMultiJoin(); setTimeout(() => { const el = document.getElementById('multi-join-code'); if (el) el.focus(); }, 80); break;
     case 'customer':   root.innerHTML = buildCustomerView(); break;
     case 'street':     root.innerHTML = buildStreetView(); if (window.startStreetLoop) window.startStreetLoop(); break;
     default:           root.innerHTML = buildTitle();
