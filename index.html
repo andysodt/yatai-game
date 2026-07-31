@@ -9146,7 +9146,7 @@ function buildServiceShell() {
           <input type="checkbox" id="subtitle-cb" onchange="toggleSubtitles(this)">
           Subs
         </label>
-        <button id="restock-btn" class="hud-btn hud-btn-gold" onclick="window.autoRestock()" title="Restock all menu items to 10">🛒 Restock</button>
+        ${MP.role !== 'customer' ? `<button id="restock-btn" class="hud-btn hud-btn-gold" onclick="window.autoRestock()" title="Restock all menu items to 10">🛒 Restock</button>` : ''}
         <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
         ${MP.role === 'master' ? `<div class="hud-stat" style="cursor:pointer" title="Room code — share with guests" onclick="navigator.clipboard&&navigator.clipboard.writeText('${MP.roomCode}').then(()=>toast('Room code copied!','info'))"><span class="hud-val" style="font-size:11px;letter-spacing:2px;color:var(--teal)" id="mp-room-code-hud">${MP.roomCode}</span><span class="hud-label">Room</span></div>` : ''}
         ${MP.role === 'master' && MP.roomCode ? `<button class="hud-btn vc-btn" onclick="window.toggleVoiceChat()" title="Live mic — everyone in this room can hear you">🎙️ Voice Chat</button>` : ''}
