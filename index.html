@@ -11384,6 +11384,241 @@ if (typeof serveCustomer === 'function') {
   };
 })();
 
+// ── PIXI CHARACTER RIG (in-progress incremental port) ──────────────────────
+// drawCustomer() (~1370 lines of procedural Canvas2D) is being ported to native
+// PIXI.Graphics one case at a time rather than all at once — too large/risky to
+// safely rewrite in a single pass. NOT wired into the live game loop yet; this
+// module is self-contained and only reachable via window._previewPixiCustomer()
+// for visual verification until each piece is confirmed correct.
+//
+// Milestone 1 (current): walking rig, default case only — tee shirt, non-female,
+// no special flags (missing hand / police / sumo / geisha / hostess), buzz/medium/
+// thin hairstyle, neutral mouth. Everything else still falls through to the
+// original drawCustomer via _pixiCanHandle()'s false cases.
+//
+// Known simplification: PixiJS 7's Graphics has no native gradient fill (that's a
+// v8 feature). Subtle shading gradients (head highlight, jacket shading) are
+// approximated as a flat semi-transparent overlay on the shadow side rather than
+// a true gradient — a deliberate, flagged tradeoff, not an oversight.
+(function() {
+  'use strict';
+
+  function hex(cssColor, fallback) {
+    if (typeof cssColor === 'string' && cssColor[0] === '#') {
+      let h = cssColor.slice(1);
+      if (h.length === 3) h = h.split('').map(c => c + c).join('');
+      const n = parseInt(h, 16);
+      if (!isNaN(n)) return n;
+    }
+    return fallback === undefined ? 0xffffff : fallback;
+  }
+
+  // Vanilla PIXI.Graphics has no rotated-ellipse primitive — approximate with a
+  // polygon of points around a unit circle, scaled and rotated.
+  function ellipsePoints(cx, cy, rx, ry, rot, segments) {
+    segments = segments || 20;
+    const pts = [];
+    const cos = Math.cos(rot || 0), sin = Math.sin(rot || 0);
+    for (let i = 0; i <= segments; i++) {
+      const a = (i / segments) * Math.PI * 2;
+      const ex = Math.cos(a) * rx, ey = Math.sin(a) * ry;
+      pts.push(cx + ex * cos - ey * sin, cy + ex * sin + ey * cos);
+    }
+    return pts;
+  }
+  function fillEllipse(g, cx, cy, rx, ry, rot, color, alpha) {
+    g.beginFill(color, alpha === undefined ? 1 : alpha);
+    g.drawPolygon(ellipsePoints(cx, cy, rx, ry, rot));
+    g.endFill();
+  }
+  function strokeSeg(g, width, color, cap) {
+    g.lineStyle({ width, color, cap: cap ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.BUTT, join: PIXI.LINE_JOIN.ROUND });
+  }
+
+  // Returns false for anything this milestone doesn't cover yet — callers should
+  // fall back to the original Canvas2D drawCustomer() in that case.
+  window._pixiCanHandle = function(cu) {
+    const ct = cu.ct || {};
+    if (cu.state !== 'walk_in' && cu.state !== 'walk_out') return false;
+    if (ct.type !== 'tee') return false;
+    if (ct.female) return false;
+    if (ct.missingRightHand || ct.police || ct.sumo || ct.geisha || ct.hostess) return false;
+    if (ct.hairStyle === 'long' || ct.hairStyle === 'ponytail') return false;
+    return true;
+  };
+
+  window._drawCustomerPixi = function(g, cu, T) {
+    const { W, H, stallBot } = G;
+    const { state, x, ct, phase } = cu;
+    g.clear();
+    g.position.set(x, 0);
+    g.scale.set(state === 'walk_out' ? -1 : 1, 1);
+
+    const bH = H * 0.22;
+    const hr = W * 0.024;
+    const gndY = stallBot - H * 0.003;
+    const stride = Math.sin(T * 4.5 + phase);
+    const strideB = -stride;
+    const shldrY = gndY - bH * 0.72;
+    const waistY = gndY - bH * 0.44;
+    const headCy = gndY - bH + hr;
+
+    // Ground shadow
+    fillEllipse(g, 0, gndY, W * 0.032, H * 0.008, 0, 0x000000, 0.20);
+
+    // ── BACK LEG ──
+    const bkKneeX = Math.sin(strideB * 0.30) * bH * 0.24;
+    const bkKneeY = waistY + bH * 0.24;
+    const bkFootX = bkKneeX + Math.sin(strideB * 0.30 - stride * 0.20) * bH * 0.24;
+    const pantsHex = hex(ct.pants);
+    strokeSeg(g, W * 0.018, pantsHex, true);
+    g.moveTo(W * 0.004, waistY).lineTo(bkKneeX, bkKneeY);
+    strokeSeg(g, W * 0.015, pantsHex, true);
+    g.moveTo(bkKneeX, bkKneeY).lineTo(bkFootX, gndY);
+    fillEllipse(g, bkFootX + W * 0.010, gndY, W * 0.014, H * 0.005, 0.10, 0x181212, 1);
+
+    // ── BODY (tee) ──
+    const hemY = shldrY + bH * 0.18;
+    g.beginFill(hex(ct.shirt));
+    g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY).lineTo(-W * 0.010, shldrY).closePath();
+    g.endFill();
+    strokeSeg(g, 1, hex(ct.jacketD), false);
+    g.moveTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY);
+    // Main torso shape + a flat shading approximation on the far side (Pixi 7 has
+    // no gradient fill — see module header)
+    g.beginFill(hex(ct.jacket));
+    g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(W * 0.022, waistY).lineTo(W * 0.021, shldrY + H * 0.005).closePath();
+    g.endFill();
+    g.beginFill(0x000000, 0.14);
+    g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(-W * 0.010, waistY).lineTo(-W * 0.008, shldrY).closePath();
+    g.endFill();
+
+    // ── FRONT LEG ──
+    const frKneeX = Math.sin(stride * 0.30) * bH * 0.24;
+    const frKneeY = waistY + bH * 0.24;
+    const frFootX = frKneeX + Math.sin(stride * 0.30 - strideB * 0.20) * bH * 0.24;
+    strokeSeg(g, W * 0.021, pantsHex, true);
+    g.moveTo(-W * 0.002, waistY + H * 0.004).lineTo(frKneeX, frKneeY);
+    strokeSeg(g, W * 0.018, pantsHex, true);
+    g.moveTo(frKneeX, frKneeY).lineTo(frFootX, gndY);
+    fillEllipse(g, frFootX + W * 0.012, gndY, W * 0.016, H * 0.005, 0.10, 0x181212, 1);
+    fillEllipse(g, frFootX + W * 0.007, gndY - H * 0.002, W * 0.007, H * 0.003, 0.10, 0xffffff, 0.08);
+
+    // ── ARMS ──
+    const bkArmA = strideB * 0.38;
+    const bkElbX = Math.sin(bkArmA) * bH * 0.20 + W * 0.008;
+    const bkElbY = shldrY + bH * 0.20;
+    const armCol = hex(ct.skin); // tee -> skin-colored short sleeve arm
+    strokeSeg(g, W * 0.013, armCol, true);
+    g.moveTo(W * 0.012, shldrY + H * 0.006).lineTo(bkElbX, bkElbY);
+    strokeSeg(g, W * 0.010, armCol, true);
+    g.moveTo(bkElbX, bkElbY).lineTo(bkElbX + Math.sin(bkArmA * 0.5) * bH * 0.18, Math.min(bkElbY + bH * 0.18, waistY + H * 0.02));
+
+    const frArmA = stride * 0.38;
+    const frElbX = Math.sin(frArmA) * bH * 0.20 - W * 0.012;
+    const frElbY = shldrY + bH * 0.20;
+    strokeSeg(g, W * 0.016, armCol, true);
+    g.moveTo(-W * 0.014, shldrY + H * 0.006).lineTo(frElbX, frElbY);
+    strokeSeg(g, W * 0.013, armCol, true);
+    g.moveTo(frElbX, frElbY).lineTo(frElbX + Math.sin(frArmA * 0.5) * bH * 0.18 - W * 0.004, Math.min(frElbY + bH * 0.18, waistY + H * 0.02));
+
+    // ── NECK ──
+    g.beginFill(hex(ct.skin));
+    g.drawRect(-W * 0.010, shldrY - H * 0.018, W * 0.018, H * 0.026);
+    g.endFill();
+
+    // ── HEAD (profile facing left) ──
+    const skinHex = hex(ct.skin), skinDHex = hex(ct.skinD);
+    fillEllipse(g, 0, headCy, hr, hr, 0, skinHex, 1);
+    fillEllipse(g, hr * 0.62, headCy + hr * 0.08, hr * 0.14, hr * 0.22, 0.12, skinHex, 1);
+    strokeSeg(g, 0.8, skinDHex, false);
+    g.arc(hr * 0.62, headCy + hr * 0.10, hr * 0.08, -Math.PI * 0.6, Math.PI * 0.3);
+    g.beginFill(skinHex);
+    g.moveTo(-hr * 0.32, headCy - hr * 0.78)
+      .quadraticCurveTo(-hr * 0.92, headCy - hr * 0.44, -hr * 0.98, headCy - hr * 0.06)
+      .quadraticCurveTo(-hr * 1.08, headCy + hr * 0.12, -hr * 1.18, headCy + hr * 0.22)
+      .quadraticCurveTo(-hr * 1.10, headCy + hr * 0.34, -hr * 0.96, headCy + hr * 0.40)
+      .quadraticCurveTo(-hr * 0.98, headCy + hr * 0.50, -hr * 0.94, headCy + hr * 0.55)
+      .quadraticCurveTo(-hr * 0.86, headCy + hr * 0.72, -hr * 0.58, headCy + hr * 0.82)
+      .lineTo(-hr * 0.08, headCy + hr * 0.92).closePath();
+    g.endFill();
+    // Head shading approximation (flat overlay on the shadow side, no gradient)
+    g.beginFill(0x000000, 0.10);
+    g.drawPolygon(ellipsePoints(-hr * 0.15, headCy + hr * 0.1, hr * 0.85, hr * 0.95, 0));
+    g.endFill();
+    // Nostril
+    fillEllipse(g, -hr * 1.12, headCy + hr * 0.28, hr * 0.04, hr * 0.03, -0.4, skinDHex, 1);
+    // Eye white / iris / pupil / catchlight
+    fillEllipse(g, -hr * 0.73, headCy - hr * 0.09, hr * 0.13, hr * 0.09, 0, 0xf5ede8, 1);
+    const irisHex = (ct.hair === '#949494' || ct.hair === '#a09898') ? 0x4a5868 : 0x28180e;
+    g.beginFill(irisHex); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.07); g.endFill();
+    g.beginFill(0x080408); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.04); g.endFill();
+    g.beginFill(0xffffff, 0.65); g.drawCircle(-hr * 0.71, headCy - hr * 0.12, hr * 0.016); g.endFill();
+    // Upper eyelid arch
+    strokeSeg(g, 0.9, skinDHex, true);
+    g.moveTo(-hr * 0.87, headCy - hr * 0.09).quadraticCurveTo(-hr * 0.73, headCy - hr * 0.20, -hr * 0.59, headCy - hr * 0.09);
+    // Eyebrow
+    const hairHex = hex(ct.hair, 0x0c0808);
+    strokeSeg(g, W * 0.0035, hairHex, true);
+    g.moveTo(-hr * 0.90, headCy - hr * 0.26).lineTo(-hr * 0.56, headCy - hr * 0.29);
+    // Mouth — neutral smile (talk/frown states not yet ported)
+    strokeSeg(g, hr * 0.13, skinDHex, true);
+    g.moveTo(-hr * 0.96, headCy + hr * 0.52).quadraticCurveTo(-hr * 0.80, headCy + hr * 0.59, -hr * 0.64, headCy + hr * 0.52);
+    // Lower lip shadow
+    strokeSeg(g, hr * 0.08, 0x000000, false);
+    g.moveTo(-hr * 0.90, headCy + hr * 0.63).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.68, -hr * 0.66, headCy + hr * 0.64);
+
+    // ── HAIR (buzz/medium/thin — the default-case hairstyles) ──
+    const topRx = ct.hairStyle === 'thin' ? hr * 0.68 : hr * 0.98;
+    g.beginFill(hairHex);
+    g.moveTo(-hr * 0.28, headCy - hr * 0.78)
+      .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
+      .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
+      .lineTo(topRx * 0.55, headCy + hr * 0.28)
+      .quadraticCurveTo(topRx * 0.88, headCy - hr * 0.42, hr * 0.44, headCy - hr * 0.76)
+      .closePath();
+    g.endFill();
+    if (ct.hairStyle === 'medium') {
+      g.beginFill(hairHex);
+      g.moveTo(hr * 0.82, headCy - hr * 0.62)
+        .quadraticCurveTo(hr * 1.05, headCy, hr * 0.96, headCy + hr * 0.58)
+        .lineTo(hr * 0.58, headCy + hr * 0.58)
+        .quadraticCurveTo(hr * 0.82, headCy + hr * 0.12, hr * 0.66, headCy - hr * 0.48)
+        .closePath();
+      g.endFill();
+    }
+  };
+
+  // ── Debug preview harness — NOT part of the live game, just for visually
+  // verifying each milestone against the original before wiring anything in. ──
+  let _previewApp = null, _previewG = null;
+  window._previewPixiCustomer = function(ct, state) {
+    let canvasEl = document.getElementById('pixi-preview-canvas');
+    if (!canvasEl) {
+      canvasEl = document.createElement('canvas');
+      canvasEl.id = 'pixi-preview-canvas';
+      canvasEl.style.cssText = 'position:fixed;top:10px;left:10px;z-index:99999;background:#274060;border:2px solid #fff;';
+      canvasEl.width = 260; canvasEl.height = 320;
+      document.body.appendChild(canvasEl);
+    }
+    if (!_previewApp) {
+      _previewApp = new PIXI.Application({ view: canvasEl, backgroundAlpha: 1, antialias: true });
+      _previewG = new PIXI.Graphics();
+      _previewApp.stage.addChild(_previewG);
+    }
+    const fakeCu = { state: state || 'walk_in', x: 130, ct: ct, phase: 0 };
+    let t = 0;
+    _previewApp.ticker.remove(_previewApp._customTick);
+    _previewApp._customTick = () => { t += 0.05; window._drawCustomerPixi(_previewG, fakeCu, t); };
+    _previewApp.ticker.add(_previewApp._customTick);
+  };
+  window._previewPixiClose = function() {
+    const el = document.getElementById('pixi-preview-canvas');
+    if (el) el.remove();
+    if (_previewApp) { _previewApp.destroy(true); _previewApp = null; _previewG = null; }
+  };
+})();
+
 // ── VOICE CHAT — real-time WebRTC audio between everyone in the current room ──
 // Signaling rides the existing room message relay (type:'msg', data:{type:'rtc-signal',...})
 // — no server changes, and no PeerJS (loaded but genuinely unused elsewhere in this file;
