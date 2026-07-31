@@ -11431,8 +11431,8 @@ if (typeof serveCustomer === 'function') {
     g.drawPolygon(ellipsePoints(cx, cy, rx, ry, rot));
     g.endFill();
   }
-  function strokeSeg(g, width, color, cap) {
-    g.lineStyle({ width, color, cap: cap ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.BUTT, join: PIXI.LINE_JOIN.ROUND });
+  function strokeSeg(g, width, color, cap, alpha) {
+    g.lineStyle({ width, color, alpha: alpha === undefined ? 1 : alpha, cap: cap ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.BUTT, join: PIXI.LINE_JOIN.ROUND });
   }
 
   // Returns false for anything this milestone doesn't cover yet — callers should
@@ -11440,8 +11440,9 @@ if (typeof serveCustomer === 'function') {
   window._pixiCanHandle = function(cu) {
     const ct = cu.ct || {};
     if (cu.state !== 'walk_in' && cu.state !== 'walk_out') return false;
-    if (ct.type !== 'tee') return false;
-    if (ct.female) return false;
+    // Clothing types + female variant now covered (Milestone 2). Politician's suit
+    // rosette is self-contained so it's safe too. Police/sumo/geisha/hostess still
+    // need hair or face treatments not yet ported — see task 40.
     if (ct.missingRightHand || ct.police || ct.sumo || ct.geisha || ct.hostess) return false;
     if (ct.hairStyle === 'long' || ct.hairStyle === 'ponytail') return false;
     return true;
@@ -11477,38 +11478,157 @@ if (typeof serveCustomer === 'function') {
     g.moveTo(bkKneeX, bkKneeY).lineTo(bkFootX, gndY);
     fillEllipse(g, bkFootX + W * 0.010, gndY, W * 0.014, H * 0.005, 0.10, 0x181212, 1);
 
-    // ── BODY (tee) ──
-    const hemY = shldrY + bH * 0.18;
-    g.beginFill(hex(ct.shirt));
-    g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY).lineTo(-W * 0.010, shldrY).closePath();
-    g.endFill();
-    strokeSeg(g, 1, hex(ct.jacketD), false);
-    g.moveTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY);
-    // Main torso shape + a flat shading approximation on the far side (Pixi 7 has
-    // no gradient fill — see module header)
-    g.beginFill(hex(ct.jacket));
-    g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(W * 0.022, waistY).lineTo(W * 0.021, shldrY + H * 0.005).closePath();
+    // ── BODY ──
+    const jacketHex = hex(ct.jacket), jacketDHex = hex(ct.jacketD);
+    const _kimonoBot = gndY - H * 0.002;
+    const isKimono = ct.type === 'kimono';
+    // Main torso silhouette + a flat shading approximation on the far side (Pixi 7
+    // has no gradient fill — see module header)
+    g.beginFill(jacketHex);
+    if (isKimono) {
+      g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.028, _kimonoBot).lineTo(W * 0.026, _kimonoBot).lineTo(W * 0.019, shldrY).closePath();
+    } else {
+      g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(W * 0.022, waistY).lineTo(W * 0.021, shldrY + H * 0.005).closePath();
+    }
     g.endFill();
     g.beginFill(0x000000, 0.14);
-    g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(-W * 0.010, waistY).lineTo(-W * 0.008, shldrY).closePath();
+    if (isKimono) {
+      g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.028, _kimonoBot).lineTo(-W * 0.010, _kimonoBot).lineTo(-W * 0.008, shldrY).closePath();
+    } else {
+      g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(-W * 0.010, waistY).lineTo(-W * 0.008, shldrY).closePath();
+    }
     g.endFill();
+
+    if (ct.type === 'suit') {
+      // Shirt V visible at front
+      g.beginFill(hex(ct.shirt));
+      g.moveTo(-W * 0.005, shldrY + H * 0.005).lineTo(-W * 0.007, waistY - H * 0.008).lineTo(W * 0.007, waistY - H * 0.008).lineTo(W * 0.012, shldrY + H * 0.005).closePath();
+      g.endFill();
+      g.beginFill(jacketDHex);
+      g.drawRect(-W * 0.024, waistY - H * 0.007, W * 0.046, H * 0.010);
+      g.endFill();
+      if (ct.tieColor) {
+        const tieHex = hex(ct.tieColor);
+        fillEllipse(g, W * 0.002, shldrY + H * 0.018, W * 0.005, H * 0.007, 0.05, tieHex, 1);
+        g.beginFill(tieHex);
+        g.moveTo(-W * 0.002, shldrY + H * 0.023).lineTo(W * 0.006, shldrY + H * 0.023).lineTo(W * 0.004, waistY - H * 0.022)
+          .lineTo(W * 0.001, waistY - H * 0.017).lineTo(-W * 0.001, waistY - H * 0.022).closePath();
+        g.endFill();
+        strokeSeg(g, W * 0.0018, 0xffffff, true, 0.13);
+        g.moveTo(W * 0.002, shldrY + H * 0.028).lineTo(W * 0.003, waistY - H * 0.028);
+      }
+      // Politician rosette on left lapel — self-contained, safe to include even
+      // though the police cap / sumo / geisha / hostess face treatments aren't
+      // ported yet (see _pixiCanHandle)
+      if (ct.politician) {
+        const _rx = -W * 0.008, _ry = shldrY + H * 0.038, _rr = W * 0.009;
+        const rosetteHex = hex(ct.tieColor, 0xc81820);
+        for (let _p = 0; _p < 8; _p++) {
+          const _a = (_p / 8) * Math.PI * 2;
+          fillEllipse(g, _rx + Math.cos(_a) * _rr * 0.65, _ry + Math.sin(_a) * _rr * 0.65, _rr * 0.38, _rr * 0.22, _a, rosetteHex, 1);
+        }
+        g.beginFill(0xf8f8f0); g.drawCircle(_rx, _ry, _rr * 0.38); g.endFill();
+        g.beginFill(rosetteHex); g.drawCircle(_rx, _ry, _rr * 0.20); g.endFill();
+      }
+    } else if (ct.type === 'hoodie') {
+      fillEllipse(g, W * 0.004, shldrY - H * 0.008, W * 0.018, H * 0.020, 0.12, jacketHex, 1);
+      strokeSeg(g, 1, jacketDHex, false);
+      g.arc(W * 0.004, shldrY - H * 0.005, W * 0.012, Math.PI * 1.2, Math.PI * 2.1);
+      g.beginFill(jacketDHex);
+      g.drawRect(-W * 0.024, waistY - H * 0.010, W * 0.046, H * 0.010);
+      g.endFill();
+      const pkT = shldrY + bH * 0.38, pkB = waistY - bH * 0.05;
+      strokeSeg(g, 1.2, jacketDHex, false);
+      g.drawRect(-W * 0.013, pkT, W * 0.024, pkB - pkT);
+      strokeSeg(g, 0.8, jacketDHex, false);
+      g.moveTo(-W * 0.003, shldrY + H * 0.005).lineTo(-W * 0.005, pkT);
+    } else if (ct.type === 'shirt') {
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.moveTo(W * 0.001, shldrY + H * 0.008).lineTo(W * 0.001, waistY - H * 0.009);
+      g.beginFill(jacketDHex);
+      [0.28, 0.54, 0.80].forEach(t => { g.drawCircle(W * 0.001, shldrY + (waistY - shldrY) * t, W * 0.004); });
+      g.endFill();
+    } else if (isKimono) {
+      strokeSeg(g, W * 0.007, hex(ct.cuff), true);
+      g.moveTo(-W * 0.004, shldrY + H * 0.006).lineTo(-W * 0.002, shldrY + H * 0.032);
+      g.beginFill(hex(ct.pants));
+      g.moveTo(-W * 0.024, waistY - H * 0.010).lineTo(-W * 0.026, waistY + H * 0.016).lineTo(W * 0.022, waistY + H * 0.016).lineTo(W * 0.020, waistY - H * 0.010).closePath();
+      g.endFill();
+      fillEllipse(g, W * 0.004, waistY + H * 0.002, W * 0.011, H * 0.011, 0, hex(ct.cuff), 1);
+      fillEllipse(g, W * 0.004, waistY + H * 0.002, W * 0.007, H * 0.007, 0, hex(ct.pants), 1);
+      strokeSeg(g, W * 0.003, jacketDHex, false);
+      g.moveTo(-W * 0.028, _kimonoBot).lineTo(W * 0.026, _kimonoBot);
+    } else {
+      // TEE — short sleeve at shoulder
+      const hemY = shldrY + bH * 0.18;
+      g.beginFill(hex(ct.shirt));
+      g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY).lineTo(-W * 0.010, shldrY).closePath();
+      g.endFill();
+      strokeSeg(g, 1, jacketDHex, false);
+      g.moveTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY);
+    }
 
     // ── FRONT LEG ──
     const frKneeX = Math.sin(stride * 0.30) * bH * 0.24;
     const frKneeY = waistY + bH * 0.24;
     const frFootX = frKneeX + Math.sin(stride * 0.30 - strideB * 0.20) * bH * 0.24;
-    strokeSeg(g, W * 0.021, pantsHex, true);
-    g.moveTo(-W * 0.002, waistY + H * 0.004).lineTo(frKneeX, frKneeY);
-    strokeSeg(g, W * 0.018, pantsHex, true);
-    g.moveTo(frKneeX, frKneeY).lineTo(frFootX, gndY);
-    fillEllipse(g, frFootX + W * 0.012, gndY, W * 0.016, H * 0.005, 0.10, 0x181212, 1);
-    fillEllipse(g, frFootX + W * 0.007, gndY - H * 0.002, W * 0.007, H * 0.003, 0.10, 0xffffff, 0.08);
+    if (!isKimono && !ct.female) {
+      strokeSeg(g, W * 0.021, pantsHex, true);
+      g.moveTo(-W * 0.002, waistY + H * 0.004).lineTo(frKneeX, frKneeY);
+      strokeSeg(g, W * 0.018, pantsHex, true);
+      g.moveTo(frKneeX, frKneeY).lineTo(frFootX, gndY);
+      fillEllipse(g, frFootX + W * 0.012, gndY, W * 0.016, H * 0.005, 0.10, 0x181212, 1);
+      fillEllipse(g, frFootX + W * 0.007, gndY - H * 0.002, W * 0.007, H * 0.003, 0.10, 0xffffff, 0.08);
+    } else if (ct.female && !isKimono) {
+      // Skirt flares from waist, bare legs peek below hem
+      const skirtBot = ct.hostess ? gndY - H * 0.14 : gndY - H * 0.06;
+      const sway = Math.sin(T * 4.5 + phase) * W * 0.004;
+      const skirtHex = hex(ct.pants);
+      g.beginFill(skirtHex);
+      g.moveTo(-W * 0.020, waistY)
+        .bezierCurveTo(-W * 0.028, waistY + H * 0.018, -W * 0.036 + sway, skirtBot - H * 0.010, -W * 0.030 + sway, skirtBot)
+        .lineTo(W * 0.028 - sway, skirtBot)
+        .bezierCurveTo(W * 0.034 - sway, skirtBot - H * 0.010, W * 0.026, waistY + H * 0.018, W * 0.022, waistY)
+        .closePath();
+      g.endFill();
+      // Flat shading approximation on both edges (no gradient fill in Pixi 7)
+      g.beginFill(0x000000, 0.15);
+      g.moveTo(-W * 0.020, waistY).lineTo(-W * 0.030 + sway, skirtBot).lineTo(-W * 0.018 + sway, skirtBot).lineTo(-W * 0.010, waistY).closePath();
+      g.endFill();
+      const _bkLX = Math.sin(strideB * 0.22) * bH * 0.10;
+      const _frLX = Math.sin(stride * 0.22) * bH * 0.10;
+      const skinHexLeg = hex(ct.skin);
+      strokeSeg(g, W * 0.011, skinHexLeg, true);
+      g.moveTo(_bkLX + W * 0.002, skirtBot).lineTo(_bkLX + W * 0.006, gndY - H * 0.002);
+      strokeSeg(g, W * 0.013, skinHexLeg, true);
+      g.moveTo(_frLX - W * 0.002, skirtBot).lineTo(_frLX + W * 0.006, gndY - H * 0.002);
+      const shoeHex = ct.hostess ? 0xc01068 : 0x181212;
+      fillEllipse(g, _bkLX + W * 0.008, gndY, W * 0.012, H * 0.004, 0.10, shoeHex, 1);
+      fillEllipse(g, _frLX + W * 0.010, gndY, W * 0.014, H * 0.004, 0.10, shoeHex, 1);
+      if (ct.hostess) {
+        fillEllipse(g, _frLX + W * 0.013, gndY - H * 0.006, W * 0.005, H * 0.008, -0.3, 0xb00858, 1);
+        g.beginFill(0xb00858); g.drawRect(_frLX + W * 0.016, gndY - H * 0.014, W * 0.003, H * 0.014); g.endFill();
+        const _sSeeds = [0.12, 0.37, 0.58, 0.81, 0.24, 0.69, 0.45, 0.92, 0.05, 0.76];
+        _sSeeds.forEach((s, idx) => {
+          const _sx = (s - 0.5) * W * 0.05;
+          const _sy = waistY + (skirtBot - waistY) * ((idx % 5) * 0.20 + 0.10);
+          const _sa = 0.5 + 0.5 * Math.sin(T * 3.8 + phase + idx * 1.2);
+          fillEllipse(g, _sx, _sy, W * 0.006, W * 0.006, 0, 0xfff0c8, _sa * 0.70);
+          fillEllipse(g, _sx, _sy, W * 0.003, W * 0.003, 0, 0xffffff, _sa * 0.55);
+        });
+      }
+    } else {
+      // Geta sandal peeking from kimono hem
+      const _gtX = Math.sin(stride * 0.25) * W * 0.006;
+      fillEllipse(g, _gtX, gndY, W * 0.014, H * 0.004, 0.05, 0x3a2810, 1);
+      fillEllipse(g, _gtX - W * 0.002, gndY - H * 0.008, W * 0.006, H * 0.010, 0, 0xe8e8e0, 1);
+    }
 
     // ── ARMS ──
     const bkArmA = strideB * 0.38;
     const bkElbX = Math.sin(bkArmA) * bH * 0.20 + W * 0.008;
     const bkElbY = shldrY + bH * 0.20;
-    const armCol = hex(ct.skin); // tee -> skin-colored short sleeve arm
+    const armCol = ct.type === 'tee' ? hex(ct.skin) : jacketHex;
     strokeSeg(g, W * 0.013, armCol, true);
     g.moveTo(W * 0.012, shldrY + H * 0.006).lineTo(bkElbX, bkElbY);
     strokeSeg(g, W * 0.010, armCol, true);
