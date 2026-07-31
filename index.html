@@ -6350,7 +6350,10 @@ try {
     const btn = document.getElementById('tv-btn');
     if (btn) btn.style.opacity = _tvOn ? '1' : '0.35';
   }
-  window._tvToggle = function(btn) { _applyTvState(!_tvOn); };
+  // G.tvOn tracks the player's actual preference; only the user-facing toggle touches it —
+  // _tvSetOn is also used to force the TV off between nights (endService) without losing
+  // that preference, so it's restored automatically next time the stall opens (openStall).
+  window._tvToggle = function(btn) { G.tvOn = !_tvOn; _applyTvState(!_tvOn); };
   window._tvGetOn  = () => _tvOn;
   window._tvSetOn  = (on) => { if (_tvOn !== on) _applyTvState(on); };
   const TV_AD_INTERVAL = 600; // seconds between ads
@@ -7869,6 +7872,7 @@ const G = {
   rep: 8,
   _permanentSeenToday: {}, // permanentId -> true, reset each day in window.nextDay
   earnedNPCs: [], // { id, name, ct } — ambient customers who left happy, now recurring
+  tvOn: false, subtitlesOn: false, // HUD toggles — kept across day transitions (autoCook already below)
 
   weather: null,
   gameTime: SERVICE_START,
@@ -8891,11 +8895,15 @@ window.openStall = function() {
   G.isOpen = true;
   window.stallOpen = true;
   fullRender();
-  // Subtitle off by default; hide the overlay element to match unchecked checkbox
+  // Restore the subtitle overlay to match whatever the player last had it set to,
+  // rather than always forcing it off — same idea as the TV restore just below.
   const _subEl = document.getElementById('subtitle');
-  if (_subEl) _subEl.style.display = 'none';
+  if (_subEl) _subEl.style.display = G.subtitlesOn ? '' : 'none';
   startLoop();
   AUDIO.startService(G.weather?.id === 'rainy');
+  // TV gets forced off between nights (endService, so its audio doesn't bleed into the
+  // review/prep screens) without touching G.tvOn — restore the player's actual preference.
+  if (window._tvSetOn) window._tvSetOn(!!G.tvOn);
   // endService() stops the host's broadcast loop when the night ends (MP.stopBroadcastLoop)
   // and nothing else restarts it — without this, day 2+ guests are stuck seeing whatever
   // the final "stall closed" broadcast said, forever, even though the host is actively
@@ -8938,6 +8946,7 @@ window.toggleAutoCook = function(cb) {
 };
 
 window.toggleSubtitles = function(cb) {
+  G.subtitlesOn = cb.checked;
   const el = document.getElementById('subtitle');
   if (el) el.style.display = cb.checked ? '' : 'none';
 };
@@ -9142,13 +9151,13 @@ function buildServiceShell() {
         </div>
         <button id="mic-btn" onclick="toggleMic()" title="Voice commands (speak dish names to cook)">🎤</button>
         <button id="mute-btn" onclick="toggleMute()" title="Toggle sound">🔊</button>
-        <button id="tv-btn" style="opacity:0.35" onclick="window._tvToggle&&window._tvToggle(this)" title="Toggle TV">📺</button>
+        <button id="tv-btn" style="opacity:${G.tvOn ? '1' : '0.35'}" onclick="window._tvToggle&&window._tvToggle(this)" title="Toggle TV">📺</button>
         <label class="auto-cook-label" title="Automatically cook and serve orders">
-          <input type="checkbox" id="auto-cook-cb" onchange="toggleAutoCook(this)">
+          <input type="checkbox" id="auto-cook-cb" ${G.autoCook ? 'checked' : ''} onchange="toggleAutoCook(this)">
           Auto
         </label>
         <label class="auto-cook-label" title="Toggle English subtitles">
-          <input type="checkbox" id="subtitle-cb" onchange="toggleSubtitles(this)">
+          <input type="checkbox" id="subtitle-cb" ${G.subtitlesOn ? 'checked' : ''} onchange="toggleSubtitles(this)">
           Subs
         </label>
         ${MP.role !== 'customer' ? `<button id="restock-btn" class="hud-btn hud-btn-gold" onclick="window.autoRestock()" title="Restock all menu items to 10">🛒 Restock</button>` : ''}
