@@ -4556,6 +4556,65 @@ try {
     }
   }
 
+  // Food + chopsticks + vomit particles for a seated customer, drawn in the customer's
+  // local (x=0-centered), non-rotated coordinate space — extracted so both the original
+  // Canvas2D drawCustomer() and the Pixi seated-rig renderer's Canvas2D food overlay can
+  // share it. Recomputes armY/shldrY/_eatY from cu/T/W/H/counterY rather than threading
+  // them through as extra params, since they're all cheap derived values.
+  function drawSeatedExtras(g, cu, T, W, H, counterY) {
+    const { state, phase } = cu;
+    const shldrY = counterY - H * 0.195;
+    const armY = counterY - H * 0.020;
+    const _eatPhase = Math.sin(T * 2.2 + phase * 3.1);
+    const _eatY = (state === 'sit' && cu.served) ? Math.pow(Math.max(0, _eatPhase), 2) * H * 0.048 : 0;
+
+    if (state === 'sit' && cu.served && !cu.puking) {
+      drawFood(g, cu.dish, W, H, counterY);
+
+      const usesChopsticks = cu.dish !== 'beer' && cu.dish !== 'sake' && cu.dish !== 'shochu';
+      if (usesChopsticks) {
+        const chopA = Math.sin(T*3.5+phase)*H*0.024;
+        g.strokeStyle = 'rgba(200,162,80,0.82)'; g.lineWidth = 1.4; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(W*0.004, armY-H*0.002 - _eatY); g.lineTo(W*0.014, counterY-H*0.038+chopA); g.stroke();
+        g.beginPath(); g.moveTo(W*0.010, armY-H*0.002 - _eatY); g.lineTo(W*0.022, counterY-H*0.036-chopA); g.stroke();
+      }
+    }
+
+    // Vomit arc + splatter
+    if (cu.puking) {
+      const _pt = cu.pukTimer || 0;
+      const _mX = 0, _mY = shldrY - H*0.088; // approx mouth pos in local space
+      const _tX = W*0.038, _tY = counterY - H*0.015; // lands on counter
+      const _cpX = W*0.058, _cpY = counterY - H*0.10; // bezier arc control
+
+      // Active vomit stream (frames 28-115)
+      if (_pt > 28 && _pt < 115) {
+        const _prog = Math.min(1, (_pt - 28) / 35);
+        const numDrops = Math.ceil(14 * _prog);
+        for (let di = 0; di < numDrops; di++) {
+          const t = di / 14;
+          const _bX = (1-t)*(1-t)*_mX + 2*(1-t)*t*_cpX + t*t*_tX;
+          const _bY = (1-t)*(1-t)*_mY + 2*(1-t)*t*_cpY + t*t*_tY;
+          const _sz = W*0.004 + t * W*0.009;
+          const _a = 0.75 - t * 0.15;
+          g.fillStyle = `rgba(80,${170 + Math.floor(t*30)},30,${_a})`;
+          g.beginPath(); g.ellipse(_bX, _bY, _sz, _sz*0.75, 0, 0, Math.PI*2); g.fill();
+        }
+      }
+      // Splatter puddle on counter (persists from frame 55)
+      if (_pt > 55 && _pt < 210) {
+        const _sA = _pt > 190 ? 0.55 * (1 - (_pt - 190) / 20) : 0.55;
+        g.fillStyle = `rgba(70,160,25,${_sA})`;
+        g.beginPath(); g.ellipse(_tX, _tY, W*0.020, H*0.004, 0.2, 0, Math.PI*2); g.fill();
+        g.beginPath(); g.ellipse(_tX + W*0.014, _tY + H*0.003, W*0.008, H*0.003, -0.3, 0, Math.PI*2); g.fill();
+        // Drip drops
+        [W*0.022, W*0.034, W*0.048].forEach((px, i) => {
+          g.beginPath(); g.arc(px, _tY + H*0.006 + i*H*0.002, W*0.003, 0, Math.PI*2); g.fill();
+        });
+      }
+    }
+  }
+
   function drawCustomer(g, cu, T) {
     const { W, H, counterY, stallBot } = G;
     const { state, x, ct, phase } = cu;
@@ -5875,51 +5934,7 @@ try {
 
       g.restore(); // end body rotation — food drawn in clean translated space
 
-      if (state === 'sit' && cu.served && !cu.puking) {
-        drawFood(g, cu.dish, W, H, counterY);
-
-        const usesChopsticks = cu.dish !== 'beer' && cu.dish !== 'sake' && cu.dish !== 'shochu';
-        if (usesChopsticks) {
-          const chopA = Math.sin(T*3.5+phase)*H*0.024;
-          g.strokeStyle = 'rgba(200,162,80,0.82)'; g.lineWidth = 1.4; g.lineCap = 'round';
-          g.beginPath(); g.moveTo(W*0.004, armY-H*0.002 - _eatY); g.lineTo(W*0.014, counterY-H*0.038+chopA); g.stroke();
-          g.beginPath(); g.moveTo(W*0.010, armY-H*0.002 - _eatY); g.lineTo(W*0.022, counterY-H*0.036-chopA); g.stroke();
-        }
-      }
-
-      // Vomit arc + splatter
-      if (cu.puking) {
-        const _pt = cu.pukTimer || 0;
-        const _mX = 0, _mY = shldrY - H*0.088; // approx mouth pos in local space
-        const _tX = W*0.038, _tY = counterY - H*0.015; // lands on counter
-        const _cpX = W*0.058, _cpY = counterY - H*0.10; // bezier arc control
-
-        // Active vomit stream (frames 28-115)
-        if (_pt > 28 && _pt < 115) {
-          const _prog = Math.min(1, (_pt - 28) / 35);
-          const numDrops = Math.ceil(14 * _prog);
-          for (let di = 0; di < numDrops; di++) {
-            const t = di / 14;
-            const _bX = (1-t)*(1-t)*_mX + 2*(1-t)*t*_cpX + t*t*_tX;
-            const _bY = (1-t)*(1-t)*_mY + 2*(1-t)*t*_cpY + t*t*_tY;
-            const _sz = W*0.004 + t * W*0.009;
-            const _a = 0.75 - t * 0.15;
-            g.fillStyle = `rgba(80,${170 + Math.floor(t*30)},30,${_a})`;
-            g.beginPath(); g.ellipse(_bX, _bY, _sz, _sz*0.75, 0, 0, Math.PI*2); g.fill();
-          }
-        }
-        // Splatter puddle on counter (persists from frame 55)
-        if (_pt > 55 && _pt < 210) {
-          const _sA = _pt > 190 ? 0.55 * (1 - (_pt - 190) / 20) : 0.55;
-          g.fillStyle = `rgba(70,160,25,${_sA})`;
-          g.beginPath(); g.ellipse(_tX, _tY, W*0.020, H*0.004, 0.2, 0, Math.PI*2); g.fill();
-          g.beginPath(); g.ellipse(_tX + W*0.014, _tY + H*0.003, W*0.008, H*0.003, -0.3, 0, Math.PI*2); g.fill();
-          // Drip drops
-          [W*0.022, W*0.034, W*0.048].forEach((px, i) => {
-            g.beginPath(); g.arc(px, _tY + H*0.006 + i*H*0.002, W*0.003, 0, Math.PI*2); g.fill();
-          });
-        }
-      }
+      drawSeatedExtras(g, cu, T, W, H, counterY);
 
       g.restore();
     }
@@ -6697,9 +6712,10 @@ try {
     // Pulsing lantern glow (on top of static scene)
     drawLanternGlow(ctx, T);
 
-    // Update + draw customers — walking-state customers render via the ported Pixi
-    // rig (composited in below); everyone else (not yet ported — see task 41) still
-    // goes through the original Canvas2D drawCustomer().
+    // Update + draw customers — walking and seated customers both render via the
+    // ported Pixi rig (composited in below); food/chopsticks/vomit stay on Canvas2D
+    // (drawFood() alone is ~1200 lines covering dozens of dishes, not ported — see
+    // task 41) and are layered on top of the Pixi body immediately after.
     updateCustomers(T);
     const _pixiDrewCustomers = window._pixiRenderCustomerLayer ? window._pixiRenderCustomerLayer(SLOTS, G, T) : false;
     SLOTS.forEach(slot => {
@@ -6708,6 +6724,16 @@ try {
       drawCustomer(ctx, slot.cu, T);
     });
     if (_pixiDrewCustomers) ctx.drawImage(window._pixiCustomerLayerView(), 0, 0, W, H);
+    if (window._drawSeatedExtras) {
+      SLOTS.forEach(slot => {
+        if (!slot.cu || !window._pixiCanHandle || !window._pixiCanHandle(slot.cu)) return;
+        if (slot.cu.state !== 'sit' && slot.cu.state !== 'sit_in') return;
+        ctx.save();
+        ctx.translate(slot.cu.x, 0);
+        window._drawSeatedExtras(ctx, slot.cu, T, W, H, G.counterY);
+        ctx.restore();
+      });
+    }
     drawWetCustomers(ctx, T);
 
     // Speech bubbles (above everything)
@@ -6969,6 +6995,10 @@ try {
   // Depends on the consuming canvas always matching window.innerWidth/innerHeight exactly,
   // same as this file's own resize() above (no devicePixelRatio scaling on either side).
   window._drawWalkFigure = drawCustomer;
+  // Exposed so the Pixi seated-rig renderer can draw food/chopsticks/vomit (not
+  // ported — see the Pixi character-rig module) directly on the main Canvas2D
+  // context, layered on top of the Pixi-rendered body at the same position.
+  window._drawSeatedExtras = drawSeatedExtras;
 
   window.addEventListener('resize', resize);
   resize();
@@ -11445,15 +11475,19 @@ if (typeof serveCustomer === 'function') {
   // Returns false for anything this milestone doesn't cover yet — callers should
   // fall back to the original Canvas2D drawCustomer() in that case.
   window._pixiCanHandle = function(cu) {
-    if (cu.state !== 'walk_in' && cu.state !== 'walk_out') return false;
-    // Full walking rig now covered (Milestones 1-3): all clothing types, female
-    // variant, missing-hand stump, drunk tint, frown/talk mouth, geisha/hostess
-    // makeup, all hairstyles, police cap, sumo chonmage. Seated/back-view rig
-    // (task 41) is the remaining gap — that's a separate code path entirely.
-    return true;
+    // Full walking rig (Milestones 1-3) and full seated/back-view rig (Milestone 5)
+    // are both covered now: all clothing types, female variant, missing-hand stump,
+    // drunk tint, frown/talk mouth, geisha/hostess makeup, all hairstyles, police
+    // cap, sumo chonmage, head-turn illusion, death/puke/fall/drunk-sway. Food/
+    // chopsticks/vomit particles stay on Canvas2D (window._drawSeatedExtras),
+    // composited by the caller — see _pixiRenderCustomerLayer.
+    return cu.state === 'walk_in' || cu.state === 'walk_out' || cu.state === 'sit' || cu.state === 'sit_in';
   };
 
-  window._drawCustomerPixi = function(g, cu, T, geo) {
+  // Draws the walking rig (walk_in/walk_out) into a single flat Graphics — no
+  // sub-transforms needed since nothing in this rig squishes/rotates independently
+  // of the whole figure.
+  function _drawWalkingRigPixi(g, cu, T, geo) {
     // `geo` is the scene's live W/H/stallBot geometry (the yatai-scene IIFE's own
     // local G, distinct from the global game-state G) — the real render loop passes
     // it explicitly; the debug preview harness falls back to the global G it pokes.
@@ -11832,6 +11866,804 @@ if (typeof serveCustomer === 'function') {
       fillEllipse(g, hr * 0.60, headCy - hr * 1.06, hr * 0.20, hr * 0.11, 0.2, hairHex, 1);
       fillEllipse(g, hr * 0.62, headCy - hr * 1.18, hr * 0.10, hr * 0.16, -0.15, hairHex, 1);
     }
+  }
+
+  // ── Seated / back-view rig (sit_in, sit) ────────────────────────────────────
+  // Unlike the walking rig, this one genuinely needs sub-transforms: the head-turn
+  // illusion squishes just the head (profile vs front-face), and death/puke/fall/
+  // drunk-sway rotate the whole body around a pivot WITHOUT affecting food (drawn
+  // separately, see below). PIXI.Graphics can carry only one flat transform, so
+  // `slot` here is a small {root, body, head} tree: `root` (a Container) carries
+  // the rotation-state transform, `body` is a plain child Graphics, and `head` is
+  // a second child Graphics with its OWN position/pivot/scale for the squish —
+  // mirroring the original's nested canvas save/translate/scale/restore calls
+  // directly, one Pixi transform per canvas transform, rather than hand-multiplying
+  // every coordinate in the head section.
+  //
+  // Food/chopsticks/vomit particles are NOT ported here — original drawFood() is
+  // itself ~1200 lines covering dozens of dishes. Left on Canvas2D: the render loop
+  // calls window._drawSeatedExtras() directly on the main ctx, translated to the
+  // customer's x position, layered on top of the Pixi-rendered body every frame.
+  // This is faithful to the original's own structure, where food is drawn in the
+  // OUTER (non-rotated) frame after the inner rotation save/restore — i.e. food was
+  // already logically separate from the rotating body, even in the Canvas2D version.
+  function _drawSeatedRigPixi(slot, cu, T, geo) {
+    const { W, H, stallBot, counterY } = geo || G;
+    const { state, x, ct, phase } = cu;
+    const _drunkAmt = Math.max(0, (cu.alcoholCount || 0) - 7);
+    const root = slot.root, g = slot.body, hg = slot.head;
+    g.clear(); hg.clear();
+    hg.visible = true;
+
+    const seatY  = counterY + H*0.048;
+    const shldrY = counterY - H*0.195;
+    const waistY = counterY + H*0.006;
+    const armY   = counterY - H*0.020;
+    const _eatPhase = Math.sin(T * 2.2 + phase * 3.1);
+    const _eatY = (state === 'sit' && cu.served) ? Math.pow(Math.max(0, _eatPhase), 2) * H * 0.048 : 0;
+    const _puffCycle = (cu.smoker && state === 'sit') ? Math.sin(T * 0.55 + phase * 2.1) : -1;
+    const _smokeRaise = Math.pow(Math.max(0, _puffCycle), 2) * H * 0.15;
+    const _lAY = armY - _smokeRaise;
+    const headBob = state === 'sit' ? Math.sin(T*2.8+phase)*H*0.004 : 0;
+
+    // ── Root transform: x position + rotation-state pivot/angle/alpha ──
+    let pivotY = 0, angle = 0, alpha = 1;
+    if (cu.dead) {
+      const _dt = cu.deathTimer || 0;
+      angle = Math.min(0.68, (_dt / 50) * 0.68);
+      pivotY = seatY - H*0.04;
+      if (_dt > 100) alpha = Math.max(0, 1 - (_dt - 100) / 180);
+    } else if (cu.puking) {
+      const _pt = cu.pukTimer || 0;
+      let _lean = 0;
+      if (_pt < 20)       _lean = (_pt / 20) * 0.40;
+      else if (_pt < 50)  _lean = 0.40 + Math.sin((_pt - 20) * 0.55) * 0.14;
+      else if (_pt < 120) _lean = 0.44;
+      else if (_pt < 180) _lean = 0.44 * Math.max(0, 1 - (_pt - 120) / 60);
+      if (_lean > 0.01) { pivotY = seatY - H*0.02; angle = _lean; }
+      if (_pt > 190) alpha = Math.max(0, 1 - (_pt - 190) / 30);
+    } else if (cu.falling) {
+      const _ft = cu.fallTimer || 0;
+      let _fallAngle;
+      if (_ft < 55) _fallAngle = Math.sin((_ft / 55) * Math.PI * 0.5) * 1.45;
+      else if (_ft < 150) _fallAngle = 1.45 + Math.sin(_ft * 0.18) * 0.06;
+      else _fallAngle = 1.45 * Math.max(0, 1 - (_ft - 150) / 70);
+      pivotY = seatY + H*0.055;
+      angle = _fallAngle;
+    } else if (_drunkAmt > 0) {
+      angle = Math.sin(T * 0.9 + phase * 1.4) * Math.min(_drunkAmt * 0.07, 0.22);
+      pivotY = counterY + H*0.048;
+    }
+    root.position.set(x, pivotY);
+    root.pivot.set(0, pivotY);
+    root.rotation = angle;
+    root.alpha = alpha;
+
+    // ── STOOL ──
+    fillEllipse(g, 0, seatY, W*0.020, H*0.006, 0, 0x5a3818, 1);
+    g.lineStyle({ width: 0 }); g.beginFill(0x2a1408);
+    [-W*0.013, W*0.013].forEach(lx => g.drawRect(lx-W*0.003, seatY+H*0.006, W*0.006, H*0.074));
+    g.drawRect(-W*0.013, seatY+H*0.042, W*0.026, H*0.005);
+    g.endFill();
+
+    // ── PANTS LEGS / KIMONO FABRIC (dangling) ──
+    const pantsHex = hex(ct.pants);
+    if (ct.type !== 'kimono' && !ct.female) {
+      g.lineStyle({ width: 0 }); g.beginFill(pantsHex);
+      g.moveTo(-W*0.024, seatY-H*0.002)
+        .bezierCurveTo(-W*0.027, seatY+H*0.028, -W*0.029, seatY+H*0.052, -W*0.024, seatY+H*0.070)
+        .lineTo(-W*0.010, seatY+H*0.070)
+        .bezierCurveTo(-W*0.008, seatY+H*0.052, -W*0.007, seatY+H*0.028, -W*0.008, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.14);
+      g.moveTo(-W*0.024, seatY-H*0.002)
+        .bezierCurveTo(-W*0.027, seatY+H*0.028, -W*0.029, seatY+H*0.052, -W*0.024, seatY+H*0.070)
+        .lineTo(-W*0.010, seatY+H*0.070)
+        .bezierCurveTo(-W*0.008, seatY+H*0.052, -W*0.007, seatY+H*0.028, -W*0.008, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(pantsHex);
+      g.moveTo(W*0.008, seatY-H*0.002)
+        .bezierCurveTo(W*0.007, seatY+H*0.028, W*0.008, seatY+H*0.052, W*0.010, seatY+H*0.070)
+        .lineTo(W*0.024, seatY+H*0.070)
+        .bezierCurveTo(W*0.029, seatY+H*0.052, W*0.027, seatY+H*0.028, W*0.024, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      // Shoes
+      fillEllipse(g, -W*0.017, seatY+H*0.074, W*0.015, H*0.006, 0.14, 0x181212, 1);
+      fillEllipse(g, W*0.017, seatY+H*0.074, W*0.015, H*0.006, -0.14, 0x181212, 1);
+      fillEllipse(g, -W*0.021, seatY+H*0.072, W*0.007, H*0.003, 0.14, 0xffffff, 0.08);
+      fillEllipse(g, W*0.013, seatY+H*0.072, W*0.007, H*0.003, -0.14, 0xffffff, 0.08);
+    } else if (ct.female && ct.type !== 'kimono') {
+      const skirtHex = hex(ct.pants);
+      g.lineStyle({ width: 0 }); g.beginFill(skirtHex);
+      g.moveTo(-W*0.032, seatY-H*0.002)
+        .bezierCurveTo(-W*0.038, seatY+H*0.030, -W*0.040, seatY+H*0.058, -W*0.034, seatY+H*0.070)
+        .lineTo(W*0.034, seatY+H*0.070)
+        .bezierCurveTo(W*0.040, seatY+H*0.058, W*0.038, seatY+H*0.030, W*0.032, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.15);
+      g.moveTo(-W*0.032, seatY-H*0.002)
+        .bezierCurveTo(-W*0.038, seatY+H*0.030, -W*0.040, seatY+H*0.058, -W*0.034, seatY+H*0.070)
+        .lineTo(W*0.034, seatY+H*0.070)
+        .bezierCurveTo(W*0.040, seatY+H*0.058, W*0.038, seatY+H*0.030, W*0.032, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      // Bare legs + small shoes below skirt hem
+      const skinHex = hex(ct.skin);
+      fillEllipse(g, -W*0.020, seatY+H*0.074, W*0.009, H*0.008, 0.10, skinHex, 1);
+      fillEllipse(g, W*0.020, seatY+H*0.074, W*0.009, H*0.008, -0.10, skinHex, 1);
+      fillEllipse(g, -W*0.020, seatY+H*0.080, W*0.012, H*0.004, 0.14, 0x181212, 1);
+      fillEllipse(g, W*0.020, seatY+H*0.080, W*0.012, H*0.004, -0.14, 0x181212, 1);
+    } else {
+      // Kimono fabric panels hanging from seat
+      const jacketHex = hex(ct.jacket), jacketDHex = hex(ct.jacketD);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(-W*0.052, seatY-H*0.002)
+        .bezierCurveTo(-W*0.050, seatY+H*0.040, -W*0.042, seatY+H*0.062, -W*0.030, seatY+H*0.070)
+        .lineTo(-W*0.006, seatY+H*0.070)
+        .bezierCurveTo(-W*0.010, seatY+H*0.060, -W*0.008, seatY+H*0.036, -W*0.008, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(W*0.008, seatY-H*0.002)
+        .bezierCurveTo(W*0.008, seatY+H*0.036, W*0.010, seatY+H*0.060, W*0.006, seatY+H*0.070)
+        .lineTo(W*0.030, seatY+H*0.070)
+        .bezierCurveTo(W*0.042, seatY+H*0.062, W*0.050, seatY+H*0.040, W*0.052, seatY-H*0.002)
+        .closePath();
+      g.endFill();
+      // Hem fold line
+      strokeSeg(g, W*0.003, jacketDHex, false);
+      g.moveTo(-W*0.030, seatY+H*0.070).lineTo(-W*0.006, seatY+H*0.070);
+      strokeSeg(g, W*0.003, jacketDHex, false);
+      g.moveTo(W*0.006, seatY+H*0.070).lineTo(W*0.030, seatY+H*0.070);
+      // Tabi socks (white) + geta (dark wood)
+      fillEllipse(g, -W*0.018, seatY+H*0.074, W*0.012, H*0.007, 0.10, 0xe8e8e0, 1);
+      fillEllipse(g, W*0.018, seatY+H*0.074, W*0.012, H*0.007, -0.10, 0xe8e8e0, 1);
+      fillEllipse(g, -W*0.018, seatY+H*0.078, W*0.014, H*0.004, 0.10, 0x3a2810, 1);
+      fillEllipse(g, W*0.018, seatY+H*0.078, W*0.014, H*0.004, -0.10, 0x3a2810, 1);
+    }
+
+    // ── JACKET BODY ──
+    const jacketHex = hex(ct.jacket), jacketDHex = hex(ct.jacketD);
+    g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+    g.moveTo(-W*0.056, shldrY+H*0.010).lineTo(-W*0.052, waistY)
+      .lineTo(W*0.052, waistY).lineTo(W*0.056, shldrY+H*0.010).closePath();
+    g.endFill();
+    // Lighting gradient approximated as a flat overlay (Pixi 7 has no gradient fill)
+    g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.10);
+    g.moveTo(-W*0.056, shldrY+H*0.010).lineTo(-W*0.052, waistY)
+      .lineTo(W*0.052, waistY).lineTo(W*0.056, shldrY+H*0.010).closePath();
+    g.endFill();
+    // Seams & details by clothing type
+    if (ct.type === 'suit') {
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.moveTo(0, shldrY+H*0.014).lineTo(0, waistY-H*0.010);
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.moveTo(-W*0.054, shldrY+H*0.028).lineTo(W*0.054, shldrY+H*0.028);
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.moveTo(-W*0.044, shldrY+H*0.030).lineTo(-W*0.046, waistY);
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.moveTo(W*0.044, shldrY+H*0.030).lineTo(W*0.046, waistY);
+    } else if (ct.type === 'hoodie') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+      g.drawRect(-W*0.052, waistY-H*0.012, W*0.104, H*0.014);
+      g.endFill();
+      for (let rx = -W*0.044; rx < W*0.044; rx += W*0.009) {
+        strokeSeg(g, 0.7, jacketHex, false);
+        g.moveTo(rx, waistY-H*0.012).lineTo(rx, waistY+H*0.002);
+      }
+    } else if (ct.type === 'shirt') {
+      strokeSeg(g, 1.0, jacketDHex, false);
+      g.moveTo(0, shldrY+H*0.016).lineTo(0, waistY-H*0.008);
+      const _btnGap = (waistY - shldrY - H*0.024) / 3;
+      for (let bi = 0; bi < 3; bi++) {
+        fillEllipse(g, 0, shldrY+H*0.024 + bi*_btnGap, W*0.005, W*0.005, 0, jacketDHex, 1);
+      }
+      strokeSeg(g, 0.9, jacketDHex, false);
+      g.drawRect(-W*0.042, shldrY+H*0.034, W*0.020, H*0.024);
+    } else if (ct.type === 'kimono') {
+      g.lineStyle({ width: 0 }); g.beginFill(pantsHex);
+      g.drawRect(-W*0.056, waistY-H*0.020, W*0.112, H*0.028);
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0xffffff, 0.10);
+      g.drawRect(-W*0.056, waistY-H*0.020, W*0.112, H*0.028);
+      g.endFill();
+      // Mon (family crest) on back
+      fillEllipse(g, 0, shldrY+H*0.060, W*0.015, W*0.015, 0, 0xffffff, 0.22);
+      strokeSeg(g, 1.2, 0xffffff, false, 0.18);
+      g.arc(0, shldrY+H*0.060, W*0.010, 0, Math.PI*2);
+      strokeSeg(g, 0.8, jacketDHex, false);
+      g.moveTo(0, shldrY+H*0.020).lineTo(0, waistY-H*0.020);
+    }
+    // Sumo mawashi belt
+    if (ct.sumo) {
+      g.lineStyle({ width: 0 }); g.beginFill(0x2a1a08);
+      g.drawRect(-W*0.058, waistY-H*0.024, W*0.116, H*0.030);
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0xc8a020, 0.20);
+      g.drawRect(-W*0.058, waistY-H*0.024, W*0.116, H*0.030);
+      g.endFill();
+      fillEllipse(g, 0, waistY-H*0.010, W*0.022, H*0.016, 0, 0x3a2a0c, 1);
+      fillEllipse(g, 0, waistY-H*0.010, W*0.014, H*0.010, 0, 0xc8a01e, 0.45);
+    }
+    // Police badge on back
+    if (ct.police) {
+      fillEllipse(g, W*0.026, shldrY+H*0.045, W*0.0055, W*0.0055, 0, 0xc8960a, 1);
+      fillEllipse(g, W*0.026, shldrY+H*0.045, W*0.0034, W*0.0034, 0, 0xf0c020, 1);
+    }
+    // Shoulder humps / Kimono sleeves
+    if (ct.type === 'kimono') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(-W*0.054, shldrY+H*0.018)
+        .bezierCurveTo(-W*0.068, shldrY+H*0.030, -W*0.072, shldrY+H*0.080, -W*0.058, waistY-H*0.004)
+        .lineTo(-W*0.038, waistY-H*0.004)
+        .bezierCurveTo(-W*0.032, shldrY+H*0.075, -W*0.032, shldrY+H*0.030, -W*0.040, shldrY+H*0.018)
+        .closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(W*0.054, shldrY+H*0.018)
+        .bezierCurveTo(W*0.068, shldrY+H*0.030, W*0.072, shldrY+H*0.080, W*0.058, waistY-H*0.004)
+        .lineTo(W*0.038, waistY-H*0.004)
+        .bezierCurveTo(W*0.032, shldrY+H*0.075, W*0.032, shldrY+H*0.030, W*0.040, shldrY+H*0.018)
+        .closePath();
+      g.endFill();
+      strokeSeg(g, 1.2, jacketDHex, false);
+      g.moveTo(-W*0.058, waistY-H*0.004).lineTo(-W*0.038, waistY-H*0.004);
+      strokeSeg(g, 1.2, jacketDHex, false);
+      g.moveTo(W*0.058, waistY-H*0.004).lineTo(W*0.038, waistY-H*0.004);
+    }
+    // Hoodie hood bunched at back of neck
+    if (ct.type === 'hoodie') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(-W*0.028, shldrY+H*0.014)
+        .quadraticCurveTo(-W*0.016, shldrY-H*0.004, 0, shldrY-H*0.010)
+        .quadraticCurveTo(W*0.016, shldrY-H*0.004, W*0.028, shldrY+H*0.014)
+        .quadraticCurveTo(W*0.016, shldrY+H*0.030, 0, shldrY+H*0.024)
+        .quadraticCurveTo(-W*0.016, shldrY+H*0.030, -W*0.028, shldrY+H*0.014)
+        .closePath();
+      g.endFill();
+      fillEllipse(g, 0, shldrY+H*0.014, W*0.014, H*0.010, 0, jacketDHex, 1);
+    }
+
+    // ── ARMS ──
+    const slvC = ct.type === 'tee' ? hex(ct.shirt) : jacketHex;
+    const frmC = ct.type === 'tee' ? hex(ct.skin) : jacketHex;
+    // Left upper arm — follows forearm lift when smoking
+    g.lineStyle({ width: 0 }); g.beginFill(slvC);
+    g.moveTo(-W*0.054, shldrY+H*0.025)
+      .quadraticCurveTo(-W*0.068, shldrY+H*0.075, -W*0.064, _lAY)
+      .lineTo(-W*0.046, _lAY)
+      .quadraticCurveTo(-W*0.040, shldrY+H*0.072, -W*0.030, shldrY+H*0.030)
+      .closePath();
+    g.endFill();
+    if (ct.type === 'tee') {
+      strokeSeg(g, 1, jacketDHex, false);
+      g.moveTo(-W*0.064, _lAY).lineTo(-W*0.046, _lAY);
+    }
+    // Left forearm
+    g.lineStyle({ width: 0 }); g.beginFill(frmC);
+    g.moveTo(-W*0.064, _lAY-H*0.006).lineTo(-W*0.064, _lAY+H*0.016)
+      .lineTo(W*0.004, _lAY+H*0.016).lineTo(W*0.004, _lAY-H*0.006).closePath();
+    g.endFill();
+    // Wrist detail
+    if (ct.type === 'suit') {
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.cuff));
+      g.drawRect(W*0.002, _lAY-H*0.006, W*0.016, H*0.022);
+      g.endFill();
+    } else if (ct.type === 'hoodie') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+      g.drawRect(-W*0.064, _lAY-H*0.006, W*0.010, H*0.022);
+      g.endFill();
+    } else if (ct.type === 'shirt') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+      g.drawRect(W*0.002, _lAY-H*0.006, W*0.012, H*0.022);
+      g.endFill();
+    }
+    // Left hand
+    const skinHex2 = hex(ct.skin), skinDHex2 = hex(ct.skinD);
+    fillEllipse(g, W*0.016, _lAY+H*0.006, W*0.014, H*0.009, 0.08, skinHex2, 1);
+    [-W*0.004, W*0.003, W*0.010].forEach(kx => {
+      strokeSeg(g, 0.5, skinDHex2, false);
+      g.moveTo(kx, _lAY+H*0.002).lineTo(kx, _lAY+H*0.012);
+    });
+
+    // Cigarette — smokers only, while seated
+    if (cu.smoker && state === 'sit') {
+      const _cigX = W*0.024, _cigBaseY = _lAY - H*0.004;
+      const _isPuffing = _puffCycle > 0.55;
+      const cigCos = Math.cos(-0.28), cigSin = Math.sin(-0.28);
+      // Rotate the small cigarette shape by hand (no nested transform on this Graphics)
+      const rot = (lx, ly) => [_cigX + lx*cigCos - ly*cigSin, _cigBaseY + lx*cigSin + ly*cigCos];
+      const rectPoly = (x0,y0,x1,y1) => {
+        const p0=rot(x0,y0), p1=rot(x1,y0), p2=rot(x1,y1), p3=rot(x0,y1);
+        return [p0[0],p0[1], p1[0],p1[1], p2[0],p2[1], p3[0],p3[1]];
+      };
+      g.lineStyle({ width: 0 }); g.beginFill(0xc09858);
+      g.drawPolygon(rectPoly(-W*0.0022, 0, W*0.0022, H*0.008));
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0xf2ede8);
+      g.drawPolygon(rectPoly(-W*0.0022, -H*0.022, W*0.0022, 0));
+      g.endFill();
+      const emberXY = rot(0, -H*0.022);
+      fillEllipse(g, emberXY[0], emberXY[1], W*0.0035, W*0.0035, 0, _isPuffing ? 0xff5808 : 0xcc3804, 1);
+      if (_isPuffing) fillEllipse(g, emberXY[0], emberXY[1], W*0.007, W*0.007, 0, 0xff7814, 0.30);
+      const ashXY = rot(W*0.001, -H*0.024);
+      fillEllipse(g, ashXY[0], ashXY[1], W*0.002, W*0.002, 0, 0xbeb9b2, 0.80);
+
+      // Smoke wisps rising from ember
+      const _smokeStr = _isPuffing ? 1.8 : 0.7;
+      for (let si = 0; si < 5; si++) {
+        const _sp = ((T * 0.35 + phase + si * 0.22) % 1.0);
+        const _wobble = Math.sin(_sp * Math.PI * 4 + si * 1.4) * W * 0.007;
+        const _sx = _cigX + Math.cos(-0.28) * (-H*0.022) * (-0.28) + _wobble - W*0.003;
+        const _sy = _cigBaseY - H*0.025 - _sp * H*0.065;
+        const _sa = _smokeStr * (1 - _sp) * 0.18;
+        const _sr = W*0.004 + _sp * W*0.014;
+        fillEllipse(g, _sx, _sy, _sr, _sr, 0, 0xd2cdc8, Math.max(0, Math.min(1, _sa)));
+      }
+    }
+
+    if (!ct.missingRightHand) {
+      // Right upper arm
+      g.lineStyle({ width: 0 }); g.beginFill(slvC);
+      g.moveTo(W*0.054, shldrY+H*0.025)
+        .quadraticCurveTo(W*0.068, shldrY+H*0.075, W*0.064, armY)
+        .lineTo(W*0.046, armY)
+        .quadraticCurveTo(W*0.040, shldrY+H*0.072, W*0.030, shldrY+H*0.030)
+        .closePath();
+      g.endFill();
+      if (ct.type === 'tee') {
+        strokeSeg(g, 1, jacketDHex, false);
+        g.moveTo(W*0.064, armY).lineTo(W*0.046, armY);
+      }
+      // Right forearm (lifts when eating)
+      const _rAY = armY - _eatY;
+      g.lineStyle({ width: 0 }); g.beginFill(frmC);
+      g.moveTo(W*0.064, _rAY-H*0.006).lineTo(W*0.064, _rAY+H*0.016)
+        .lineTo(-W*0.004, _rAY+H*0.016).lineTo(-W*0.004, _rAY-H*0.006).closePath();
+      g.endFill();
+      if (ct.type === 'suit') {
+        g.lineStyle({ width: 0 }); g.beginFill(hex(ct.cuff));
+        g.drawRect(-W*0.018, _rAY-H*0.006, W*0.016, H*0.022);
+        g.endFill();
+      } else if (ct.type === 'hoodie') {
+        g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+        g.drawRect(W*0.054, _rAY-H*0.006, W*0.010, H*0.022);
+        g.endFill();
+      } else if (ct.type === 'shirt') {
+        g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+        g.drawRect(-W*0.014, _rAY-H*0.006, W*0.012, H*0.022);
+        g.endFill();
+      }
+      // Right hand
+      fillEllipse(g, -W*0.016, _rAY+H*0.006, W*0.014, H*0.009, -0.08, skinHex2, 1);
+      [-W*0.010, -W*0.003, W*0.004].forEach(kx => {
+        strokeSeg(g, 0.5, skinDHex2, false);
+        g.moveTo(kx, _rAY+H*0.002).lineTo(kx, _rAY+H*0.012);
+      });
+    } else {
+      // Right arm ends in a bandaged stump partway down the upper arm
+      g.lineStyle({ width: 0 }); g.beginFill(slvC);
+      g.moveTo(W*0.054, shldrY+H*0.025)
+        .quadraticCurveTo(W*0.062, shldrY+H*0.050, W*0.052, shldrY+H*0.062)
+        .lineTo(W*0.038, shldrY+H*0.062)
+        .quadraticCurveTo(W*0.036, shldrY+H*0.048, W*0.030, shldrY+H*0.030)
+        .closePath();
+      g.endFill();
+      fillEllipse(g, W*0.045, shldrY+H*0.062, W*0.012, H*0.008, 0, 0xe8e0d0, 1);
+      strokeSeg(g, 0.6, 0xc8bca8, false);
+      g.moveTo(W*0.036, shldrY+H*0.058).lineTo(W*0.054, shldrY+H*0.058);
+      strokeSeg(g, 0.6, 0xc8bca8, false);
+      g.moveTo(W*0.036, shldrY+H*0.066).lineTo(W*0.054, shldrY+H*0.066);
+    }
+
+    // ── COLLAR ──
+    if (ct.type === 'suit') {
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.shirt));
+      g.arc(0, shldrY+H*0.004, W*0.026, Math.PI*0.88, Math.PI*2.12); g.closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.13);
+      g.arc(0, shldrY+H*0.008, W*0.024, Math.PI*0.90, Math.PI*2.10); g.closePath();
+      g.endFill();
+      if (ct.tieColor) {
+        g.lineStyle({ width: 0 }); g.beginFill(hex(ct.tieColor));
+        g.moveTo(-W*0.006, shldrY+H*0.010).lineTo(W*0.006, shldrY+H*0.010)
+          .lineTo(W*0.004, shldrY+H*0.026).lineTo(0, shldrY+H*0.030)
+          .lineTo(-W*0.004, shldrY+H*0.026).closePath();
+        g.endFill();
+      }
+    } else if (ct.type === 'hoodie') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.arc(0, shldrY+H*0.006, W*0.028, Math.PI*0.86, Math.PI*2.14); g.closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+      g.arc(0, shldrY+H*0.010, W*0.024, Math.PI*0.88, Math.PI*2.12); g.closePath();
+      g.endFill();
+    } else if (ct.type === 'shirt') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.arc(0, shldrY+H*0.004, W*0.026, Math.PI*0.84, Math.PI*2.16); g.closePath();
+      g.endFill();
+      strokeSeg(g, 1, jacketDHex, false);
+      g.moveTo(-W*0.011, shldrY+H*0.006).lineTo(0, shldrY+H*0.024).lineTo(W*0.011, shldrY+H*0.006);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(-W*0.011, shldrY+H*0.006).lineTo(-W*0.024, shldrY+H*0.020).lineTo(-W*0.014, shldrY+H*0.026).closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.moveTo(W*0.011, shldrY+H*0.006).lineTo(W*0.024, shldrY+H*0.020).lineTo(W*0.014, shldrY+H*0.026).closePath();
+      g.endFill();
+    } else if (ct.type === 'kimono') {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.arc(0, shldrY+H*0.004, W*0.030, Math.PI*0.80, Math.PI*2.20); g.closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.cuff));
+      g.arc(0, shldrY+H*0.008, W*0.020, Math.PI*0.84, Math.PI*2.16); g.closePath();
+      g.endFill();
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
+      g.arc(0, shldrY+H*0.010, W*0.014, Math.PI*0.88, Math.PI*2.12); g.closePath();
+      g.endFill();
+    } else {
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
+      g.arc(0, shldrY+H*0.005, W*0.020, Math.PI*0.88, Math.PI*2.12); g.closePath();
+      g.endFill();
+      strokeSeg(g, 1, jacketDHex, false);
+      g.arc(0, shldrY+H*0.005, W*0.020, Math.PI*0.88, Math.PI*2.12);
+    }
+
+    // ── NECK ──
+    const nW = W*0.016, nTop = shldrY-H*0.045, nBot = shldrY+H*0.010;
+    g.lineStyle({ width: 0 }); g.beginFill(skinHex2);
+    g.moveTo(-nW, nBot).quadraticCurveTo(-nW*0.85, nTop+H*0.012, -nW*0.55, nTop)
+      .lineTo(nW*0.55, nTop).quadraticCurveTo(nW*0.85, nTop+H*0.012, nW, nBot).closePath();
+    g.endFill();
+    g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.10);
+    g.moveTo(-nW, nBot).quadraticCurveTo(-nW*0.85, nTop+H*0.012, -nW*0.55, nTop)
+      .lineTo(nW*0.55, nTop).quadraticCurveTo(nW*0.85, nTop+H*0.012, nW, nBot).closePath();
+    g.endFill();
+
+    // ── HEAD — drawn into `hg`, a separate child Graphics with its own transform
+    // for the profile/front-face squish (see comment above _drawSeatedRigPixi). ──
+    const hCy = nTop - H*0.040 + headBob;
+    const hR  = W*0.033;
+    const _hGlanceTrig = Math.sin(T * 0.038 + cu.phase * 0.9);
+    const _hGlanceAmt  = Math.max(0, _hGlanceTrig - 0.4) / 0.6;
+    const _hTurnA = Math.sin(T * 0.12 + cu.phase * 2.3) * (0.34 + _hGlanceAmt * 1.4);
+    const _hSin = Math.sin(_hTurnA), _hCos = Math.cos(_hTurnA);
+    const _hAbsSin = Math.abs(_hSin);
+    const FRONT_TH = 0.42;
+    hg.position.set(0, hCy);
+    hg.pivot.set(0, hCy);
+
+    const hairHex = hex(ct.hair, 0x0c0808);
+    const irisHex = (ct.hair === '#949494' || ct.hair === '#a09898') ? 0x4a5868 : 0x28180e;
+
+    if (_hAbsSin > FRONT_TH) {
+      // ── PROFILE ──
+      hg.scale.set(Math.sign(_hSin) * Math.max(0.05, _hAbsSin), 1);
+      fillEllipse(hg, 0, hCy, hR, hR, 0, skinHex2, 1);
+      fillEllipse(hg, hR*0.62, hCy+hR*0.08, hR*0.14, hR*0.22, 0.12, skinHex2, 1);
+      strokeSeg(hg, 0.8, skinDHex2, false);
+      hg.arc(hR*0.62, hCy+hR*0.10, hR*0.08, -Math.PI*0.6, Math.PI*0.3);
+      g.lineStyle({ width: 0 });
+      hg.lineStyle({ width: 0 }); hg.beginFill(skinHex2);
+      hg.moveTo(-hR*0.32, hCy-hR*0.78)
+        .quadraticCurveTo(-hR*0.92, hCy-hR*0.44, -hR*0.98, hCy-hR*0.06)
+        .quadraticCurveTo(-hR*1.08, hCy+hR*0.12, -hR*1.18, hCy+hR*0.22)
+        .quadraticCurveTo(-hR*1.10, hCy+hR*0.34, -hR*0.96, hCy+hR*0.40)
+        .quadraticCurveTo(-hR*0.98, hCy+hR*0.50, -hR*0.94, hCy+hR*0.55)
+        .quadraticCurveTo(-hR*0.86, hCy+hR*0.72, -hR*0.58, hCy+hR*0.82)
+        .lineTo(-hR*0.08, hCy+hR*0.92).closePath();
+      hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0x000000, 0.10);
+      hg.drawPolygon(ellipsePoints(-hR*0.15, hCy+hR*0.1, hR*0.85, hR*0.95, 0));
+      hg.endFill();
+      const nostrilHex = _drunkAmt > 0 ? 0xc85050 : skinDHex2;
+      const nostrilAlpha = _drunkAmt > 0 ? Math.min(0.85, 0.5 + _drunkAmt * 0.15) : 1;
+      fillEllipse(hg, -hR*1.12, hCy+hR*0.28, hR*0.07, hR*0.05, -0.4, nostrilHex, nostrilAlpha);
+      fillEllipse(hg, -hR*0.73, hCy-hR*0.09, hR*0.13, hR*0.09, 0, 0xf5ede8, 1);
+      hg.lineStyle({ width: 0 }); hg.beginFill(irisHex); hg.drawCircle(-hR*0.73, hCy-hR*0.09, hR*0.07); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0x080408); hg.drawCircle(-hR*0.73, hCy-hR*0.09, hR*0.04); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0xffffff, 0.65); hg.drawCircle(-hR*0.71, hCy-hR*0.12, hR*0.016); hg.endFill();
+      strokeSeg(hg, hR*0.10, skinDHex2, true);
+      hg.moveTo(-hR*0.87, hCy-hR*0.09).quadraticCurveTo(-hR*0.73, hCy-hR*0.20, -hR*0.59, hCy-hR*0.09);
+      if (ct.female) {
+        strokeSeg(hg, hR*0.07, hairHex, true);
+        [[-hR*0.84, 0], [-hR*0.76, hR*0.05], [-hR*0.68, hR*0.08], [-hR*0.61, hR*0.04]].forEach(([lx, oy]) => {
+          hg.moveTo(lx, hCy-hR*0.17+oy).lineTo(lx-hR*0.025, hCy-hR*0.26+oy);
+        });
+      }
+      strokeSeg(hg, hR*0.12, hairHex, true);
+      hg.moveTo(-hR*0.90, hCy-hR*0.26).lineTo(-hR*0.56, hCy-hR*0.29);
+      const _tkFs = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.10 : 0;
+      strokeSeg(hg, hR*0.13, skinDHex2, true);
+      hg.moveTo(-hR*0.96, hCy+hR*0.52).quadraticCurveTo(-hR*0.80, hCy+hR*0.60 + _tkFs, -hR*0.64, hCy+hR*0.52);
+      if (_tkFs > 0.01) {
+        hg.lineStyle({ width: 0 }); hg.beginFill(0x280a05, 0.50);
+        hg.moveTo(-hR*0.92, hCy+hR*0.54).quadraticCurveTo(-hR*0.78, hCy+hR*0.59 + _tkFs, -hR*0.66, hCy+hR*0.54).closePath();
+        hg.endFill();
+      }
+      strokeSeg(hg, hR*0.08, 0x000000, false, 0.18);
+      hg.moveTo(-hR*0.90, hCy+hR*0.63).quadraticCurveTo(-hR*0.78, hCy+hR*0.68 + _tkFs*0.5, -hR*0.66, hCy+hR*0.64);
+      if (ct.geisha) {
+        strokeSeg(hg, hR*0.15, 0xc01828, true);
+        hg.moveTo(-hR*0.93, hCy+hR*0.53).quadraticCurveTo(-hR*0.79, hCy+hR*0.60 + _tkFs, -hR*0.66, hCy+hR*0.53);
+        strokeSeg(hg, hR*0.05, 0xd4a020, false);
+        hg.moveTo(-hR*0.10, hCy-hR*0.80).lineTo(-hR*0.06, hCy-hR*1.30);
+        fillEllipse(hg, -hR*0.06, hCy-hR*1.32, hR*0.07, hR*0.07, 0, 0xe8b830, 1);
+        fillEllipse(hg, -hR*0.06, hCy-hR*1.32, hR*0.04, hR*0.04, 0, 0xff4060, 1);
+      }
+
+      // Hair (profile)
+      if (ct.hairStyle === 'long') {
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(-hR*0.28, hCy-hR*0.80)
+          .quadraticCurveTo(hR*0.08, hCy-hR*1.10, hR*0.92, hCy-hR*0.90)
+          .quadraticCurveTo(hR*1.04, hCy-hR*0.55, hR*1.02, hCy+hR*0.60)
+          .bezierCurveTo(hR*1.00, waistY-H*0.04, hR*0.78, waistY+H*0.01, hR*0.56, waistY+H*0.04)
+          .lineTo(hR*0.24, waistY+H*0.04)
+          .bezierCurveTo(hR*0.48, waistY-H*0.03, hR*0.62, hCy+hR*0.72, hR*0.62, hCy+hR*0.22)
+          .lineTo(hR*0.50, hCy-hR*0.80).closePath();
+        hg.endFill();
+        strokeSeg(hg, hR*0.06, 0xffffff, true, 0.08);
+        hg.moveTo(hR*0.80, hCy-hR*0.50).bezierCurveTo(hR*0.94, hCy+hR*0.40, hR*0.76, waistY-H*0.06, hR*0.50, waistY);
+      } else if (ct.hairStyle === 'ponytail') {
+        const topRx = hR*0.92;
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(-hR*0.28, hCy-hR*0.78)
+          .quadraticCurveTo(hR*0.08, hCy-hR*1.08, topRx, hCy-hR*0.88)
+          .quadraticCurveTo(hR*1.04, hCy-hR*0.55, topRx, hCy+hR*0.28)
+          .lineTo(topRx*0.55, hCy+hR*0.28)
+          .quadraticCurveTo(topRx*0.88, hCy-hR*0.42, hR*0.44, hCy-hR*0.76).closePath();
+        hg.endFill();
+        fillEllipse(hg, hR*0.72, hCy+hR*0.32, hR*0.11, hR*0.07, 0.3, hex(ct.jacketD), 1);
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(hR*0.64, hCy+hR*0.28)
+          .bezierCurveTo(hR*1.10, hCy+hR*0.80, hR*1.00, waistY-H*0.04, hR*0.70, waistY+H*0.03)
+          .lineTo(hR*0.42, waistY+H*0.03)
+          .bezierCurveTo(hR*0.58, waistY-H*0.06, hR*0.56, hCy+hR*0.60, hR*0.52, hCy+hR*0.34).closePath();
+        hg.endFill();
+        strokeSeg(hg, hR*0.05, 0xffffff, true, 0.09);
+        hg.moveTo(hR*0.88, hCy+hR*0.60).bezierCurveTo(hR*0.96, waistY-H*0.10, hR*0.76, waistY-H*0.02, hR*0.56, waistY+H*0.01);
+      } else {
+        const topRx = ct.hairStyle === 'thin' ? hR*0.68 : hR*0.98;
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(-hR*0.28, hCy-hR*0.78)
+          .quadraticCurveTo(hR*0.08, hCy-hR*1.08, topRx, hCy-hR*0.88)
+          .quadraticCurveTo(hR*1.04, hCy-hR*0.55, topRx, hCy+hR*0.28)
+          .lineTo(topRx*0.55, hCy+hR*0.28)
+          .quadraticCurveTo(topRx*0.88, hCy-hR*0.42, hR*0.44, hCy-hR*0.76).closePath();
+        hg.endFill();
+        if (ct.hairStyle === 'medium') {
+          hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+          hg.moveTo(hR*0.82, hCy-hR*0.62)
+            .quadraticCurveTo(hR*1.05, hCy, hR*0.96, hCy+hR*0.58)
+            .lineTo(hR*0.58, hCy+hR*0.58)
+            .quadraticCurveTo(hR*0.82, hCy+hR*0.12, hR*0.66, hCy-hR*0.48).closePath();
+          hg.endFill();
+        }
+      }
+      if (ct.police) {
+        hg.lineStyle({ width: 0 }); hg.beginFill(jacketHex);
+        hg.moveTo(-hR*0.26,hCy-hR*0.70).lineTo(hR*1.02,hCy-hR*0.70).lineTo(hR*0.92,hCy-hR*1.04).lineTo(-hR*0.18,hCy-hR*1.04).closePath();
+        hg.endFill();
+        hg.lineStyle({ width: 0 }); hg.beginFill(jacketDHex);
+        hg.moveTo(-hR*0.18,hCy-hR*1.04).lineTo(hR*0.92,hCy-hR*1.04).lineTo(hR*0.86,hCy-hR*1.12).lineTo(-hR*0.14,hCy-hR*1.12).closePath();
+        hg.endFill();
+        hg.lineStyle({ width: 0 }); hg.beginFill(jacketDHex);
+        hg.moveTo(-hR*0.26,hCy-hR*0.72).quadraticCurveTo(-hR*0.54,hCy-hR*0.62,-hR*0.44,hCy-hR*0.52).quadraticCurveTo(-hR*0.22,hCy-hR*0.62,-hR*0.22,hCy-hR*0.70).closePath();
+        hg.endFill();
+        hg.lineStyle({ width: 0 }); hg.beginFill(0xf0f2ee, 0.82);
+        hg.drawRect(-hR*0.24,hCy-hR*0.80,hR*1.22,hR*0.11);
+        hg.endFill();
+        fillEllipse(hg, hR*0.28,hCy-hR*0.86,hR*0.10,hR*0.10,0,0xc8960a,1);
+        fillEllipse(hg, hR*0.28,hCy-hR*0.86,hR*0.06,hR*0.06,0,0xf0c020,1);
+      }
+      if (ct.sumo) {
+        fillEllipse(hg, hR*0.60,hCy-hR*1.06,hR*0.20,hR*0.11,0.2,hairHex,1);
+        fillEllipse(hg, hR*0.62,hCy-hR*1.18,hR*0.10,hR*0.16,-0.15,hairHex,1);
+      }
+    } else {
+      // ── FRONT FACE ──
+      hg.scale.set(Math.max(0.05, Math.abs(_hCos)), 1);
+      fillEllipse(hg, 0, hCy, hR*0.84, hR, 0, skinHex2, 1);
+      hg.lineStyle({ width: 0 }); hg.beginFill(0x000000, 0.08);
+      hg.drawPolygon(ellipsePoints(0, hCy, hR*0.84, hR, 0));
+      hg.endFill();
+      // Ears
+      fillEllipse(hg, -hR*0.90, hCy+hR*0.08, hR*0.14, hR*0.22, 0.08, skinHex2, 1);
+      fillEllipse(hg, hR*0.90, hCy+hR*0.08, hR*0.14, hR*0.22, -0.08, skinHex2, 1);
+      strokeSeg(hg, 0.8, skinDHex2, false);
+      hg.arc(-hR*0.90, hCy+hR*0.10, hR*0.08, -Math.PI*0.3, Math.PI*0.6);
+      strokeSeg(hg, 0.8, skinDHex2, false);
+      hg.arc(hR*0.90, hCy+hR*0.10, hR*0.08, Math.PI*0.4, Math.PI*1.3);
+      // Eyes
+      const _eY = hCy - hR*0.12, _eL = -hR*0.38, _eR = hR*0.38;
+      const _iC = irisHex;
+      const _blinkTrig = Math.sin(T * (1.57 + Math.sin(cu.phase * 3.7) * 0.5) + cu.phase * 11.3);
+      const _blinkAmt  = Math.max(0, Math.min(1, (_blinkTrig - 0.98) / 0.02));
+      fillEllipse(hg, _eL, _eY, hR*0.20, hR*0.14, 0, 0xf5ede8, 1);
+      fillEllipse(hg, _eR, _eY, hR*0.20, hR*0.14, 0, 0xf5ede8, 1);
+      hg.lineStyle({ width: 0 }); hg.beginFill(_iC); hg.drawCircle(_eL, _eY, hR*0.10); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(_iC); hg.drawCircle(_eR, _eY, hR*0.10); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0x080408); hg.drawCircle(_eL, _eY, hR*0.055); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0x080408); hg.drawCircle(_eR, _eY, hR*0.055); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0xffffff, 0.72); hg.drawCircle(_eL-hR*0.03, _eY-hR*0.04, hR*0.022); hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(0xffffff, 0.72); hg.drawCircle(_eR-hR*0.03, _eY-hR*0.04, hR*0.022); hg.endFill();
+      strokeSeg(hg, 0.9, skinDHex2, true);
+      hg.moveTo(_eL-hR*0.20, _eY).quadraticCurveTo(_eL, _eY-hR*0.14, _eL+hR*0.20, _eY);
+      strokeSeg(hg, 0.9, skinDHex2, true);
+      hg.moveTo(_eR-hR*0.20, _eY).quadraticCurveTo(_eR, _eY-hR*0.14, _eR+hR*0.20, _eY);
+      if (ct.female) {
+        [-hR*0.16, -hR*0.08, 0, hR*0.08, hR*0.16].forEach(lx => {
+          strokeSeg(hg, hR*0.07, hairHex, true);
+          hg.moveTo(_eL+lx, _eY-hR*0.13).lineTo(_eL+lx, _eY-hR*0.22);
+          strokeSeg(hg, hR*0.07, hairHex, true);
+          hg.moveTo(_eR+lx, _eY-hR*0.13).lineTo(_eR+lx, _eY-hR*0.22);
+        });
+      }
+      if (_blinkAmt > 0 && !cu.dead) {
+        fillEllipse(hg, _eL, _eY, hR*0.23, hR*0.17 * _blinkAmt, 0, skinHex2, 1);
+        fillEllipse(hg, _eR, _eY, hR*0.23, hR*0.17 * _blinkAmt, 0, skinHex2, 1);
+      }
+      if (cu.dead) {
+        strokeSeg(hg, hR*0.15, 0x0f0a0a, true, 0.90);
+        hg.moveTo(_eL-hR*0.17, _eY-hR*0.13).lineTo(_eL+hR*0.17, _eY+hR*0.13);
+        strokeSeg(hg, hR*0.15, 0x0f0a0a, true, 0.90);
+        hg.moveTo(_eL+hR*0.17, _eY-hR*0.13).lineTo(_eL-hR*0.17, _eY+hR*0.13);
+        strokeSeg(hg, hR*0.15, 0x0f0a0a, true, 0.90);
+        hg.moveTo(_eR-hR*0.17, _eY-hR*0.13).lineTo(_eR+hR*0.17, _eY+hR*0.13);
+        strokeSeg(hg, hR*0.15, 0x0f0a0a, true, 0.90);
+        hg.moveTo(_eR+hR*0.17, _eY-hR*0.13).lineTo(_eR-hR*0.17, _eY+hR*0.13);
+        fillEllipse(hg, 0, hCy, hR*0.84, hR, 0, 0xbedcbe, 0.38);
+      }
+      if (cu.puking && (cu.pukTimer || 0) > 8) {
+        const _pgA = Math.min(0.42, ((cu.pukTimer || 0) - 8) / 25 * 0.42);
+        fillEllipse(hg, 0, hCy, hR*0.84, hR, 0, 0x3ca028, _pgA);
+        if ((cu.pukTimer || 0) > 20) {
+          fillEllipse(hg, _eL, _eY+hR*0.16, hR*0.04, hR*0.06, 0, 0x64a0dc, 0.70);
+          fillEllipse(hg, _eR, _eY+hR*0.16, hR*0.04, hR*0.06, 0, 0x64a0dc, 0.70);
+        }
+      }
+      strokeSeg(hg, hR*0.10, hairHex, true);
+      hg.moveTo(_eL-hR*0.24, _eY-hR*0.28).quadraticCurveTo(_eL, _eY-hR*0.38, _eL+hR*0.22, _eY-hR*0.26);
+      strokeSeg(hg, hR*0.10, hairHex, true);
+      hg.moveTo(_eR-hR*0.22, _eY-hR*0.26).quadraticCurveTo(_eR, _eY-hR*0.38, _eR+hR*0.24, _eY-hR*0.28);
+      if (_drunkAmt > 0 || cu.angry) {
+        const _blushA = cu.angry
+          ? 0.42 + Math.abs(Math.sin(T * 6 + phase)) * 0.18
+          : Math.min(0.38, _drunkAmt * 0.14 + Math.sin(T*1.1+phase)*0.04);
+        const blushHex = cu.angry ? 0xdc2828 : 0xdc4646;
+        fillEllipse(hg, _eL+hR*0.12, _eY+hR*0.26, hR*0.26, hR*0.15, 0.2, blushHex, Math.max(0, Math.min(1, _blushA)));
+        fillEllipse(hg, _eR-hR*0.12, _eY+hR*0.26, hR*0.26, hR*0.15, -0.2, blushHex, Math.max(0, Math.min(1, _blushA)));
+        if (cu.angry) {
+          strokeSeg(hg, hR*0.12, 0x500a0a, true, 0.55);
+          hg.moveTo(_eL-hR*0.22, _eY-hR*0.30).lineTo(_eL+hR*0.10, _eY-hR*0.22);
+          strokeSeg(hg, hR*0.12, 0x500a0a, true, 0.55);
+          hg.moveTo(_eR+hR*0.22, _eY-hR*0.30).lineTo(_eR-hR*0.10, _eY-hR*0.22);
+        }
+      }
+      // Nose
+      strokeSeg(hg, hR*0.14, skinDHex2, true);
+      hg.moveTo(-hR*0.06, hCy+hR*0.18).quadraticCurveTo(-hR*0.22, hCy+hR*0.40, -hR*0.14, hCy+hR*0.46)
+        .quadraticCurveTo(0, hCy+hR*0.50, hR*0.14, hCy+hR*0.46).quadraticCurveTo(hR*0.22, hCy+hR*0.40, hR*0.06, hCy+hR*0.18);
+      fillEllipse(hg, -hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05, 0.2, skinDHex2, 1);
+      fillEllipse(hg, hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05, -0.2, skinDHex2, 1);
+      // Mouth
+      const _tkF = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.14 : 0;
+      strokeSeg(hg, hR*0.14, skinDHex2, true);
+      hg.moveTo(-hR*0.32, hCy+hR*0.65).quadraticCurveTo(0, hCy+hR*0.80 + _tkF, hR*0.32, hCy+hR*0.65);
+      if (_tkF > 0.01) {
+        hg.lineStyle({ width: 0 }); hg.beginFill(0x280a05, 0.55);
+        hg.moveTo(-hR*0.28, hCy+hR*0.67).quadraticCurveTo(0, hCy+hR*0.78 + _tkF, hR*0.28, hCy+hR*0.67).closePath();
+        hg.endFill();
+      }
+      strokeSeg(hg, hR*0.09, 0x000000, false, 0.18);
+      hg.moveTo(-hR*0.22, hCy+hR*0.73).quadraticCurveTo(0, hCy+hR*0.84 + _tkF*0.6, hR*0.22, hCy+hR*0.73);
+      if (ct.geisha) {
+        strokeSeg(hg, hR*0.16, 0xc01828, true);
+        hg.moveTo(-hR*0.28, hCy+hR*0.65).quadraticCurveTo(0, hCy+hR*0.80 + _tkF, hR*0.28, hCy+hR*0.65);
+        strokeSeg(hg, hR*0.05, 0xd4a020, false);
+        hg.moveTo(hR*0.30, hCy-hR*1.02).lineTo(hR*0.36, hCy-hR*1.50);
+        fillEllipse(hg, hR*0.36, hCy-hR*1.52, hR*0.07, hR*0.07, 0, 0xe8b830, 1);
+        fillEllipse(hg, hR*0.36, hCy-hR*1.52, hR*0.04, hR*0.04, 0, 0xff4060, 1);
+      }
+      // Hair front
+      if (ct.hairStyle === 'long') {
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(-hR*0.82, hCy-hR*0.12)
+          .quadraticCurveTo(-hR*0.96, hCy-hR*0.60, -hR*0.80, hCy-hR*0.90)
+          .quadraticCurveTo(-hR*0.44, hCy-hR*1.12, 0, hCy-hR*1.10)
+          .quadraticCurveTo(hR*0.44, hCy-hR*1.12, hR*0.80, hCy-hR*0.90)
+          .quadraticCurveTo(hR*0.96, hCy-hR*0.60, hR*0.82, hCy-hR*0.12).closePath();
+        hg.endFill();
+      } else {
+        const _fW = ct.hairStyle === 'thin' ? hR*0.58 : hR*0.84;
+        hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+        hg.moveTo(-_fW, hCy-hR*0.26)
+          .quadraticCurveTo(-hR*0.90, hCy-hR*0.72, -hR*0.68, hCy-hR*0.92)
+          .quadraticCurveTo(-hR*0.28, hCy-hR*1.10, 0, hCy-hR*1.08)
+          .quadraticCurveTo(hR*0.28, hCy-hR*1.10, hR*0.68, hCy-hR*0.92)
+          .quadraticCurveTo(hR*0.90, hCy-hR*0.72, _fW, hCy-hR*0.26).closePath();
+        hg.endFill();
+      }
+      if (ct.police) {
+        hg.lineStyle({ width: 0 }); hg.beginFill(jacketHex);
+        hg.moveTo(-hR*0.88,hCy-hR*0.72).quadraticCurveTo(0,hCy-hR*0.82,hR*0.88,hCy-hR*0.72).lineTo(hR*0.76,hCy-hR*1.06).quadraticCurveTo(0,hCy-hR*1.14,-hR*0.76,hCy-hR*1.06).closePath();
+        hg.endFill();
+        hg.lineStyle({ width: 0 }); hg.beginFill(0xf0f2ee, 0.82);
+        hg.moveTo(-hR*0.90,hCy-hR*0.76).quadraticCurveTo(0,hCy-hR*0.86,hR*0.90,hCy-hR*0.76).lineTo(hR*0.90,hCy-hR*0.86).quadraticCurveTo(0,hCy-hR*0.96,-hR*0.90,hCy-hR*0.86).closePath();
+        hg.endFill();
+        hg.lineStyle({ width: 0 }); hg.beginFill(jacketDHex);
+        hg.moveTo(-hR*0.88,hCy-hR*1.06).quadraticCurveTo(0,hCy-hR*1.16,hR*0.88,hCy-hR*1.06).lineTo(hR*0.72,hCy-hR*1.16).quadraticCurveTo(0,hCy-hR*1.24,-hR*0.72,hCy-hR*1.16).closePath();
+        hg.endFill();
+        fillEllipse(hg, 0,hCy-hR*0.91,hR*0.11,hR*0.11,0,0xc8960a,1);
+        fillEllipse(hg, 0,hCy-hR*0.91,hR*0.07,hR*0.07,0,0xf0c020,1);
+      }
+      if (ct.sumo) {
+        fillEllipse(hg, 0,hCy-hR*1.12,hR*0.18,hR*0.10,0,hairHex,1);
+        fillEllipse(hg, 0,hCy-hR*1.24,hR*0.09,hR*0.16,0,hairHex,1);
+      }
+    }
+
+    // Name tag above head — drawn as a persistent child Text on the body Graphics
+    // (not the head child, since it must NOT squish with the head-turn), cached and
+    // reused across frames rather than recreated (Graphics.clear() doesn't touch
+    // child display objects, so a fresh PIXI.Text every frame would leak).
+    const showName = !!(cu.name && !cu.falling && (cu.isPlayer || cu.permanentId || T < (cu.nameShownUntil || 0)));
+    if (showName) {
+      if (!slot._nameText) {
+        slot._nameText = new PIXI.Text('', {
+          fontFamily: 'sans-serif', fontWeight: 'bold', align: 'center',
+          dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1, dropShadowAlpha: 0.55,
+        });
+        slot._nameText.anchor.set(0.5, 1);
+        g.addChild(slot._nameText);
+      }
+      const _nY = shldrY - H*0.14;
+      const nameHex = cu.isPlayer ? 0x50dcff : (cu.permanentId ? 0xffc85a : ((cu.alcoholCount||0) > 7 ? 0xffa078 : 0xfff0c8));
+      slot._nameText.text = cu.name;
+      slot._nameText.style.fontSize = Math.round(W*0.018);
+      slot._nameText.style.fill = nameHex;
+      slot._nameText.position.set(0, _nY);
+      slot._nameText.visible = true;
+
+      if (cu.isPlayer) {
+        if (!slot._crownText) {
+          slot._crownText = new PIXI.Text('👤', { fontFamily: 'sans-serif', align: 'center' });
+          slot._crownText.anchor.set(0.5, 1);
+          g.addChild(slot._crownText);
+        }
+        slot._crownText.style.fontSize = Math.round(W*0.013);
+        slot._crownText.position.set(0, _nY - H*0.022);
+        slot._crownText.visible = true;
+      } else if (slot._crownText) {
+        slot._crownText.visible = false;
+      }
+    } else {
+      if (slot._nameText) slot._nameText.visible = false;
+      if (slot._crownText) slot._crownText.visible = false;
+    }
+  }
+
+  // Dispatches to the walking or seated rig based on state. `slot` is either a bare
+  // PIXI.Graphics (walking-only callers) or a {root, body, head} tree (seated-capable
+  // callers) — see _pixiRenderCustomerLayer and _previewPixiCustomer for how each is built.
+  window._drawCustomerPixi = function(slot, cu, T, geo) {
+    const isWalking = cu.state === 'walk_in' || cu.state === 'walk_out';
+    if (isWalking) {
+      const g = slot.body || slot;
+      if (slot.head) { slot.head.clear(); slot.head.visible = false; }
+      // _drawWalkingRigPixi positions itself via g.position.set(x,0) internally —
+      // the root (if any) must stay neutral or the x-offset would double-apply.
+      if (slot.root) { slot.root.position.set(0, 0); slot.root.pivot.set(0, 0); slot.root.rotation = 0; slot.root.alpha = 1; }
+      _drawWalkingRigPixi(g, cu, T, geo);
+    } else {
+      // Seated rig always needs the full {root, body, head} tree — both real
+      // callers (the live layer and the preview harness) build one.
+      _drawSeatedRigPixi(slot, cu, T, geo);
+    }
   };
 
   // ── Live compositing layer — renders walking-state customers via Pixi into an
@@ -11867,6 +12699,25 @@ if (typeof serveCustomer === 'function') {
     return _layerApp ? _layerApp.view : null;
   };
 
+  // Each pool entry is a {root, body, head} tree (root: Container carrying the
+  // rotation-state transform for seated customers; body/head: child Graphics —
+  // see _drawSeatedRigPixi). Walking customers only use `body`; `root`/`head` are
+  // reset to neutral/hidden for them by _drawCustomerPixi's dispatcher.
+  function _ensureSlot(app, i) {
+    let slot = _layerPool[i];
+    if (!slot) {
+      const root = new PIXI.Container();
+      const body = new PIXI.Graphics();
+      const head = new PIXI.Graphics();
+      root.addChild(body);
+      root.addChild(head);
+      app.stage.addChild(root);
+      slot = { root, body, head };
+      _layerPool[i] = slot;
+    }
+    return slot;
+  }
+
   window._pixiRenderCustomerLayer = function(slots, geo, T) {
     if (typeof PIXI === 'undefined') return false;
     const app = _ensureLayer(geo.W || 1, geo.H || 1);
@@ -11874,18 +12725,13 @@ if (typeof serveCustomer === 'function') {
     for (let i = 0; i < slots.length; i++) {
       const cu = slots[i].cu;
       const eligible = cu && window._pixiCanHandle(cu);
-      let gfx = _layerPool[i];
-      if (!gfx) {
-        gfx = new PIXI.Graphics();
-        app.stage.addChild(gfx);
-        _layerPool[i] = gfx;
-      }
+      const slot = _ensureSlot(app, i);
       if (eligible) {
-        gfx.visible = true;
-        window._drawCustomerPixi(gfx, cu, T, geo);
+        slot.root.visible = true;
+        window._drawCustomerPixi(slot, cu, T, geo);
         drewAny = true;
       } else {
-        gfx.visible = false;
+        slot.root.visible = false;
       }
     }
     app.renderer.render(app.stage);
@@ -11894,7 +12740,7 @@ if (typeof serveCustomer === 'function') {
 
   // ── Debug preview harness — NOT part of the live game, just for visually
   // verifying each milestone against the original before wiring anything in. ──
-  let _previewApp = null, _previewG = null;
+  let _previewApp = null, _previewSlot = null;
   window._previewPixiCustomer = function(ct, state, extraCu) {
     let canvasEl = document.getElementById('pixi-preview-canvas');
     if (!canvasEl) {
@@ -11906,19 +12752,23 @@ if (typeof serveCustomer === 'function') {
     }
     if (!_previewApp) {
       _previewApp = new PIXI.Application({ view: canvasEl, backgroundAlpha: 1, antialias: true });
-      _previewG = new PIXI.Graphics();
-      _previewApp.stage.addChild(_previewG);
+      const root = new PIXI.Container();
+      const body = new PIXI.Graphics();
+      const head = new PIXI.Graphics();
+      root.addChild(body); root.addChild(head);
+      _previewApp.stage.addChild(root);
+      _previewSlot = { root, body, head };
     }
     const fakeCu = Object.assign({ state: state || 'walk_in', x: 130, ct: ct, phase: 0 }, extraCu || {});
     let t = 0;
     _previewApp.ticker.remove(_previewApp._customTick);
-    _previewApp._customTick = () => { t += 0.05; window._drawCustomerPixi(_previewG, fakeCu, t); };
+    _previewApp._customTick = () => { t += 0.05; window._drawCustomerPixi(_previewSlot, fakeCu, t); };
     _previewApp.ticker.add(_previewApp._customTick);
   };
   window._previewPixiClose = function() {
     const el = document.getElementById('pixi-preview-canvas');
     if (el) el.remove();
-    if (_previewApp) { _previewApp.destroy(true); _previewApp = null; _previewG = null; }
+    if (_previewApp) { _previewApp.destroy(true); _previewApp = null; _previewSlot = null; }
   };
 })();
 
