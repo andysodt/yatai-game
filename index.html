@@ -10332,8 +10332,10 @@ const MP = {
     if (dayEl && this.stateData.day != null) dayEl.textContent = 'Day ' + this.stateData.day;
     const timeEl = document.getElementById('hud-time');
     if (timeEl && timeStr) timeEl.textContent = timeStr;
+    // Guest's own money, not the host's broadcast state.money (that's the yatai master's
+    // earnings) — same "don't overwrite with the host's data" rule as hud-master above.
     const moneyEl = document.getElementById('hud-money');
-    if (moneyEl && this.stateData.money != null) moneyEl.textContent = '¥' + Number(this.stateData.money).toLocaleString();
+    if (moneyEl) moneyEl.textContent = '¥' + Number(G.money).toLocaleString();
     const repEl = document.getElementById('hud-rep');
     if (repEl && this.stateData.stars != null) repEl.textContent = '⭐'.repeat(this.stateData.stars) + '☆'.repeat(5 - this.stateData.stars);
     // Time bar
@@ -10693,7 +10695,7 @@ function buildCustomerView() {
           <span class="hud-label">Day</span>
         </div>
         <div class="hud-stat">
-          <span class="hud-val gold" id="hud-money">¥—</span>
+          <span class="hud-val gold" id="hud-money">¥${G.money.toLocaleString()}</span>
           <span class="hud-label">Money</span>
         </div>
         <div class="hud-stat">
