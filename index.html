@@ -9144,7 +9144,7 @@ function buildServiceShell() {
         <button id="npc-voice-btn" class="hud-btn" onclick="window.toggleNpcVoice(this)" title="Toggle all voices">🗣️ Voice</button>
         ${MP.role === 'master' ? `<div class="hud-stat" style="cursor:pointer" title="Room code — share with guests" onclick="navigator.clipboard&&navigator.clipboard.writeText('${MP.roomCode}').then(()=>toast('Room code copied!','info'))"><span class="hud-val" style="font-size:11px;letter-spacing:2px;color:var(--teal)" id="mp-room-code-hud">${MP.roomCode}</span><span class="hud-label">Room</span></div>` : ''}
         ${MP.role === 'master' && MP.roomCode ? `<button class="hud-btn vc-btn" onclick="window.toggleVoiceChat()" title="Live mic — everyone in this room can hear you">🎙️ Voice Chat</button>` : ''}
-        ${MP.role === 'master' && MP.roomCode ? `<button class="hud-btn" onclick="window.goStreet()" title="Hang out with connected players">🚶 Street</button>` : ''}
+        <button class="hud-btn" onclick="window.goStreetAny()" title="Head out to the street">🚶 Street</button>
       </div>
     </div>
 
@@ -11651,6 +11651,15 @@ if (typeof serveCustomer === 'function') {
     MP._preStreetScreen = G.screen;
     G.screen = 'street';
     fullRender();
+  };
+
+  // Single button for the host HUD that works whether or not a multiplayer room is
+  // active: hosting guests right now peeks at the street without disconnecting them
+  // (goStreet); otherwise (solo play, no room) there's no session to preserve, so join
+  // the shared Plaza directly like a guest would (goExploreStreet).
+  window.goStreetAny = function() {
+    if (MP.role === 'master' && MP.roomCode) { window.goStreet(); return; }
+    window.goExploreStreet();
   };
 
   // Leave whatever room you're currently in (if any — MP.destroy() is a safe no-op
