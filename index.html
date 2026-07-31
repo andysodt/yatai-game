@@ -8852,7 +8852,11 @@ window.startGame = function() {
     SHOP.forEach(s => { G.inv[s.id] = 0; });
     G.weather = WEATHER[0];
   }
-  playIntro(() => { G.screen = 'prep'; fullRender(); });
+  playIntro(() => {
+    G.screen = 'prep';
+    fullRender();
+    if (window._startPrepAutoOpen) window._startPrepAutoOpen();
+  });
 };
 
 window.adjustCart = function(id, delta) {
@@ -8938,6 +8942,7 @@ window.nextDay = function() {
   savePlayerState();
   G.screen = 'prep';
   fullRender();
+  if (window._startPrepAutoOpen) window._startPrepAutoOpen();
 };
 
 // ─────────────────────────────────────────────
@@ -9081,9 +9086,27 @@ function buildPrepShell() {
       </div>` : ''}
 
       <button class="btn btn-primary btn-full" onclick="openStall()">🏮 Open for Evening Service →</button>
+      <div id="prep-countdown" style="margin-top:8px;font-size:11px;opacity:.55;text-align:center"></div>
     </div>
   </div>`;
 }
+
+// Auto-opens the stall 30s after the prep screen appears. Ticks look up the countdown
+// element fresh each second (rather than caching it) since adjustCart() re-renders the
+// whole prep shell on every +/- click; a stale G.screen check (set by openStall() or by
+// leaving the screen) cancels it either way.
+window._startPrepAutoOpen = function() {
+  let secondsLeft = 30;
+  const tick = () => {
+    const el = document.getElementById('prep-countdown');
+    if (G.screen !== 'prep' || !el) return;
+    if (secondsLeft <= 0) { openStall(); return; }
+    el.textContent = `Auto-opening in ${secondsLeft}s…`;
+    secondsLeft--;
+    setTimeout(tick, 1000);
+  };
+  tick();
+};
 
 function buildServiceShell() {
   return `
