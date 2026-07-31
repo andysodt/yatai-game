@@ -10733,13 +10733,17 @@ function buildCustomerView() {
 // ── WINDOW ACTIONS ──
 window.goMultiplayer = function() { G.screen = 'multilobby'; fullRender(); };
 
-window.multiHostStart = function() {
+window.multiHostStart = async function() {
   if (window._joiningLock) return;
   window._joiningLock = true;
   setTimeout(() => { window._joiningLock = false; }, 5000);
   MP.destroy();
   const code = MP._randCode();
-  MP.initMaster(code);
+  await MP.initMaster(code);
+  // Skip the intermediate room-code/"waiting for players" screen — go straight into
+  // opening the stall. The room still exists with a real code (see the HUD/Room stat
+  // and buildMultiHost, still reachable if this ever needs a manual step again).
+  if (MP.role === 'master' && MP.roomCode) window.multiStartGame();
 };
 
 window.multiStartGame = function() {
