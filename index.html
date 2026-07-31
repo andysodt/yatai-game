@@ -906,6 +906,15 @@ try {
     { type:'shirt', jacket:'#c01860', jacketD:'#881040', pants:'#f8b0d8', shirt:'#f8b0d8', cuff:'#fcd8ec', skin:'#f0d090', skinD:'#d0b070', hair:'#060404', hairStyle:'long', hostess:true, female:true },
     { type:'shirt', jacket:'#5808a8', jacketD:'#380678', pants:'#e8d0f8', shirt:'#e8d0f8', cuff:'#f4e8fc', skin:'#eee0c0', skinD:'#d0c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
     { type:'shirt', jacket:'#181030', jacketD:'#0e0820', pants:'#f0ecf8', shirt:'#f0ecf8', cuff:'#faf6fc', skin:'#f2e0c0', skinD:'#d8c0a0', hair:'#060404', hairStyle:'long', hostess:true, female:true },
+    // ── FILIPINO VISITOR ───────────────────────────────────────────────
+    { type:'shirt', jacket:'#2860a0', jacketD:'#164070', pants:'#243040', shirt:'#2860a0', cuff:'#3878b8', skin:'#c88858', skinD:'#a06838', hair:'#100c08', hairStyle:'medium', filipino:true },
+    { type:'tee', jacket:'#c85030', jacketD:'#a03818', pants:'#302820', shirt:'#c85030', cuff:'#c85030', skin:'#b87848', skinD:'#906030', hair:'#0c0808', hairStyle:'long', filipino:true, female:true },
+    // ── BRITISH VISITOR ─────────────────────────────────────────────────
+    { type:'suit', jacket:'#203028', jacketD:'#101c16', pants:'#181818', shirt:'#e8e4d8', cuff:'#f0ece0', skin:'#e0b090', skinD:'#c09070', hair:'#584030', hairStyle:'medium', british:true },
+    { type:'shirt', jacket:'#701828', jacketD:'#480c18', pants:'#302028', shirt:'#701828', cuff:'#902030', skin:'#eec0a0', skinD:'#d0a080', hair:'#8c6040', hairStyle:'long', british:true, female:true },
+    // ── CHINESE VISITOR (Cantonese-speaking) ────────────────────────────
+    { type:'tee', jacket:'#a01818', jacketD:'#780c0c', pants:'#181818', shirt:'#a01818', cuff:'#c02020', skin:'#e0b898', skinD:'#c09878', hair:'#0c0808', hairStyle:'buzz', chinese:true },
+    { type:'shirt', jacket:'#e8c840', jacketD:'#c0a020', pants:'#302820', shirt:'#e8c840', cuff:'#f0d868', skin:'#eec4a4', skinD:'#d0a684', hair:'#0c0808', hairStyle:'long', chinese:true, female:true },
   ];
 
   // ── PERMANENT NPCS ── named, recurring characters with a fixed identity — distinct
@@ -1335,11 +1344,11 @@ try {
     const _enC = TRANSLATIONS[text]; if (_enC) { try { if (window._showSubtitle) window._showSubtitle(_enC, _canvasToScreen(x, y + G.H * 0.20)); } catch(_) {} }
     if (!window._npcVoiceMuted && window.speechSynthesis && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
       const utt = new SpeechSynthesisUtterance(text);
-      utt.lang   = 'ja-JP';
+      utt.lang   = opts.lang || 'ja-JP';
       utt.rate   = opts.rate  ?? 1.05;
       utt.pitch  = opts.pitch ?? 1.00;
       utt.volume = 0.80;
-      const v = opts.voice ?? _custVoice(0);
+      const v = opts.voice ?? (utt.lang === 'ja-JP' ? _custVoice(0) : null);
       if (v) utt.voice = v;
       window.speechSynthesis.speak(utt);
     }
@@ -1469,7 +1478,7 @@ try {
     return {
       state: cu.state, x: cu.x, targetX: cu.targetX || cu.x,
       xFrac: cu.x / _w, targetXFrac: (cu.targetX || cu.x) / _w,
-      phase: cu.phase, name: cu.name || null,
+      phase: cu.phase, name: cu.name || null, permanentId: cu.permanentId || null,
       served: !!cu.served, alcoholCount: cu.alcoholCount || 0,
       dead: !!cu.dead, puking: !!cu.puking, falling: !!cu.falling, angry: !!cu.angry,
       isPlayer: !!cu.isPlayer, guestId: cu.guestId || null,
@@ -1513,6 +1522,8 @@ try {
           existing.angry = d.angry || false;
           existing.ct = d.ct;
           existing.smoker = d.smoker || false;
+          if (d.name) existing.name = d.name;
+          existing.permanentId = d.permanentId || null;
         }
         existing._synced = true;
         existing.dish = d.dish || null;
@@ -1522,7 +1533,7 @@ try {
         SLOTS[i].cu = {
           state: d.isPlayer ? 'sit' : d.state,
           x: sx, targetX: ltx, ct: d.ct,
-          phase: d.phase, name: d.name,
+          phase: d.phase, name: d.name, permanentId: d.permanentId || null,
           served: d.served, eatTimer: 0, eatMax: 9e9,
           roundsLeft: 9999, unhappy: false,
           alcoholCount: d.alcoholCount,
@@ -3103,10 +3114,30 @@ try {
           cu.chatAt = -1;
           const { counterY } = G;
           const _isDrunkChat = (cu.alcoholCount || 0) > 7;
-          const pool = _isDrunkChat ? DRUNK_TALK : SMALL_TALK;
-          const line = pool[Math.floor(Math.random() * pool.length)];
           const _chatRate = _isDrunkChat ? cu.voiceRate * 0.80 : cu.voiceRate * 0.92;
-          spawnBubble(cu.x, counterY - H*0.28, line, { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch, rate: _chatRate });
+          const _cx = cu.x, _cy = counterY - H * 0.28, _ct = cu.ct || {};
+          const _sayFallback = () => {
+            const pool = _isDrunkChat ? DRUNK_TALK : SMALL_TALK;
+            const line = pool[Math.floor(Math.random() * pool.length)];
+            spawnBubble(_cx, _cy, line, { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch, rate: _chatRate, lang: _customerVoiceLang(_ct) });
+          };
+          // LLM-generated idle chatter, in-character per persona/ct — falls back to the
+          // static line pool if the request fails (offline, no LLM backend configured, etc).
+          try {
+            fetch('/api/chat', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: _isDrunkChat
+                  ? '(You are a little drunk, mumbling something out loud to no one in particular — spontaneous, not responding to anyone.)'
+                  : '(Making idle small talk out loud to no one in particular — spontaneous, not responding to anyone.)',
+                systemPrompt: _buildCustomerPersona(cu, _ct),
+              }),
+            }).then(r => r.json()).then(data => {
+              const line = (data.reply || '').trim();
+              if (!line || cu.state === 'walk_out') { if (line === '') _sayFallback(); return; }
+              spawnBubble(_cx, _cy, line, { voice: _custVoice(cu.voiceIdx), pitch: cu.voicePitch, rate: _chatRate, lang: _customerVoiceLang(_ct) });
+            }).catch(_sayFallback);
+          } catch(_) { _sayFallback(); }
           const _now = performance.now() / 1000;
           if (_now - _lastMasterSmallTalk > 18) {
             _lastMasterSmallTalk = _now;
@@ -6749,6 +6780,32 @@ try {
           } else {
             _typeJp = '普通のお客さんですよ！気軽にどうぞ。'; _typeEn = "Just a regular customer! Make yourself comfortable.";
           }
+          let _introLang = 'ja-JP';
+          if (ct.filipino) {
+            _introLang = 'fil-PH';
+            const _fils = [
+              ['Turista lang ako dito sa Kagoshima! Ang ganda dito ah!', "Just a tourist here in Kagoshima! It's so beautiful here!"],
+              ['OFW ako, bakasyon lang. Sarap ng pagkain dito!', "I'm an OFW, just on vacation. The food here is so good!"],
+              ['Bisita lang po ako! Gustung-gusto ko ang yatai!', "Just a visitor! I love this yatai!"],
+            ];
+            [_typeJp, _typeEn] = _fils[Math.floor(Math.random() * _fils.length)];
+          } else if (ct.british) {
+            _introLang = 'en-GB';
+            const _brits = [
+              ["Oh, just visiting from England! Lovely little place, this.", "Oh, just visiting from England! Lovely little place, this."],
+              ["Tourist, I'm afraid — couldn't resist popping in for a bite.", "Tourist, I'm afraid — couldn't resist popping in for a bite."],
+              ["Just here on holiday. Rather fond of the sake already, actually.", "Just here on holiday. Rather fond of the sake already, actually."],
+            ];
+            [_typeJp, _typeEn] = _brits[Math.floor(Math.random() * _brits.length)];
+          } else if (ct.chinese) {
+            _introLang = 'zh-HK';
+            const _zhs = [
+              ['我係遊客，嚟鹿兒島玩嘅！呢度好靚啊！', "I'm a tourist, came to Kagoshima to visit! This place is so pretty!"],
+              ['第一次食屋台料理，好期待呀！', "First time eating yatai food, I'm so excited!"],
+              ['我係香港嚟嘅，呢間舖睇落幾正！', "I'm from Hong Kong, this place looks great!"],
+            ];
+            [_typeJp, _typeEn] = _zhs[Math.floor(Math.random() * _zhs.length)];
+          }
           setTimeout(() => {
             if (cu.state !== 'sit' && cu.state !== 'sit_in') return;
             bubbles.push({ x: cu.x, y: counterY - H * 0.28, text: _typeJp, born: performance.now() / 1000, life: 3.0 });
@@ -6756,8 +6813,9 @@ try {
             try { if (window._showSubtitle) window._showSubtitle(_typeEn, _canvasToScreen(cu.x, counterY - H * 0.08)); } catch(_e) {}
             if (window.speechSynthesis) {
               const _ut = new SpeechSynthesisUtterance(_typeJp);
-              _ut.lang = 'ja-JP'; _ut.rate = (cu.voiceRate || 1.0) * 0.88; _ut.pitch = cu.voicePitch || 1.0; _ut.volume = 0.90;
-              const _vt = _custVoice(cu.voiceIdx); if (_vt) _ut.voice = _vt;
+              _ut.lang = _introLang;
+              if (_introLang === 'ja-JP') { const _vt = _custVoice(cu.voiceIdx); if (_vt) _ut.voice = _vt; }
+              _ut.rate = (cu.voiceRate || 1.0) * 0.88; _ut.pitch = cu.voicePitch || 1.0; _ut.volume = 0.90;
               window.speechSynthesis.speak(_ut);
             }
           }, 1400);
@@ -9515,6 +9573,31 @@ window._takeSubtitles  = () => _pendingSubtitles.splice(0);
 }
 
 // ── AI CUSTOMER CHAT ─────────────────────────────
+// Shared by the player-typed chat box and the ambient/idle small-talk generator so
+// persona rules never drift between the two.
+function _buildCustomerPersona(cu, ct) {
+  let persona = 'You are a customer at a Japanese yatai (late-night street food stall) near Sakurajima volcano in Kagoshima. Respond in casual Japanese. Keep it short — 1 or 2 sentences max. Be warm and in-character.';
+  if (cu.permanentId === 'gondo_razor') persona = 'You are Gondō "The Razor," an aging godfather of the Japanese punk scene. Decades ago the yakuza cut off your right hand for crossing them, and you wear it like a badge of honor. Gruff, wry, still commands real respect. Reply in rough, blunt Japanese, short.';
+  else if (ct.sumo) persona = 'You are a sumo wrestler enjoying a late-night meal at a yatai. You are large, jovial, enthusiastic about food. Reply in casual Japanese, short and lively.';
+  else if (ct.geisha) persona = 'You are a geisha relaxing at a yatai after a performance. You are graceful and cultured. Reply in polished Japanese, short and elegant.';
+  else if (ct.police) persona = 'You are an off-duty police officer having a drink at a yatai. You are professional but friendly and tired. Reply in casual Japanese, short.';
+  else if (ct.politician) persona = 'You are a Japanese politician at a yatai. You are a bit pompous and tend to relate everything to politics or your constituency. Reply in formal Japanese, short.';
+  else if (ct.hostess) persona = 'You are a hostess (ホステス) unwinding at a yatai after a long night of work. You are charming, a little flirty, and tired. Reply in casual Japanese, short and warm.';
+  else if (ct.type === 'kimono' && !ct.geisha) persona = 'You are a yakuza member eating at a yatai. You are gruff but courteous about food. Reply in terse Japanese, very short.';
+  else if (ct.filipino) persona = 'You are a Filipino visitor (OFW or tourist) eating at a yatai in Kagoshima, Japan. Reply primarily in Tagalog, warm and friendly and a little playful — natural Taglish is fine (mixing in a little English or a Japanese food word here and there, the way many Filipinos actually talk), but keep it mostly Tagalog. Keep it short — 1 or 2 sentences max.';
+  else if (ct.british) persona = 'You are a British tourist or expat at a yatai in Kagoshima, Japan. Reply in English with a dry, understated British wit — polite, a little self-deprecating, maybe a bit awkwardly enthusiastic about the food or the sake. Keep it short — 1 or 2 sentences max.';
+  else if (ct.chinese) persona = 'You are a tourist from China (Hong Kong/Guangdong background) visiting a yatai in Kagoshima, Japan. Reply in Cantonese (粵語/廣東話), written in Cantonese colloquial characters (e.g. 係, 唔, 嘅, 嚟, 呢度), not Mandarin. Warm, chatty, a little curious about Japanese food. Keep it short — 1 or 2 sentences max.';
+
+  // Kagoshima dialect flavor only makes sense for Japanese-speaking personas
+  if (!ct.filipino && !ct.british && !ct.chinese) {
+    persona += ' Speak with a natural Kagoshima dialect (鹿児島弁) flavor where it fits the mood — sentence endings like ～じゃっど, ～ど, ～っちょ, ～とじゃ, and words like わっぜ (very/a lot), げんね (embarrassing/awkward), よだきい (a hassle) — not every line, just enough to feel like a Kagoshima local. When it fits naturally, bring up local color as a regular would: Sakurajima\'s smoke or ash today, the weather, a local festival, shochu, the news — small talk, not a lecture.';
+  }
+  return persona;
+}
+function _customerVoiceLang(ct) {
+  return ct.filipino ? 'fil-PH' : ct.british ? 'en-GB' : ct.chinese ? 'zh-HK' : undefined;
+}
+
 window.sendChatToCustomer = async function() {
   const inp = document.getElementById('chat-input');
   const btn = document.getElementById('chat-send-btn');
@@ -9536,17 +9619,7 @@ window.sendChatToCustomer = async function() {
   const slot = seated[Math.floor(Math.random() * seated.length)];
   const cu = slot.cu;
   const ct = cu.ct || {};
-
-  let persona = 'You are a customer at a Japanese yatai (late-night street food stall) near Sakurajima volcano in Kagoshima. Respond in casual Japanese. Keep it short — 1 or 2 sentences max. Be warm and in-character.';
-  if (cu.permanentId === 'gondo_razor') persona = 'You are Gondō "The Razor," an aging godfather of the Japanese punk scene. Decades ago the yakuza cut off your right hand for crossing them, and you wear it like a badge of honor. Gruff, wry, still commands real respect. Reply in rough, blunt Japanese, short.';
-  else if (ct.sumo) persona = 'You are a sumo wrestler enjoying a late-night meal at a yatai. You are large, jovial, enthusiastic about food. Reply in casual Japanese, short and lively.';
-  else if (ct.geisha) persona = 'You are a geisha relaxing at a yatai after a performance. You are graceful and cultured. Reply in polished Japanese, short and elegant.';
-  else if (ct.police) persona = 'You are an off-duty police officer having a drink at a yatai. You are professional but friendly and tired. Reply in casual Japanese, short.';
-  else if (ct.politician) persona = 'You are a Japanese politician at a yatai. You are a bit pompous and tend to relate everything to politics or your constituency. Reply in formal Japanese, short.';
-  else if (ct.hostess) persona = 'You are a hostess (ホステス) unwinding at a yatai after a long night of work. You are charming, a little flirty, and tired. Reply in casual Japanese, short and warm.';
-  else if (ct.type === 'kimono' && !ct.geisha) persona = 'You are a yakuza member eating at a yatai. You are gruff but courteous about food. Reply in terse Japanese, very short.';
-
-  persona += ' Speak with a natural Kagoshima dialect (鹿児島弁) flavor where it fits the mood — sentence endings like ～じゃっど, ～ど, ～っちょ, ～とじゃ, and words like わっぜ (very/a lot), げんね (embarrassing/awkward), よだきい (a hassle) — not every line, just enough to feel like a Kagoshima local. When it fits naturally, bring up local color as a regular would: Sakurajima\'s smoke or ash today, the weather, a local festival, shochu, the news — small talk, not a lecture.';
+  const persona = _buildCustomerPersona(cu, ct);
 
   // Show typing indicator
   const feed = document.getElementById('dialog-feed');
@@ -9570,7 +9643,7 @@ window.sendChatToCustomer = async function() {
     if (thinkEl) thinkEl.remove();
     if (window._logDialog) window._logDialog(reply, 'cust');
     if (window._spawnBubbleAuto && cu.x) {
-      window._spawnBubbleAuto(cu.x, reply, { pitch: cu.voicePitch, rate: cu.voiceRate });
+      window._spawnBubbleAuto(cu.x, reply, { pitch: cu.voicePitch, rate: cu.voiceRate, lang: _customerVoiceLang(ct) });
     }
   } catch(e) {
     if (thinkEl) thinkEl.remove();
