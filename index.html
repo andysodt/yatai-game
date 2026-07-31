@@ -620,6 +620,7 @@ html, body {
 <div id="kag-bg"></div>
 <div id="subtitle"><span class="subtitle-inner"></span></div>
 <script src="/peerjs.min.js"></script>
+<script src="/pixi.min.js"></script>
 <canvas id="stars-canvas"></canvas>
 <canvas id="street-canvas"></canvas>
 <div id="root"></div>
@@ -11065,11 +11066,28 @@ if (typeof serveCustomer === 'function') {
 
   const BALL_R = 6, PIN_R = 4, GRAVITY = 0.32, RESTITUTION = 0.42, WALL_RESTITUTION = 0.7;
   const POCKET_H = 34, MAX_FRAMES = 900, STUCK_LIMIT = 90;
+  const TRAIL_LEN = 6;
 
-  let canvas = null, ctx = null, cw = 0, ch = 0, pins = [];
+  // ── PixiJS rendering — retained-mode scene graph instead of clear+redraw-everything
+  // Canvas2D each frame. Static visuals (board, pins, pockets, tulip) are built once per
+  // resize; the physics loop below only ever moves the ball/trail sprites' x/y, and
+  // Pixi's own ticker composites the changed scene each frame.
+  let canvasEl = null, app = null, cw = 0, ch = 0, pins = [];
+  let pinTexture = null, ballTexture = null;
+  let boardLayer = null, pinLayer = null, ballSprite = null, trailSprites = [];
   let ball = null, playing = false, rafId = null, frameCount = 0;
   let lastProgressY = 0, stuckFrames = 0;
-  let ballTrail = [];
+
+  function _radialTexture(size, stops) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const g2 = c.getContext('2d');
+    const grad = g2.createRadialGradient(size * 0.38, size * 0.38, size * 0.05, size * 0.5, size * 0.5, size * 0.5);
+    stops.forEach(([off, col]) => grad.addColorStop(off, col));
+    g2.fillStyle = grad;
+    g2.beginPath(); g2.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); g2.fill();
+    return PIXI.Texture.from(c);
+  }
 
   function buildPins() {
     pins = [];
@@ -11101,97 +11119,129 @@ if (typeof serveCustomer === 'function') {
     });
   }
 
-  function resizeCanvas() {
-    if (!canvas) return;
-    const rect = canvas.parentElement.getBoundingClientRect();
-    cw = canvas.width = Math.max(1, Math.round(rect.width));
-    ch = canvas.height = Math.max(1, Math.round(rect.height));
-    buildPins();
+  function initPixi() {
+    if (app) return;
+    ballTexture = _radialTexture(32, [[0, '#ffffff'], [0.5, '#ffcf5c'], [1, '#d98c00']]);
+    pinTexture = _radialTexture(24, [[0, '#ffffff'], [0.4, '#d8dbe2'], [1, '#7a7e88']]);
+    app = new PIXI.Application({ view: canvasEl, backgroundAlpha: 1, antialias: true, resolution: 1 });
+    boardLayer = new PIXI.Container();
+    pinLayer = new PIXI.Container();
+    app.stage.addChild(boardLayer, pinLayer);
+    ballSprite = new PIXI.Sprite(ballTexture);
+    ballSprite.anchor.set(0.5);
+    ballSprite.width = ballSprite.height = BALL_R * 2;
+    ballSprite.visible = false;
+    for (let i = 0; i < TRAIL_LEN; i++) {
+      const t = new PIXI.Sprite(ballTexture);
+      t.anchor.set(0.5);
+      t.width = t.height = BALL_R * 1.4;
+      t.alpha = 0; t.tint = 0xffcf5c;
+      pinLayer.addChild(t);
+      trailSprites.push(t);
+    }
+    pinLayer.addChild(ballSprite);
   }
 
-  function draw() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, cw, ch);
+  // Rebuilds every static visual (board bg, guide rings, tulip, pockets, pins) — cheap
+  // enough to redo whenever the modal opens or the stage resizes, since it only runs
+  // once per resize, never per physics frame.
+  function rebuildBoard() {
+    const rect = canvasEl.parentElement.getBoundingClientRect();
+    cw = Math.max(1, Math.round(rect.width));
+    ch = Math.max(1, Math.round(rect.height));
+    app.renderer.resize(cw, ch);
+    buildPins();
 
-    // Board — deep green felt with a vignette, like a real machine's playing field
-    const bg = ctx.createRadialGradient(cw / 2, ch * 0.4, 10, cw / 2, ch * 0.5, ch * 0.75);
-    bg.addColorStop(0, '#0f2418'); bg.addColorStop(0.7, '#081712'); bg.addColorStop(1, '#020604');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, cw, ch);
+    boardLayer.removeChildren();
+    const g = new PIXI.Graphics();
+    // Deep green felt board, approximated vignette via layered translucent rects
+    g.beginFill(0x0a1c12).drawRect(0, 0, cw, ch).endFill();
+    g.beginFill(0x0f2418, 0.5).drawRect(0, 0, cw, ch * 0.7).endFill();
     // Faint concentric guide rings, like the etched lanes on a real board
-    ctx.strokeStyle = 'rgba(255,255,255,.035)';
-    for (let ring = 1; ring <= 3; ring++) {
-      ctx.beginPath(); ctx.arc(cw / 2, ch * 0.42, ring * 46, 0, Math.PI * 2); ctx.stroke();
-    }
+    g.lineStyle(1, 0xffffff, 0.035);
+    for (let ring = 1; ring <= 3; ring++) g.drawCircle(cw / 2, ch * 0.42, ring * 46);
+    g.lineStyle(0);
+    boardLayer.addChild(g);
+
+    const bounds = pocketBounds();
 
     // Decorative "start chucker" tulip marker above the jackpot pocket
-    const bounds = pocketBounds();
     const jackpotB = bounds.find(b => b.mult === 20);
     if (jackpotB) {
       const jx = (jackpotB.x0 + jackpotB.x1) / 2, jy = ch - POCKET_H - 26;
-      const glow = ctx.createRadialGradient(jx, jy, 2, jx, jy, 22);
-      glow.addColorStop(0, 'rgba(255,210,90,.55)'); glow.addColorStop(1, 'rgba(255,210,90,0)');
-      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(jx, jy, 22, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3a2c10'; ctx.strokeStyle = '#ffd35c'; ctx.lineWidth = 1.5;
-      ctx.beginPath();
+      const glow = new PIXI.Graphics();
+      for (let i = 4; i >= 1; i--) glow.beginFill(0xffd25a, 0.12).drawCircle(jx, jy, i * 5.5).endFill();
+      boardLayer.addChild(glow);
+      const tulip = new PIXI.Graphics();
+      tulip.lineStyle(1.5, 0xffd35c, 1);
+      tulip.beginFill(0x3a2c10);
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
         const r = i % 2 === 0 ? 9 : 5;
         const px = jx + Math.cos(a) * r, py = jy + Math.sin(a) * r;
-        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        i === 0 ? tulip.moveTo(px, py) : tulip.lineTo(px, py);
       }
-      ctx.closePath(); ctx.fill(); ctx.stroke();
+      tulip.closePath(); tulip.endFill();
+      boardLayer.addChild(tulip);
     }
 
     // Pockets — chrome dividers instead of thin lines, gold glow under the jackpot
+    const pk = new PIXI.Graphics();
     bounds.forEach(b => {
       const isJackpot = b.mult === 20;
-      ctx.fillStyle = isJackpot ? 'rgba(255,200,60,.30)' : (b.mult === 0 ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.05)');
-      ctx.fillRect(b.x0, ch - POCKET_H, b.x1 - b.x0, POCKET_H);
-      const divGrad = ctx.createLinearGradient(b.x0 - 1.5, 0, b.x0 + 1.5, 0);
-      divGrad.addColorStop(0, 'rgba(255,255,255,0)'); divGrad.addColorStop(0.5, 'rgba(230,230,240,.9)'); divGrad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = divGrad;
-      ctx.fillRect(b.x0 - 1.5, ch - POCKET_H, 3, POCKET_H);
-      ctx.fillStyle = isJackpot ? '#ffe9a8' : 'rgba(255,255,255,.7)';
-      ctx.font = isJackpot ? 'bold 10px sans-serif' : '9px sans-serif';
-      ctx.textAlign = 'center';
-      if (isJackpot) { ctx.shadowColor = 'rgba(255,200,80,.9)'; ctx.shadowBlur = 6; }
-      ctx.fillText(b.tag || b.label, (b.x0 + b.x1) / 2, ch - POCKET_H / 2 + 3);
-      ctx.shadowBlur = 0;
+      pk.beginFill(isJackpot ? 0xffc83c : (b.mult === 0 ? 0x000000 : 0xffffff), isJackpot ? 0.30 : (b.mult === 0 ? 0.25 : 0.05));
+      pk.drawRect(b.x0, ch - POCKET_H, b.x1 - b.x0, POCKET_H);
+      pk.endFill();
+      pk.beginFill(0xe6e6f0, 0.9);
+      pk.drawRect(b.x0 - 1, ch - POCKET_H, 2, POCKET_H);
+      pk.endFill();
+      const label = new PIXI.Text(b.tag || b.label, {
+        fontFamily: 'sans-serif', fontSize: isJackpot ? 10 : 9, fontWeight: isJackpot ? 'bold' : 'normal',
+        fill: isJackpot ? 0xffe9a8 : 0xffffff, align: 'center',
+      });
+      label.alpha = isJackpot ? 1 : 0.7;
+      label.anchor.set(0.5);
+      label.position.set((b.x0 + b.x1) / 2, ch - POCKET_H / 2);
+      boardLayer.addChild(label);
     });
+    boardLayer.addChild(pk);
 
-    // Pins — small chrome balls with a highlight, not flat dots
+    // Pins — sprites sharing one metallic texture, positioned once (no per-frame redraw)
+    pinLayer.removeChildren();
     pins.forEach(p => {
-      ctx.beginPath(); ctx.arc(p.x + 0.6, p.y + 0.8, PIN_R, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
-      const pg = ctx.createRadialGradient(p.x - 1.3, p.y - 1.3, 0.4, p.x, p.y, PIN_R);
-      pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.45, '#d8dbe2'); pg.addColorStop(1, '#7a7e88');
-      ctx.fillStyle = pg;
-      ctx.beginPath(); ctx.arc(p.x, p.y, PIN_R, 0, Math.PI * 2); ctx.fill();
+      const shadow = new PIXI.Graphics();
+      shadow.beginFill(0x000000, 0.35).drawCircle(p.x + 0.6, p.y + 0.8, PIN_R).endFill();
+      pinLayer.addChild(shadow);
+      const s = new PIXI.Sprite(pinTexture);
+      s.anchor.set(0.5);
+      s.width = s.height = PIN_R * 2;
+      s.position.set(p.x, p.y);
+      pinLayer.addChild(s);
     });
-
-    if (ball) {
-      // Fading trail behind the ball for a sense of speed
-      for (let i = 0; i < ballTrail.length; i++) {
-        const t = ballTrail[i];
-        const alpha = (i / ballTrail.length) * 0.25;
-        ctx.fillStyle = `rgba(255,207,92,${alpha.toFixed(2)})`;
-        ctx.beginPath(); ctx.arc(t.x, t.y, BALL_R * 0.7, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.beginPath(); ctx.arc(ball.x + 1, ball.y + 1.5, BALL_R, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill();
-      const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_R);
-      grad.addColorStop(0, '#fff'); grad.addColorStop(0.55, '#ffcf5c'); grad.addColorStop(1, '#d98c00');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
-    }
+    trailSprites.forEach(t => pinLayer.addChild(t));
+    pinLayer.addChild(ballSprite);
 
     // Glass sheen — a faint diagonal highlight sweep, like light off the cover glass
-    const sheen = ctx.createLinearGradient(0, 0, cw, ch);
-    sheen.addColorStop(0, 'rgba(255,255,255,.05)'); sheen.addColorStop(0.18, 'rgba(255,255,255,0)');
-    sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); sheen.addColorStop(0.62, 'rgba(255,255,255,.04)');
-    sheen.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = sheen; ctx.fillRect(0, 0, cw, ch);
+    const sheen = new PIXI.Graphics();
+    sheen.beginFill(0xffffff, 0.05);
+    sheen.moveTo(0, 0).lineTo(cw * 0.22, 0).lineTo(0, ch * 0.3).closePath();
+    sheen.endFill();
+    sheen.beginFill(0xffffff, 0.04);
+    sheen.moveTo(cw * 0.5, ch).lineTo(cw, ch * 0.35).lineTo(cw, ch * 0.55).lineTo(cw * 0.68, ch).closePath();
+    sheen.endFill();
+    app.stage.addChild(sheen);
+  }
+
+  // Updates only what actually moves each physics tick — the ball sprite and its trail.
+  function updateBallVisual(trail) {
+    if (!ball) { ballSprite.visible = false; return; }
+    ballSprite.visible = true;
+    ballSprite.position.set(ball.x, ball.y);
+    for (let i = 0; i < trailSprites.length; i++) {
+      const t = trail[i];
+      if (t) { trailSprites[i].visible = true; trailSprites[i].position.set(t.x, t.y); trailSprites[i].alpha = (i / trail.length) * 0.3; }
+      else trailSprites[i].visible = false;
+    }
   }
 
   // Two half-gravity substeps per frame for collision stability at this ball speed/pin
@@ -11239,14 +11289,15 @@ if (typeof serveCustomer === 'function') {
     return bounds.find(b => ball.x >= b.x0 && ball.x < b.x1) || bounds[bounds.length - 1];
   }
 
+  let ballTrail = [];
   function loop() {
     const landed = stepPhysics();
-    ballTrail.push({ x: ball.x, y: ball.y });
-    if (ballTrail.length > 6) ballTrail.shift();
-    draw();
+    ballTrail.unshift({ x: ball.x, y: ball.y });
+    if (ballTrail.length > TRAIL_LEN) ballTrail.length = TRAIL_LEN;
+    updateBallVisual(ballTrail);
     if (landed) {
       ball.vx = 0; ball.vy = 0; ball.y = ch - POCKET_H + BALL_R - 2;
-      draw();
+      updateBallVisual(ballTrail);
       setTimeout(() => finishPlay(settledPocket()), 500);
       return;
     }
@@ -11283,7 +11334,7 @@ if (typeof serveCustomer === 'function') {
     ball = null;
     const btn = document.getElementById('pk-play-btn');
     if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
-    draw();
+    updateBallVisual(ballTrail);
   }
 
   window._openPachinkoModal = function(machine) {
@@ -11295,11 +11346,13 @@ if (typeof serveCustomer === 'function') {
     if (resultEl) { resultEl.textContent = ''; resultEl.className = 'pk-result'; }
     if (rafId) cancelAnimationFrame(rafId);
     ball = null;
+    ballTrail = [];
     playing = false;
     modal.classList.add('visible');
-    if (!canvas) { canvas = document.getElementById('pk-canvas'); ctx = canvas.getContext('2d'); }
-    resizeCanvas();
-    draw();
+    if (!canvasEl) canvasEl = document.getElementById('pk-canvas');
+    initPixi();
+    rebuildBoard();
+    updateBallVisual(ballTrail);
     updateMoneyDisplays();
     const btn = document.getElementById('pk-play-btn');
     if (btn) { btn.disabled = false; btn.textContent = `Play — ¥${BET}`; }
