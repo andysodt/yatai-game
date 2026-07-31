@@ -11438,13 +11438,11 @@ if (typeof serveCustomer === 'function') {
   // Returns false for anything this milestone doesn't cover yet — callers should
   // fall back to the original Canvas2D drawCustomer() in that case.
   window._pixiCanHandle = function(cu) {
-    const ct = cu.ct || {};
     if (cu.state !== 'walk_in' && cu.state !== 'walk_out') return false;
-    // Clothing types + female variant now covered (Milestone 2). Politician's suit
-    // rosette is self-contained so it's safe too. Police/sumo/geisha/hostess still
-    // need hair or face treatments not yet ported — see task 40.
-    if (ct.missingRightHand || ct.police || ct.sumo || ct.geisha || ct.hostess) return false;
-    if (ct.hairStyle === 'long' || ct.hairStyle === 'ponytail') return false;
+    // Full walking rig now covered (Milestones 1-3): all clothing types, female
+    // variant, missing-hand stump, drunk tint, frown/talk mouth, geisha/hostess
+    // makeup, all hairstyles, police cap, sumo chonmage. Seated/back-view rig
+    // (task 41) is the remaining gap — that's a separate code path entirely.
     return true;
   };
 
@@ -11463,6 +11461,7 @@ if (typeof serveCustomer === 'function') {
     const shldrY = gndY - bH * 0.72;
     const waistY = gndY - bH * 0.44;
     const headCy = gndY - bH + hr;
+    const _drunkAmt = Math.max(0, (cu.alcoholCount || 0) - 7);
 
     // Ground shadow
     fillEllipse(g, 0, gndY, W * 0.032, H * 0.008, 0, 0x000000, 0.20);
@@ -11639,8 +11638,16 @@ if (typeof serveCustomer === 'function') {
     const frElbY = shldrY + bH * 0.20;
     strokeSeg(g, W * 0.016, armCol, true);
     g.moveTo(-W * 0.014, shldrY + H * 0.006).lineTo(frElbX, frElbY);
-    strokeSeg(g, W * 0.013, armCol, true);
-    g.moveTo(frElbX, frElbY).lineTo(frElbX + Math.sin(frArmA * 0.5) * bH * 0.18 - W * 0.004, Math.min(frElbY + bH * 0.18, waistY + H * 0.02));
+    if (!ct.missingRightHand) {
+      strokeSeg(g, W * 0.013, armCol, true);
+      g.moveTo(frElbX, frElbY).lineTo(frElbX + Math.sin(frArmA * 0.5) * bH * 0.18 - W * 0.004, Math.min(frElbY + bH * 0.18, waistY + H * 0.02));
+    } else {
+      // No fixed left/right handedness on this mirrored profile rig — a missing
+      // hand always renders on whichever arm is "front." Bandaged stump instead
+      // of a forearm.
+      strokeSeg(g, W * 0.020, 0xe8e0d0, true);
+      g.moveTo(frElbX, frElbY).lineTo(frElbX + Math.sin(frArmA * 0.5) * bH * 0.03, frElbY + bH * 0.03);
+    }
 
     // ── NECK ──
     g.beginFill(hex(ct.skin));
@@ -11666,8 +11673,10 @@ if (typeof serveCustomer === 'function') {
     g.beginFill(0x000000, 0.10);
     g.drawPolygon(ellipsePoints(-hr * 0.15, headCy + hr * 0.1, hr * 0.85, hr * 0.95, 0));
     g.endFill();
-    // Nostril
-    fillEllipse(g, -hr * 1.12, headCy + hr * 0.28, hr * 0.04, hr * 0.03, -0.4, skinDHex, 1);
+    // Nostril — tints red as drunkenness rises
+    const nostrilHex = _drunkAmt > 0 ? 0xc85050 : skinDHex;
+    const nostrilAlpha = _drunkAmt > 0 ? Math.min(0.80, 0.45 + _drunkAmt * 0.15) : 1;
+    fillEllipse(g, -hr * 1.12, headCy + hr * 0.28, hr * 0.04, hr * 0.03, -0.4, nostrilHex, nostrilAlpha);
     // Eye white / iris / pupil / catchlight
     fillEllipse(g, -hr * 0.73, headCy - hr * 0.09, hr * 0.13, hr * 0.09, 0, 0xf5ede8, 1);
     const irisHex = (ct.hair === '#949494' || ct.hair === '#a09898') ? 0x4a5868 : 0x28180e;
@@ -11677,42 +11686,148 @@ if (typeof serveCustomer === 'function') {
     // Upper eyelid arch
     strokeSeg(g, 0.9, skinDHex, true);
     g.moveTo(-hr * 0.87, headCy - hr * 0.09).quadraticCurveTo(-hr * 0.73, headCy - hr * 0.20, -hr * 0.59, headCy - hr * 0.09);
-    // Eyebrow
     const hairHex = hex(ct.hair, 0x0c0808);
+    if (ct.female) {
+      strokeSeg(g, hr * 0.07, hairHex, true);
+      [[-hr * 0.84, 0], [-hr * 0.76, hr * 0.05], [-hr * 0.68, hr * 0.08], [-hr * 0.61, hr * 0.04]].forEach(([lx, oy]) => {
+        g.moveTo(lx, headCy - hr * 0.17 + oy).lineTo(lx - hr * 0.025, headCy - hr * 0.26 + oy);
+      });
+    }
+    // Eyebrow
     strokeSeg(g, W * 0.0035, hairHex, true);
     g.moveTo(-hr * 0.90, headCy - hr * 0.26).lineTo(-hr * 0.56, headCy - hr * 0.29);
-    // Mouth — neutral smile (talk/frown states not yet ported)
+    // Mouth — smile when happy, frown when leaving unhappy, wobbles while talking
+    const frown = cu.unhappy && state === 'walk_out';
+    const _tkFw = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hr * 0.10 : 0;
     strokeSeg(g, hr * 0.13, skinDHex, true);
-    g.moveTo(-hr * 0.96, headCy + hr * 0.52).quadraticCurveTo(-hr * 0.80, headCy + hr * 0.59, -hr * 0.64, headCy + hr * 0.52);
+    if (frown) {
+      g.moveTo(-hr * 0.96, headCy + hr * 0.56).quadraticCurveTo(-hr * 0.80, headCy + hr * 0.50, -hr * 0.64, headCy + hr * 0.55);
+    } else {
+      g.moveTo(-hr * 0.96, headCy + hr * 0.52).quadraticCurveTo(-hr * 0.80, headCy + hr * 0.59 + _tkFw, -hr * 0.64, headCy + hr * 0.52);
+    }
+    if (_tkFw > 0.01 && !frown) {
+      g.beginFill(0x280a05, 0.50);
+      g.moveTo(-hr * 0.92, headCy + hr * 0.54).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.58 + _tkFw, -hr * 0.66, headCy + hr * 0.54).closePath();
+      g.endFill();
+    }
     // Lower lip shadow
-    strokeSeg(g, hr * 0.08, 0x000000, false);
-    g.moveTo(-hr * 0.90, headCy + hr * 0.63).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.68, -hr * 0.66, headCy + hr * 0.64);
+    strokeSeg(g, hr * 0.08, 0x000000, false, 0.18);
+    g.moveTo(-hr * 0.90, headCy + hr * 0.63).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.68 + _tkFw * 0.5, -hr * 0.66, headCy + hr * 0.64);
+    if (ct.geisha) {
+      // Red lips
+      strokeSeg(g, hr * 0.15, 0xc01828, true);
+      g.moveTo(-hr * 0.93, headCy + hr * 0.53).quadraticCurveTo(-hr * 0.79, headCy + hr * 0.60 + _tkFw, -hr * 0.66, headCy + hr * 0.53);
+      // Kanzashi pin in hair
+      strokeSeg(g, hr * 0.05, 0xd4a020, false);
+      g.moveTo(-hr * 0.12, headCy - hr * 0.80).lineTo(-hr * 0.08, headCy - hr * 1.30);
+      fillEllipse(g, -hr * 0.08, headCy - hr * 1.32, hr * 0.07, hr * 0.07, 0, 0xe8b830, 1);
+      fillEllipse(g, -hr * 0.08, headCy - hr * 1.32, hr * 0.04, hr * 0.04, 0, 0xff4060, 1);
+    }
+    if (ct.hostess) {
+      // Glossy pink lips
+      strokeSeg(g, hr * 0.17, 0xe00858, true);
+      g.moveTo(-hr * 0.93, headCy + hr * 0.53).quadraticCurveTo(-hr * 0.79, headCy + hr * 0.61 + _tkFw, -hr * 0.66, headCy + hr * 0.53);
+      // Lip gloss highlight
+      strokeSeg(g, hr * 0.06, 0xffc8dc, false, 0.55);
+      g.moveTo(-hr * 0.89, headCy + hr * 0.52).lineTo(-hr * 0.79, headCy + hr * 0.53);
+      // Eye shadow (smoky)
+      fillEllipse(g, -hr * 0.74, headCy + hr * 0.17, hr * 0.18, hr * 0.07, -0.1, 0x640aa0, 0.30);
+      // Eyelash curl
+      strokeSeg(g, hr * 0.08, 0x060402, true);
+      g.arc(-hr * 0.74, headCy + hr * 0.12, hr * 0.16, Math.PI * 0.8, Math.PI * 1.8);
+    }
 
-    // ── HAIR (buzz/medium/thin — the default-case hairstyles) ──
-    const topRx = ct.hairStyle === 'thin' ? hr * 0.68 : hr * 0.98;
-    g.beginFill(hairHex);
-    g.moveTo(-hr * 0.28, headCy - hr * 0.78)
-      .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
-      .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
-      .lineTo(topRx * 0.55, headCy + hr * 0.28)
-      .quadraticCurveTo(topRx * 0.88, headCy - hr * 0.42, hr * 0.44, headCy - hr * 0.76)
-      .closePath();
-    g.endFill();
-    if (ct.hairStyle === 'medium') {
+    // ── HAIR (profile) ──
+    if (ct.hairStyle === 'long') {
+      // Flows from crown down past shoulder to waist
       g.beginFill(hairHex);
-      g.moveTo(hr * 0.82, headCy - hr * 0.62)
-        .quadraticCurveTo(hr * 1.05, headCy, hr * 0.96, headCy + hr * 0.58)
-        .lineTo(hr * 0.58, headCy + hr * 0.58)
-        .quadraticCurveTo(hr * 0.82, headCy + hr * 0.12, hr * 0.66, headCy - hr * 0.48)
+      g.moveTo(-hr * 0.28, headCy - hr * 0.80)
+        .quadraticCurveTo(hr * 0.08, headCy - hr * 1.10, hr * 0.92, headCy - hr * 0.90)
+        .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, hr * 1.02, headCy + hr * 0.60)
+        .bezierCurveTo(hr * 1.00, waistY - bH * 0.10, hr * 0.80, waistY + bH * 0.02, hr * 0.60, waistY + bH * 0.08)
+        .lineTo(hr * 0.28, waistY + bH * 0.08)
+        .bezierCurveTo(hr * 0.50, waistY - bH * 0.05, hr * 0.68, headCy + hr * 0.72, hr * 0.62, headCy + hr * 0.22)
+        .lineTo(hr * 0.50, headCy - hr * 0.80)
         .closePath();
       g.endFill();
+      // Subtle strand highlight
+      strokeSeg(g, hr * 0.06, 0xffffff, true, 0.08);
+      g.moveTo(hr * 0.80, headCy - hr * 0.50)
+        .bezierCurveTo(hr * 0.92, headCy + hr * 0.40, hr * 0.76, waistY - bH * 0.12, hr * 0.52, waistY + bH * 0.02);
+    } else if (ct.hairStyle === 'ponytail') {
+      // Short cap on top + long tied tail down the back
+      const topRx = hr * 0.92;
+      g.beginFill(hairHex);
+      g.moveTo(-hr * 0.28, headCy - hr * 0.78)
+        .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
+        .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
+        .lineTo(topRx * 0.55, headCy + hr * 0.28)
+        .quadraticCurveTo(topRx * 0.88, headCy - hr * 0.42, hr * 0.44, headCy - hr * 0.76)
+        .closePath();
+      g.endFill();
+      // Tie band
+      fillEllipse(g, hr * 0.72, headCy + hr * 0.32, hr * 0.11, hr * 0.07, 0.3, hex(ct.jacketD), 1);
+      // Tail — flowing ribbon from tie to waist
+      g.beginFill(hairHex);
+      g.moveTo(hr * 0.64, headCy + hr * 0.28)
+        .bezierCurveTo(hr * 1.10, headCy + hr * 0.80, hr * 1.00, waistY - bH * 0.08, hr * 0.72, waistY + bH * 0.06)
+        .lineTo(hr * 0.44, waistY + bH * 0.06)
+        .bezierCurveTo(hr * 0.62, waistY - bH * 0.12, hr * 0.58, headCy + hr * 0.60, hr * 0.52, headCy + hr * 0.34)
+        .closePath();
+      g.endFill();
+      // Strand highlight on tail
+      strokeSeg(g, hr * 0.05, 0xffffff, true, 0.09);
+      g.moveTo(hr * 0.88, headCy + hr * 0.60)
+        .bezierCurveTo(hr * 0.96, waistY - bH * 0.20, hr * 0.78, waistY - bH * 0.04, hr * 0.60, waistY + bH * 0.02);
+    } else {
+      const topRx = ct.hairStyle === 'thin' ? hr * 0.68 : hr * 0.98;
+      g.beginFill(hairHex);
+      g.moveTo(-hr * 0.28, headCy - hr * 0.78)
+        .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
+        .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
+        .lineTo(topRx * 0.55, headCy + hr * 0.28)
+        .quadraticCurveTo(topRx * 0.88, headCy - hr * 0.42, hr * 0.44, headCy - hr * 0.76)
+        .closePath();
+      g.endFill();
+      if (ct.hairStyle === 'medium') {
+        g.beginFill(hairHex);
+        g.moveTo(hr * 0.82, headCy - hr * 0.62)
+          .quadraticCurveTo(hr * 1.05, headCy, hr * 0.96, headCy + hr * 0.58)
+          .lineTo(hr * 0.58, headCy + hr * 0.58)
+          .quadraticCurveTo(hr * 0.82, headCy + hr * 0.12, hr * 0.66, headCy - hr * 0.48)
+          .closePath();
+        g.endFill();
+      }
+    }
+    // Police cap
+    if (ct.police) {
+      const jacketHex2 = hex(ct.jacket), jacketDHex2 = hex(ct.jacketD);
+      g.beginFill(jacketHex2);
+      g.moveTo(-hr * 0.26, headCy - hr * 0.70).lineTo(hr * 1.02, headCy - hr * 0.70).lineTo(hr * 0.92, headCy - hr * 1.04).lineTo(-hr * 0.18, headCy - hr * 1.04).closePath();
+      g.endFill();
+      g.beginFill(jacketDHex2);
+      g.moveTo(-hr * 0.18, headCy - hr * 1.04).lineTo(hr * 0.92, headCy - hr * 1.04).lineTo(hr * 0.86, headCy - hr * 1.12).lineTo(-hr * 0.14, headCy - hr * 1.12).closePath();
+      g.endFill();
+      g.beginFill(jacketDHex2);
+      g.moveTo(-hr * 0.26, headCy - hr * 0.72).quadraticCurveTo(-hr * 0.54, headCy - hr * 0.62, -hr * 0.44, headCy - hr * 0.52).quadraticCurveTo(-hr * 0.22, headCy - hr * 0.62, -hr * 0.22, headCy - hr * 0.70).closePath();
+      g.endFill();
+      g.beginFill(0xf0f2ee, 0.82);
+      g.drawRect(-hr * 0.24, headCy - hr * 0.80, hr * 1.22, hr * 0.11);
+      g.endFill();
+      fillEllipse(g, hr * 0.28, headCy - hr * 0.86, hr * 0.10, hr * 0.10, 0, 0xc8960a, 1);
+      fillEllipse(g, hr * 0.28, headCy - hr * 0.86, hr * 0.06, hr * 0.06, 0, 0xf0c020, 1);
+    }
+    // Sumo chonmage
+    if (ct.sumo) {
+      fillEllipse(g, hr * 0.60, headCy - hr * 1.06, hr * 0.20, hr * 0.11, 0.2, hairHex, 1);
+      fillEllipse(g, hr * 0.62, headCy - hr * 1.18, hr * 0.10, hr * 0.16, -0.15, hairHex, 1);
     }
   };
 
   // ── Debug preview harness — NOT part of the live game, just for visually
   // verifying each milestone against the original before wiring anything in. ──
   let _previewApp = null, _previewG = null;
-  window._previewPixiCustomer = function(ct, state) {
+  window._previewPixiCustomer = function(ct, state, extraCu) {
     let canvasEl = document.getElementById('pixi-preview-canvas');
     if (!canvasEl) {
       canvasEl = document.createElement('canvas');
@@ -11726,7 +11841,7 @@ if (typeof serveCustomer === 'function') {
       _previewG = new PIXI.Graphics();
       _previewApp.stage.addChild(_previewG);
     }
-    const fakeCu = { state: state || 'walk_in', x: 130, ct: ct, phase: 0 };
+    const fakeCu = Object.assign({ state: state || 'walk_in', x: 130, ct: ct, phase: 0 }, extraCu || {});
     let t = 0;
     _previewApp.ticker.remove(_previewApp._customTick);
     _previewApp._customTick = () => { t += 0.05; window._drawCustomerPixi(_previewG, fakeCu, t); };
