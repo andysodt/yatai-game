@@ -10336,8 +10336,8 @@ const MP = {
     // earnings) — same "don't overwrite with the host's data" rule as hud-master above.
     const moneyEl = document.getElementById('hud-money');
     if (moneyEl) moneyEl.textContent = '¥' + Number(G.money).toLocaleString();
-    const repEl = document.getElementById('hud-rep');
-    if (repEl && this.stateData.stars != null) repEl.textContent = '⭐'.repeat(this.stateData.stars) + '☆'.repeat(5 - this.stateData.stars);
+    // No rep/stars shown as a guest — that's the yatai master's own reputation, not
+    // something meaningful to display for someone just visiting as a customer.
     // Time bar
     const bar = document.getElementById('time-bar-fill');
     if (bar && timePct != null) bar.style.width = (Math.min(1, Math.max(0, timePct)) * 100) + '%';
@@ -10697,10 +10697,6 @@ function buildCustomerView() {
         <div class="hud-stat">
           <span class="hud-val gold" id="hud-money">¥${G.money.toLocaleString()}</span>
           <span class="hud-label">Money</span>
-        </div>
-        <div class="hud-stat">
-          <span class="hud-val" id="hud-rep">—</span>
-          <span class="hud-label">Rep</span>
         </div>
         <div class="hud-stat">
           <span class="hud-val" style="font-size:11px;letter-spacing:1px">${MP.roomCode}</span>
