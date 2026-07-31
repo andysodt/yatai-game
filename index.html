@@ -5945,6 +5945,7 @@ try {
     c.width = window.innerWidth;
     c.height = window.innerHeight;
     buildOff();
+    if (window._pixiResizeCustomerLayer) window._pixiResizeCustomerLayer(G.W, G.H);
     initSteam();
     bubbles = [];
     // Reanchor seated customers
@@ -6696,11 +6697,17 @@ try {
     // Pulsing lantern glow (on top of static scene)
     drawLanternGlow(ctx, T);
 
-    // Update + draw customers
+    // Update + draw customers — walking-state customers render via the ported Pixi
+    // rig (composited in below); everyone else (not yet ported — see task 41) still
+    // goes through the original Canvas2D drawCustomer().
     updateCustomers(T);
+    const _pixiDrewCustomers = window._pixiRenderCustomerLayer ? window._pixiRenderCustomerLayer(SLOTS, G, T) : false;
     SLOTS.forEach(slot => {
-      if (slot.cu) drawCustomer(ctx, slot.cu, T);
+      if (!slot.cu) return;
+      if (window._pixiCanHandle && window._pixiCanHandle(slot.cu)) return;
+      drawCustomer(ctx, slot.cu, T);
     });
+    if (_pixiDrewCustomers) ctx.drawImage(window._pixiCustomerLayerView(), 0, 0, W, H);
     drawWetCustomers(ctx, T);
 
     // Speech bubbles (above everything)
@@ -11427,7 +11434,7 @@ if (typeof serveCustomer === 'function') {
     return pts;
   }
   function fillEllipse(g, cx, cy, rx, ry, rot, color, alpha) {
-    g.beginFill(color, alpha === undefined ? 1 : alpha);
+    g.lineStyle({ width: 0 }); g.beginFill(color, alpha === undefined ? 1 : alpha);
     g.drawPolygon(ellipsePoints(cx, cy, rx, ry, rot));
     g.endFill();
   }
@@ -11446,8 +11453,11 @@ if (typeof serveCustomer === 'function') {
     return true;
   };
 
-  window._drawCustomerPixi = function(g, cu, T) {
-    const { W, H, stallBot } = G;
+  window._drawCustomerPixi = function(g, cu, T, geo) {
+    // `geo` is the scene's live W/H/stallBot geometry (the yatai-scene IIFE's own
+    // local G, distinct from the global game-state G) — the real render loop passes
+    // it explicitly; the debug preview harness falls back to the global G it pokes.
+    const { W, H, stallBot } = geo || G;
     const { state, x, ct, phase } = cu;
     g.clear();
     g.position.set(x, 0);
@@ -11483,14 +11493,14 @@ if (typeof serveCustomer === 'function') {
     const isKimono = ct.type === 'kimono';
     // Main torso silhouette + a flat shading approximation on the far side (Pixi 7
     // has no gradient fill — see module header)
-    g.beginFill(jacketHex);
+    g.lineStyle({ width: 0 }); g.beginFill(jacketHex);
     if (isKimono) {
       g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.028, _kimonoBot).lineTo(W * 0.026, _kimonoBot).lineTo(W * 0.019, shldrY).closePath();
     } else {
       g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(W * 0.022, waistY).lineTo(W * 0.021, shldrY + H * 0.005).closePath();
     }
     g.endFill();
-    g.beginFill(0x000000, 0.14);
+    g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.14);
     if (isKimono) {
       g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.028, _kimonoBot).lineTo(-W * 0.010, _kimonoBot).lineTo(-W * 0.008, shldrY).closePath();
     } else {
@@ -11500,16 +11510,16 @@ if (typeof serveCustomer === 'function') {
 
     if (ct.type === 'suit') {
       // Shirt V visible at front
-      g.beginFill(hex(ct.shirt));
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.shirt));
       g.moveTo(-W * 0.005, shldrY + H * 0.005).lineTo(-W * 0.007, waistY - H * 0.008).lineTo(W * 0.007, waistY - H * 0.008).lineTo(W * 0.012, shldrY + H * 0.005).closePath();
       g.endFill();
-      g.beginFill(jacketDHex);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
       g.drawRect(-W * 0.024, waistY - H * 0.007, W * 0.046, H * 0.010);
       g.endFill();
       if (ct.tieColor) {
         const tieHex = hex(ct.tieColor);
         fillEllipse(g, W * 0.002, shldrY + H * 0.018, W * 0.005, H * 0.007, 0.05, tieHex, 1);
-        g.beginFill(tieHex);
+        g.lineStyle({ width: 0 }); g.beginFill(tieHex);
         g.moveTo(-W * 0.002, shldrY + H * 0.023).lineTo(W * 0.006, shldrY + H * 0.023).lineTo(W * 0.004, waistY - H * 0.022)
           .lineTo(W * 0.001, waistY - H * 0.017).lineTo(-W * 0.001, waistY - H * 0.022).closePath();
         g.endFill();
@@ -11526,14 +11536,14 @@ if (typeof serveCustomer === 'function') {
           const _a = (_p / 8) * Math.PI * 2;
           fillEllipse(g, _rx + Math.cos(_a) * _rr * 0.65, _ry + Math.sin(_a) * _rr * 0.65, _rr * 0.38, _rr * 0.22, _a, rosetteHex, 1);
         }
-        g.beginFill(0xf8f8f0); g.drawCircle(_rx, _ry, _rr * 0.38); g.endFill();
-        g.beginFill(rosetteHex); g.drawCircle(_rx, _ry, _rr * 0.20); g.endFill();
+        g.lineStyle({ width: 0 }); g.beginFill(0xf8f8f0); g.drawCircle(_rx, _ry, _rr * 0.38); g.endFill();
+        g.lineStyle({ width: 0 }); g.beginFill(rosetteHex); g.drawCircle(_rx, _ry, _rr * 0.20); g.endFill();
       }
     } else if (ct.type === 'hoodie') {
       fillEllipse(g, W * 0.004, shldrY - H * 0.008, W * 0.018, H * 0.020, 0.12, jacketHex, 1);
       strokeSeg(g, 1, jacketDHex, false);
       g.arc(W * 0.004, shldrY - H * 0.005, W * 0.012, Math.PI * 1.2, Math.PI * 2.1);
-      g.beginFill(jacketDHex);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
       g.drawRect(-W * 0.024, waistY - H * 0.010, W * 0.046, H * 0.010);
       g.endFill();
       const pkT = shldrY + bH * 0.38, pkB = waistY - bH * 0.05;
@@ -11544,13 +11554,13 @@ if (typeof serveCustomer === 'function') {
     } else if (ct.type === 'shirt') {
       strokeSeg(g, 0.9, jacketDHex, false);
       g.moveTo(W * 0.001, shldrY + H * 0.008).lineTo(W * 0.001, waistY - H * 0.009);
-      g.beginFill(jacketDHex);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex);
       [0.28, 0.54, 0.80].forEach(t => { g.drawCircle(W * 0.001, shldrY + (waistY - shldrY) * t, W * 0.004); });
       g.endFill();
     } else if (isKimono) {
       strokeSeg(g, W * 0.007, hex(ct.cuff), true);
       g.moveTo(-W * 0.004, shldrY + H * 0.006).lineTo(-W * 0.002, shldrY + H * 0.032);
-      g.beginFill(hex(ct.pants));
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.pants));
       g.moveTo(-W * 0.024, waistY - H * 0.010).lineTo(-W * 0.026, waistY + H * 0.016).lineTo(W * 0.022, waistY + H * 0.016).lineTo(W * 0.020, waistY - H * 0.010).closePath();
       g.endFill();
       fillEllipse(g, W * 0.004, waistY + H * 0.002, W * 0.011, H * 0.011, 0, hex(ct.cuff), 1);
@@ -11560,7 +11570,7 @@ if (typeof serveCustomer === 'function') {
     } else {
       // TEE — short sleeve at shoulder
       const hemY = shldrY + bH * 0.18;
-      g.beginFill(hex(ct.shirt));
+      g.lineStyle({ width: 0 }); g.beginFill(hex(ct.shirt));
       g.moveTo(-W * 0.018, shldrY).lineTo(-W * 0.025, hemY).lineTo(-W * 0.012, hemY).lineTo(-W * 0.010, shldrY).closePath();
       g.endFill();
       strokeSeg(g, 1, jacketDHex, false);
@@ -11583,7 +11593,7 @@ if (typeof serveCustomer === 'function') {
       const skirtBot = ct.hostess ? gndY - H * 0.14 : gndY - H * 0.06;
       const sway = Math.sin(T * 4.5 + phase) * W * 0.004;
       const skirtHex = hex(ct.pants);
-      g.beginFill(skirtHex);
+      g.lineStyle({ width: 0 }); g.beginFill(skirtHex);
       g.moveTo(-W * 0.020, waistY)
         .bezierCurveTo(-W * 0.028, waistY + H * 0.018, -W * 0.036 + sway, skirtBot - H * 0.010, -W * 0.030 + sway, skirtBot)
         .lineTo(W * 0.028 - sway, skirtBot)
@@ -11591,7 +11601,7 @@ if (typeof serveCustomer === 'function') {
         .closePath();
       g.endFill();
       // Flat shading approximation on both edges (no gradient fill in Pixi 7)
-      g.beginFill(0x000000, 0.15);
+      g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.15);
       g.moveTo(-W * 0.020, waistY).lineTo(-W * 0.030 + sway, skirtBot).lineTo(-W * 0.018 + sway, skirtBot).lineTo(-W * 0.010, waistY).closePath();
       g.endFill();
       const _bkLX = Math.sin(strideB * 0.22) * bH * 0.10;
@@ -11606,7 +11616,7 @@ if (typeof serveCustomer === 'function') {
       fillEllipse(g, _frLX + W * 0.010, gndY, W * 0.014, H * 0.004, 0.10, shoeHex, 1);
       if (ct.hostess) {
         fillEllipse(g, _frLX + W * 0.013, gndY - H * 0.006, W * 0.005, H * 0.008, -0.3, 0xb00858, 1);
-        g.beginFill(0xb00858); g.drawRect(_frLX + W * 0.016, gndY - H * 0.014, W * 0.003, H * 0.014); g.endFill();
+        g.lineStyle({ width: 0 }); g.beginFill(0xb00858); g.drawRect(_frLX + W * 0.016, gndY - H * 0.014, W * 0.003, H * 0.014); g.endFill();
         const _sSeeds = [0.12, 0.37, 0.58, 0.81, 0.24, 0.69, 0.45, 0.92, 0.05, 0.76];
         _sSeeds.forEach((s, idx) => {
           const _sx = (s - 0.5) * W * 0.05;
@@ -11650,7 +11660,7 @@ if (typeof serveCustomer === 'function') {
     }
 
     // ── NECK ──
-    g.beginFill(hex(ct.skin));
+    g.lineStyle({ width: 0 }); g.beginFill(hex(ct.skin));
     g.drawRect(-W * 0.010, shldrY - H * 0.018, W * 0.018, H * 0.026);
     g.endFill();
 
@@ -11660,7 +11670,7 @@ if (typeof serveCustomer === 'function') {
     fillEllipse(g, hr * 0.62, headCy + hr * 0.08, hr * 0.14, hr * 0.22, 0.12, skinHex, 1);
     strokeSeg(g, 0.8, skinDHex, false);
     g.arc(hr * 0.62, headCy + hr * 0.10, hr * 0.08, -Math.PI * 0.6, Math.PI * 0.3);
-    g.beginFill(skinHex);
+    g.lineStyle({ width: 0 }); g.beginFill(skinHex);
     g.moveTo(-hr * 0.32, headCy - hr * 0.78)
       .quadraticCurveTo(-hr * 0.92, headCy - hr * 0.44, -hr * 0.98, headCy - hr * 0.06)
       .quadraticCurveTo(-hr * 1.08, headCy + hr * 0.12, -hr * 1.18, headCy + hr * 0.22)
@@ -11670,7 +11680,7 @@ if (typeof serveCustomer === 'function') {
       .lineTo(-hr * 0.08, headCy + hr * 0.92).closePath();
     g.endFill();
     // Head shading approximation (flat overlay on the shadow side, no gradient)
-    g.beginFill(0x000000, 0.10);
+    g.lineStyle({ width: 0 }); g.beginFill(0x000000, 0.10);
     g.drawPolygon(ellipsePoints(-hr * 0.15, headCy + hr * 0.1, hr * 0.85, hr * 0.95, 0));
     g.endFill();
     // Nostril — tints red as drunkenness rises
@@ -11680,9 +11690,9 @@ if (typeof serveCustomer === 'function') {
     // Eye white / iris / pupil / catchlight
     fillEllipse(g, -hr * 0.73, headCy - hr * 0.09, hr * 0.13, hr * 0.09, 0, 0xf5ede8, 1);
     const irisHex = (ct.hair === '#949494' || ct.hair === '#a09898') ? 0x4a5868 : 0x28180e;
-    g.beginFill(irisHex); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.07); g.endFill();
-    g.beginFill(0x080408); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.04); g.endFill();
-    g.beginFill(0xffffff, 0.65); g.drawCircle(-hr * 0.71, headCy - hr * 0.12, hr * 0.016); g.endFill();
+    g.lineStyle({ width: 0 }); g.beginFill(irisHex); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.07); g.endFill();
+    g.lineStyle({ width: 0 }); g.beginFill(0x080408); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.04); g.endFill();
+    g.lineStyle({ width: 0 }); g.beginFill(0xffffff, 0.65); g.drawCircle(-hr * 0.71, headCy - hr * 0.12, hr * 0.016); g.endFill();
     // Upper eyelid arch
     strokeSeg(g, 0.9, skinDHex, true);
     g.moveTo(-hr * 0.87, headCy - hr * 0.09).quadraticCurveTo(-hr * 0.73, headCy - hr * 0.20, -hr * 0.59, headCy - hr * 0.09);
@@ -11706,7 +11716,7 @@ if (typeof serveCustomer === 'function') {
       g.moveTo(-hr * 0.96, headCy + hr * 0.52).quadraticCurveTo(-hr * 0.80, headCy + hr * 0.59 + _tkFw, -hr * 0.64, headCy + hr * 0.52);
     }
     if (_tkFw > 0.01 && !frown) {
-      g.beginFill(0x280a05, 0.50);
+      g.lineStyle({ width: 0 }); g.beginFill(0x280a05, 0.50);
       g.moveTo(-hr * 0.92, headCy + hr * 0.54).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.58 + _tkFw, -hr * 0.66, headCy + hr * 0.54).closePath();
       g.endFill();
     }
@@ -11740,7 +11750,7 @@ if (typeof serveCustomer === 'function') {
     // ── HAIR (profile) ──
     if (ct.hairStyle === 'long') {
       // Flows from crown down past shoulder to waist
-      g.beginFill(hairHex);
+      g.lineStyle({ width: 0 }); g.beginFill(hairHex);
       g.moveTo(-hr * 0.28, headCy - hr * 0.80)
         .quadraticCurveTo(hr * 0.08, headCy - hr * 1.10, hr * 0.92, headCy - hr * 0.90)
         .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, hr * 1.02, headCy + hr * 0.60)
@@ -11757,7 +11767,7 @@ if (typeof serveCustomer === 'function') {
     } else if (ct.hairStyle === 'ponytail') {
       // Short cap on top + long tied tail down the back
       const topRx = hr * 0.92;
-      g.beginFill(hairHex);
+      g.lineStyle({ width: 0 }); g.beginFill(hairHex);
       g.moveTo(-hr * 0.28, headCy - hr * 0.78)
         .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
         .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
@@ -11768,7 +11778,7 @@ if (typeof serveCustomer === 'function') {
       // Tie band
       fillEllipse(g, hr * 0.72, headCy + hr * 0.32, hr * 0.11, hr * 0.07, 0.3, hex(ct.jacketD), 1);
       // Tail — flowing ribbon from tie to waist
-      g.beginFill(hairHex);
+      g.lineStyle({ width: 0 }); g.beginFill(hairHex);
       g.moveTo(hr * 0.64, headCy + hr * 0.28)
         .bezierCurveTo(hr * 1.10, headCy + hr * 0.80, hr * 1.00, waistY - bH * 0.08, hr * 0.72, waistY + bH * 0.06)
         .lineTo(hr * 0.44, waistY + bH * 0.06)
@@ -11781,7 +11791,7 @@ if (typeof serveCustomer === 'function') {
         .bezierCurveTo(hr * 0.96, waistY - bH * 0.20, hr * 0.78, waistY - bH * 0.04, hr * 0.60, waistY + bH * 0.02);
     } else {
       const topRx = ct.hairStyle === 'thin' ? hr * 0.68 : hr * 0.98;
-      g.beginFill(hairHex);
+      g.lineStyle({ width: 0 }); g.beginFill(hairHex);
       g.moveTo(-hr * 0.28, headCy - hr * 0.78)
         .quadraticCurveTo(hr * 0.08, headCy - hr * 1.08, topRx, headCy - hr * 0.88)
         .quadraticCurveTo(hr * 1.04, headCy - hr * 0.55, topRx, headCy + hr * 0.28)
@@ -11790,7 +11800,7 @@ if (typeof serveCustomer === 'function') {
         .closePath();
       g.endFill();
       if (ct.hairStyle === 'medium') {
-        g.beginFill(hairHex);
+        g.lineStyle({ width: 0 }); g.beginFill(hairHex);
         g.moveTo(hr * 0.82, headCy - hr * 0.62)
           .quadraticCurveTo(hr * 1.05, headCy, hr * 0.96, headCy + hr * 0.58)
           .lineTo(hr * 0.58, headCy + hr * 0.58)
@@ -11802,16 +11812,16 @@ if (typeof serveCustomer === 'function') {
     // Police cap
     if (ct.police) {
       const jacketHex2 = hex(ct.jacket), jacketDHex2 = hex(ct.jacketD);
-      g.beginFill(jacketHex2);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketHex2);
       g.moveTo(-hr * 0.26, headCy - hr * 0.70).lineTo(hr * 1.02, headCy - hr * 0.70).lineTo(hr * 0.92, headCy - hr * 1.04).lineTo(-hr * 0.18, headCy - hr * 1.04).closePath();
       g.endFill();
-      g.beginFill(jacketDHex2);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex2);
       g.moveTo(-hr * 0.18, headCy - hr * 1.04).lineTo(hr * 0.92, headCy - hr * 1.04).lineTo(hr * 0.86, headCy - hr * 1.12).lineTo(-hr * 0.14, headCy - hr * 1.12).closePath();
       g.endFill();
-      g.beginFill(jacketDHex2);
+      g.lineStyle({ width: 0 }); g.beginFill(jacketDHex2);
       g.moveTo(-hr * 0.26, headCy - hr * 0.72).quadraticCurveTo(-hr * 0.54, headCy - hr * 0.62, -hr * 0.44, headCy - hr * 0.52).quadraticCurveTo(-hr * 0.22, headCy - hr * 0.62, -hr * 0.22, headCy - hr * 0.70).closePath();
       g.endFill();
-      g.beginFill(0xf0f2ee, 0.82);
+      g.lineStyle({ width: 0 }); g.beginFill(0xf0f2ee, 0.82);
       g.drawRect(-hr * 0.24, headCy - hr * 0.80, hr * 1.22, hr * 0.11);
       g.endFill();
       fillEllipse(g, hr * 0.28, headCy - hr * 0.86, hr * 0.10, hr * 0.10, 0, 0xc8960a, 1);
@@ -11822,6 +11832,64 @@ if (typeof serveCustomer === 'function') {
       fillEllipse(g, hr * 0.60, headCy - hr * 1.06, hr * 0.20, hr * 0.11, 0.2, hairHex, 1);
       fillEllipse(g, hr * 0.62, headCy - hr * 1.18, hr * 0.10, hr * 0.16, -0.15, hairHex, 1);
     }
+  };
+
+  // ── Live compositing layer — renders walking-state customers via Pixi into an
+  // offscreen transparent WebGL surface, then the main Canvas2D render loop
+  // drawImage()s that surface at the exact point it used to call drawCustomer()
+  // directly. This keeps the existing single-canvas z-order (background → customers
+  // → wet-effects → speech bubbles) intact without touching Pixi's own DOM/stacking,
+  // and avoids per-customer readback cost — one GPU render + one drawImage per frame,
+  // not one per customer. Seated customers (not yet ported — see task 41) always fall
+  // back to the original drawCustomer() on the main canvas, drawn separately by the
+  // caller for any slot this layer skips.
+  let _layerApp = null;
+  const _layerPool = []; // one persistent PIXI.Graphics per SLOTS index, reused every frame
+  let _layerW = 0, _layerH = 0;
+
+  function _ensureLayer(w, h) {
+    if (!_layerApp) {
+      _layerApp = new PIXI.Application({ width: w, height: h, backgroundAlpha: 0, antialias: true, autoStart: false });
+    }
+    if (w !== _layerW || h !== _layerH) {
+      _layerApp.renderer.resize(w, h);
+      _layerW = w; _layerH = h;
+    }
+    return _layerApp;
+  }
+
+  window._pixiResizeCustomerLayer = function(w, h) {
+    if (typeof PIXI === 'undefined') return;
+    _ensureLayer(w, h);
+  };
+
+  window._pixiCustomerLayerView = function() {
+    return _layerApp ? _layerApp.view : null;
+  };
+
+  window._pixiRenderCustomerLayer = function(slots, geo, T) {
+    if (typeof PIXI === 'undefined') return false;
+    const app = _ensureLayer(geo.W || 1, geo.H || 1);
+    let drewAny = false;
+    for (let i = 0; i < slots.length; i++) {
+      const cu = slots[i].cu;
+      const eligible = cu && window._pixiCanHandle(cu);
+      let gfx = _layerPool[i];
+      if (!gfx) {
+        gfx = new PIXI.Graphics();
+        app.stage.addChild(gfx);
+        _layerPool[i] = gfx;
+      }
+      if (eligible) {
+        gfx.visible = true;
+        window._drawCustomerPixi(gfx, cu, T, geo);
+        drewAny = true;
+      } else {
+        gfx.visible = false;
+      }
+    }
+    app.renderer.render(app.stage);
+    return drewAny;
   };
 
   // ── Debug preview harness — NOT part of the live game, just for visually
