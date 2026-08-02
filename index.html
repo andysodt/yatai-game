@@ -902,14 +902,19 @@ try {
     { type:'tee', jacket:'#4a3070', jacketD:'#301e50', pants:'#201828', shirt:'#4a3070', cuff:'#301e50', skin:'#c89468', skinD:'#a87448', hair:'#0a0608', hairStyle:'long' },
     { type:'tee', jacket:'#387070', jacketD:'#205050', pants:'#182828', shirt:'#387070', cuff:'#205050', skin:'#c0a060', skinD:'#9a8040', hair:'#060404', hairStyle:'buzz' },
     { type:'tee', jacket:'#204860', jacketD:'#103040', pants:'#162030', shirt:'#204860', cuff:'#103040', skin:'#b87858', skinD:'#8a5838', hair:'#080404', hairStyle:'long' },
-    // ── KIMONO (Yakuza) ─────────────────────────────────────────────
-    { type:'kimono', jacket:'#080c1a', jacketD:'#04060e', pants:'#c8c8b0', shirt:'#0e1220', cuff:'#d8d8c0', skin:'#c09060', skinD:'#9a7040', hair:'#060404', hairStyle:'buzz' },
-    { type:'kimono', jacket:'#0e0808', jacketD:'#060404', pants:'#b8b098', shirt:'#161010', cuff:'#ccc4a8', skin:'#b87858', skinD:'#8a5838', hair:'#060404', hairStyle:'buzz' },
-    { type:'kimono', jacket:'#0a100a', jacketD:'#060806', pants:'#c0bca8', shirt:'#121810', cuff:'#d0ccb8', skin:'#c09870', skinD:'#9a7850', hair:'#060404', hairStyle:'buzz' },
-    // ── KIMONO (Geisha) ─────────────────────────────────────────────
-    { type:'kimono', jacket:'#8a1828', jacketD:'#601018', pants:'#f0e8d8', shirt:'#d03048', cuff:'#f4e0d0', skin:'#f0ece0', skinD:'#d8d4c8', hair:'#060404', hairStyle:'long', geisha:true },
-    { type:'kimono', jacket:'#1a2858', jacketD:'#0e1838', pants:'#f4eee0', shirt:'#c82840', cuff:'#f8f0e4', skin:'#f2eee2', skinD:'#dedad0', hair:'#060404', hairStyle:'long', geisha:true },
-    { type:'kimono', jacket:'#2a1858', jacketD:'#180e38', pants:'#f0ecd8', shirt:'#d04060', cuff:'#f8f0e8', skin:'#eeead8', skinD:'#d8d4c4', hair:'#060404', hairStyle:'long', geisha:true },
+    // ── KIMONO (Yakuza) — dark ground, tone-on-tone accent pattern ───
+    { type:'kimono', jacket:'#080c1a', jacketD:'#04060e', pants:'#c8c8b0', shirt:'#0e1220', cuff:'#d8d8c0', skin:'#c09060', skinD:'#9a7040', hair:'#060404', hairStyle:'buzz', pattern:'seigaiha', patternColor:'#2a3a5a' },
+    { type:'kimono', jacket:'#0e0808', jacketD:'#060404', pants:'#b8b098', shirt:'#161010', cuff:'#ccc4a8', skin:'#b87858', skinD:'#8a5838', hair:'#060404', hairStyle:'buzz', pattern:'asanoha', patternColor:'#3a2020' },
+    { type:'kimono', jacket:'#0a100a', jacketD:'#060806', pants:'#c0bca8', shirt:'#121810', cuff:'#d0ccb8', skin:'#c09870', skinD:'#9a7850', hair:'#060404', hairStyle:'buzz', pattern:'diamond', patternColor:'#203020' },
+    // ── KIMONO (Geisha) ────────────────────────────────────────────
+    { type:'kimono', jacket:'#8a1828', jacketD:'#601018', pants:'#f0e8d8', shirt:'#d03048', cuff:'#f4e0d0', skin:'#f0ece0', skinD:'#d8d4c8', hair:'#060404', hairStyle:'long', geisha:true, pattern:'asanoha', patternColor:'#f0c840' },
+    { type:'kimono', jacket:'#1a2858', jacketD:'#0e1838', pants:'#f4eee0', shirt:'#c82840', cuff:'#f8f0e4', skin:'#f2eee2', skinD:'#dedad0', hair:'#060404', hairStyle:'long', geisha:true, pattern:'seigaiha', patternColor:'#e8d8a0' },
+    { type:'kimono', jacket:'#2a1858', jacketD:'#180e38', pants:'#f0ecd8', shirt:'#d04060', cuff:'#f8f0e8', skin:'#eeead8', skinD:'#d8d4c4', hair:'#060404', hairStyle:'long', geisha:true, pattern:'diamond', patternColor:'#f0a8c0' },
+    // ── KIMONO (colorful townsfolk) — brighter grounds, festival palette ──
+    { type:'kimono', jacket:'#186858', jacketD:'#0c4436', pants:'#e8e0c8', shirt:'#1c7a68', cuff:'#f0e8d0', skin:'#c8986a', skinD:'#a2764a', hair:'#0c0808', hairStyle:'buzz', pattern:'seigaiha', patternColor:'#e0c868' },
+    { type:'kimono', jacket:'#8a4a10', jacketD:'#5c3008', pants:'#f0e4c4', shirt:'#a05c14', cuff:'#f4ecd8', skin:'#c8946a', skinD:'#a06e48', hair:'#100a08', hairStyle:'buzz', pattern:'diamond', patternColor:'#f0d888' },
+    { type:'kimono', jacket:'#5a1a5c', jacketD:'#3a0e3c', pants:'#ecdce8', shirt:'#6e2270', cuff:'#f2e6ee', skin:'#d0a880', skinD:'#ac8560', hair:'#0a0608', hairStyle:'buzz', pattern:'asanoha', patternColor:'#d888c0', female:true },
+    { type:'kimono', jacket:'#1a3868', jacketD:'#0e2244', pants:'#e0e8ec', shirt:'#22488a', cuff:'#eef2f6', skin:'#d4ac82', skinD:'#b0885e', hair:'#080606', hairStyle:'long', pattern:'seigaiha', patternColor:'#88b8e0', female:true },
     // ── POLICE ──────────────────────────────────────────────────────
     { type:'suit', jacket:'#1c2854', jacketD:'#0e1638', pants:'#162044', shirt:'#e0e4d8', cuff:'#eaeedc', skin:'#c09870', skinD:'#9a7850', hair:'#0c0808', hairStyle:'buzz', police:true },
     { type:'suit', jacket:'#1a2650', jacketD:'#0c1430', pants:'#142040', shirt:'#dce0d0', cuff:'#e8ece0', skin:'#d0a878', skinD:'#aa8858', hair:'#242018', hairStyle:'buzz', police:true },
@@ -4615,6 +4620,56 @@ try {
     }
   }
 
+  // Tiles a small textile motif (kimono fabric pattern) across whatever region the
+  // caller has already clipped to. Shared by both the walking and seated kimono
+  // rendering below — caller does ctx.save()/clip()/restore() around the call.
+  function drawKimonoPattern(g, patternType, patternColor, x0, y0, x1, y1, alpha) {
+    if (!patternType) return;
+    const w = x1 - x0, h = y1 - y0;
+    if (w <= 0 || h <= 0) return;
+    const tile = Math.max(4, Math.min(w, h) / 5);
+    g.save();
+    g.globalAlpha = alpha == null ? 0.38 : alpha;
+    g.strokeStyle = patternColor;
+    g.fillStyle = patternColor;
+    g.lineWidth = Math.max(0.5, tile * 0.07);
+    g.lineCap = 'round';
+    if (patternType === 'diamond') {
+      for (let py = y0 - tile; py < y1 + tile; py += tile) {
+        for (let px = x0 - tile; px < x1 + tile; px += tile) {
+          const r = tile * 0.24;
+          g.beginPath();
+          g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py);
+          g.closePath(); g.fill();
+        }
+      }
+    } else if (patternType === 'seigaiha') {
+      const r = tile * 0.55;
+      for (let row = 0; y0 + row * r * 0.85 - r <= y1; row++) {
+        const py = y0 + row * r * 0.85;
+        const offset = (row % 2) * r;
+        for (let px = x0 - r + offset; px < x1 + r; px += r * 2) {
+          g.beginPath(); g.arc(px, py, r, Math.PI, 0); g.stroke();
+          g.beginPath(); g.arc(px, py, r * 0.6, Math.PI, 0); g.stroke();
+        }
+      }
+    } else { // asanoha — simplified 3-line star burst at each grid point
+      for (let py = y0 - tile; py < y1 + tile; py += tile) {
+        for (let px = x0 - tile * 0.5; px < x1 + tile; px += tile) {
+          const r = tile * 0.34;
+          for (let a = 0; a < 3; a++) {
+            const ang = (a / 3) * Math.PI;
+            g.beginPath();
+            g.moveTo(px - Math.cos(ang) * r, py - Math.sin(ang) * r);
+            g.lineTo(px + Math.cos(ang) * r, py + Math.sin(ang) * r);
+            g.stroke();
+          }
+        }
+      }
+    }
+    g.restore();
+  }
+
   function drawCustomer(g, cu, T) {
     const { W, H, counterY, stallBot } = G;
     const { state, x, ct, phase } = cu;
@@ -4676,6 +4731,15 @@ try {
           g.lineTo(W*0.022, waistY); g.lineTo(W*0.021, shldrY+H*0.005);
         }
         g.closePath(); g.fill();
+      }
+      if (ct.type === 'kimono' && ct.pattern) {
+        g.save();
+        g.beginPath();
+        g.moveTo(-W*0.018, shldrY); g.lineTo(-W*0.028, _kimonoBot);
+        g.lineTo(W*0.026, _kimonoBot); g.lineTo(W*0.019, shldrY);
+        g.closePath(); g.clip();
+        drawKimonoPattern(g, ct.pattern, ct.patternColor || ct.jacketD, -W*0.028, shldrY, W*0.026, _kimonoBot);
+        g.restore();
       }
       if (ct.type === 'suit') {
         // Shirt V visible at front
@@ -5262,6 +5326,15 @@ try {
       g.moveTo(-W*0.056, shldrY+H*0.010); g.lineTo(-W*0.052, waistY);
       g.lineTo(W*0.052, waistY); g.lineTo(W*0.056, shldrY+H*0.010);
       g.closePath(); g.fill();
+      if (ct.type === 'kimono' && ct.pattern) {
+        g.save();
+        g.beginPath();
+        g.moveTo(-W*0.056, shldrY+H*0.010); g.lineTo(-W*0.052, waistY);
+        g.lineTo(W*0.052, waistY); g.lineTo(W*0.056, shldrY+H*0.010);
+        g.closePath(); g.clip();
+        drawKimonoPattern(g, ct.pattern, ct.patternColor || ct.jacketD, -W*0.056, shldrY, W*0.056, waistY + H*0.010);
+        g.restore();
+      }
       // Seams & details by clothing type
       if (ct.type === 'suit') {
         g.strokeStyle = ct.jacketD; g.lineWidth = 0.9;
@@ -11472,6 +11545,69 @@ if (typeof serveCustomer === 'function') {
     g.lineStyle({ width, color, alpha: alpha === undefined ? 1 : alpha, cap: cap ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.BUTT, join: PIXI.LINE_JOIN.ROUND });
   }
 
+  // Tiles a small textile motif (kimono fabric pattern) across a bounding box —
+  // the Pixi equivalent of drawKimonoPattern() in the Canvas2D original. Pixi
+  // Graphics has no cheap clip-to-path here, so this just tiles within the given
+  // rect; the kimono silhouette only tapers slightly over that span, so the minor
+  // bleed past the angled edges is not visually significant.
+  // `shape` describes the kimono trapezoid: {topLX, topRX, topY, botLX, botRX, botY}.
+  // Pixi Graphics has no cheap clip-to-path, so instead of a bounding-box tile (which
+  // bled well outside the tapered silhouette), each candidate motif's center is
+  // tested against the trapezoid's left/right edge at that Y (linearly interpolated
+  // between top and bottom) and skipped if it falls outside.
+  function drawKimonoPatternPixi(g, patternType, patternColor, shape, alpha) {
+    if (!patternType) return;
+    const { topLX, topRX, topY, botLX, botRX, botY } = shape;
+    const x0 = Math.min(topLX, botLX), x1 = Math.max(topRX, botRX);
+    const y0 = Math.min(topY, botY), y1 = Math.max(topY, botY);
+    const w = x1 - x0, h = y1 - y0;
+    if (w <= 0 || h <= 0) return;
+    const tile = Math.max(4, Math.min(w, h) / 5);
+    const a = alpha == null ? 0.38 : alpha;
+    const colorHex = hex(patternColor, 0x000000);
+    const inside = (px, py) => {
+      const t = Math.max(0, Math.min(1, (py - topY) / (botY - topY)));
+      const lx = topLX + (botLX - topLX) * t, rx = topRX + (botRX - topRX) * t;
+      return px >= lx && px <= rx;
+    };
+    if (patternType === 'diamond') {
+      for (let py = y0; py < y1; py += tile) {
+        for (let px = x0; px < x1; px += tile) {
+          if (!inside(px, py)) continue;
+          const r = tile * 0.24;
+          g.lineStyle({ width: 0 }); g.beginFill(colorHex, a);
+          g.moveTo(px, py - r).lineTo(px + r, py).lineTo(px, py + r).lineTo(px - r, py).closePath();
+          g.endFill();
+        }
+      }
+    } else if (patternType === 'seigaiha') {
+      const r = tile * 0.55;
+      for (let row = 0; y0 + row * r * 0.85 <= y1; row++) {
+        const py = y0 + row * r * 0.85;
+        const offset = (row % 2) * r;
+        for (let px = x0 + offset; px < x1; px += r * 2) {
+          if (!inside(px, py)) continue;
+          strokeSeg(g, Math.max(0.5, tile * 0.07), colorHex, true, a);
+          g.arc(px, py, r, Math.PI, 0);
+          strokeSeg(g, Math.max(0.5, tile * 0.07), colorHex, true, a);
+          g.arc(px, py, r * 0.6, Math.PI, 0);
+        }
+      }
+    } else { // asanoha — simplified 3-line star burst at each grid point
+      for (let py = y0; py < y1; py += tile) {
+        for (let px = x0; px < x1; px += tile) {
+          if (!inside(px, py)) continue;
+          const r = tile * 0.34;
+          for (let ai = 0; ai < 3; ai++) {
+            const ang = (ai / 3) * Math.PI;
+            strokeSeg(g, Math.max(0.5, tile * 0.07), colorHex, true, a);
+            g.moveTo(px - Math.cos(ang) * r, py - Math.sin(ang) * r).lineTo(px + Math.cos(ang) * r, py + Math.sin(ang) * r);
+          }
+        }
+      }
+    }
+  }
+
   // Returns false for anything this milestone doesn't cover yet — callers should
   // fall back to the original Canvas2D drawCustomer() in that case.
   window._pixiCanHandle = function(cu) {
@@ -11541,6 +11677,12 @@ if (typeof serveCustomer === 'function') {
       g.moveTo(-W * 0.020, shldrY).lineTo(-W * 0.024, waistY).lineTo(-W * 0.010, waistY).lineTo(-W * 0.008, shldrY).closePath();
     }
     g.endFill();
+    if (isKimono && ct.pattern) {
+      drawKimonoPatternPixi(g, ct.pattern, ct.patternColor || ct.jacketD, {
+        topLX: -W * 0.018, topRX: W * 0.019, topY: shldrY,
+        botLX: -W * 0.028, botRX: W * 0.026, botY: _kimonoBot,
+      });
+    }
 
     if (ct.type === 'suit') {
       // Shirt V visible at front
@@ -12048,6 +12190,12 @@ if (typeof serveCustomer === 'function') {
     g.moveTo(-W*0.056, shldrY+H*0.010).lineTo(-W*0.052, waistY)
       .lineTo(W*0.052, waistY).lineTo(W*0.056, shldrY+H*0.010).closePath();
     g.endFill();
+    if (ct.type === 'kimono' && ct.pattern) {
+      drawKimonoPatternPixi(g, ct.pattern, ct.patternColor || ct.jacketD, {
+        topLX: -W*0.056, topRX: W*0.056, topY: shldrY + H*0.010,
+        botLX: -W*0.052, botRX: W*0.052, botY: waistY,
+      });
+    }
     // Seams & details by clothing type
     if (ct.type === 'suit') {
       strokeSeg(g, 0.9, jacketDHex, false);
