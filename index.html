@@ -4983,6 +4983,9 @@ try {
       // Nostril
       g.fillStyle = _drunkAmt > 0 ? `rgba(200,80,80,${Math.min(0.80,0.45+_drunkAmt*0.15)})` : ct.skinD;
       g.beginPath(); g.ellipse(-hr*1.12, headCy+hr*0.28, hr*0.04, hr*0.03, -0.4, 0, Math.PI*2); g.fill();
+      // Nose bridge highlight
+      g.strokeStyle = 'rgba(255,255,255,0.16)'; g.lineWidth = hr*0.025; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-hr*0.58, headCy-hr*0.32); g.quadraticCurveTo(-hr*0.88, headCy-hr*0.12, -hr*0.99, headCy+hr*0.04); g.stroke();
       // Eye white
       g.fillStyle = '#f5ede8';
       g.beginPath(); g.ellipse(-hr*0.73, headCy-hr*0.09, hr*0.13, hr*0.09, 0, 0, Math.PI*2); g.fill();
@@ -4995,21 +4998,30 @@ try {
       // Catchlight
       g.fillStyle = 'rgba(255,255,255,0.65)';
       g.beginPath(); g.arc(-hr*0.71, headCy-hr*0.12, hr*0.016, 0, Math.PI*2); g.fill();
-      // Upper eyelid arch
+      // Upper eyelid arch + a lighter lower lid line
       g.strokeStyle = ct.skinD; g.lineWidth = 0.9; g.lineCap = 'round';
       g.beginPath();
       g.moveTo(-hr*0.87, headCy-hr*0.09);
       g.quadraticCurveTo(-hr*0.73, headCy-hr*0.20, -hr*0.59, headCy-hr*0.09);
       g.stroke();
+      g.strokeStyle = ct.skinD; g.globalAlpha = 0.45; g.lineWidth = hr*0.02; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-hr*0.85, headCy-hr*0.01); g.quadraticCurveTo(-hr*0.73, headCy+hr*0.03, -hr*0.61, headCy-hr*0.01); g.stroke();
+      g.globalAlpha = 1;
       if (ct.female) {
         g.strokeStyle = ct.hair; g.lineWidth = hr*0.07; g.lineCap = 'round';
         [[-hr*0.84, 0], [-hr*0.76, hr*0.05], [-hr*0.68, hr*0.08], [-hr*0.61, hr*0.04]].forEach(([lx, oy]) => {
           g.beginPath(); g.moveTo(lx, headCy-hr*0.17+oy); g.lineTo(lx-hr*0.025, headCy-hr*0.26+oy); g.stroke();
         });
       }
-      // Eyebrow
-      g.strokeStyle = ct.hair; g.lineWidth = W*0.0035; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(-hr*0.90, headCy-hr*0.26); g.lineTo(-hr*0.56, headCy-hr*0.29); g.stroke();
+      // Eyebrow — tapered filled wedge (thick at the nose side, thin at the temple)
+      g.fillStyle = ct.hair;
+      g.beginPath();
+      g.moveTo(-hr*0.91, headCy-hr*0.23);
+      g.quadraticCurveTo(-hr*0.86, headCy-hr*0.33, -hr*0.70, headCy-hr*0.325);
+      g.quadraticCurveTo(-hr*0.60, headCy-hr*0.32, -hr*0.545, headCy-hr*0.285);
+      g.quadraticCurveTo(-hr*0.60, headCy-hr*0.265, -hr*0.72, headCy-hr*0.255);
+      g.quadraticCurveTo(-hr*0.84, headCy-hr*0.245, -hr*0.91, headCy-hr*0.23);
+      g.closePath(); g.fill();
       // Mouth — smile when happy, frown when leaving unhappy
       const frown = cu.unhappy && state === 'walk_out';
       const _tkFw = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hr * 0.10 : 0;
@@ -5026,6 +5038,12 @@ try {
       if (_tkFw > 0.01 && !frown) {
         g.fillStyle = 'rgba(40,10,5,0.50)';
         g.beginPath(); g.moveTo(-hr*0.92, headCy+hr*0.54); g.quadraticCurveTo(-hr*0.78, headCy+hr*0.58 + _tkFw, -hr*0.66, headCy+hr*0.54); g.closePath(); g.fill();
+      }
+      // Philtrum — faint groove between nose and upper lip
+      if (!frown) {
+        g.strokeStyle = ct.skinD; g.globalAlpha = 0.35; g.lineWidth = hr*0.018; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(-hr*0.80, headCy+hr*0.42); g.lineTo(-hr*0.80, headCy+hr*0.50); g.stroke();
+        g.globalAlpha = 1;
       }
       // Lower lip shadow
       g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = hr*0.08;
@@ -5682,6 +5700,9 @@ try {
       // Nostril
       g.fillStyle = _drunkAmt > 0 ? `rgba(200,80,80,${Math.min(0.85,0.5+_drunkAmt*0.15)})` : ct.skinD;
       g.beginPath(); g.ellipse(-hR*1.12, hCy+hR*0.28, hR*0.07, hR*0.05, -0.4, 0, Math.PI*2); g.fill();
+      // Nose bridge highlight
+      g.strokeStyle = 'rgba(255,255,255,0.16)'; g.lineWidth = hR*0.025; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-hR*0.58, hCy-hR*0.32); g.quadraticCurveTo(-hR*0.88, hCy-hR*0.12, -hR*0.99, hCy+hR*0.04); g.stroke();
       // Eye white
       g.fillStyle = '#f5ede8';
       g.beginPath(); g.ellipse(-hR*0.73, hCy-hR*0.09, hR*0.13, hR*0.09, 0, 0, Math.PI*2); g.fill();
@@ -5694,21 +5715,30 @@ try {
       // Catchlight
       g.fillStyle = 'rgba(255,255,255,0.65)';
       g.beginPath(); g.arc(-hR*0.71, hCy-hR*0.12, hR*0.016, 0, Math.PI*2); g.fill();
-      // Upper eyelid arch
+      // Upper eyelid arch + a lighter lower lid line
       g.strokeStyle = ct.skinD; g.lineWidth = hR*0.10; g.lineCap = 'round';
       g.beginPath();
       g.moveTo(-hR*0.87, hCy-hR*0.09);
       g.quadraticCurveTo(-hR*0.73, hCy-hR*0.20, -hR*0.59, hCy-hR*0.09);
       g.stroke();
+      g.strokeStyle = ct.skinD; g.globalAlpha = 0.45; g.lineWidth = hR*0.02; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-hR*0.85, hCy-hR*0.01); g.quadraticCurveTo(-hR*0.73, hCy+hR*0.03, -hR*0.61, hCy-hR*0.01); g.stroke();
+      g.globalAlpha = 1;
       if (ct.female) {
         g.strokeStyle = ct.hair; g.lineWidth = hR*0.07; g.lineCap = 'round';
         [[-hR*0.84, 0], [-hR*0.76, hR*0.05], [-hR*0.68, hR*0.08], [-hR*0.61, hR*0.04]].forEach(([lx, oy]) => {
           g.beginPath(); g.moveTo(lx, hCy-hR*0.17+oy); g.lineTo(lx-hR*0.025, hCy-hR*0.26+oy); g.stroke();
         });
       }
-      // Eyebrow
-      g.strokeStyle = ct.hair; g.lineWidth = hR*0.12; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(-hR*0.90, hCy-hR*0.26); g.lineTo(-hR*0.56, hCy-hR*0.29); g.stroke();
+      // Eyebrow — tapered filled wedge
+      g.fillStyle = ct.hair;
+      g.beginPath();
+      g.moveTo(-hR*0.91, hCy-hR*0.23);
+      g.quadraticCurveTo(-hR*0.86, hCy-hR*0.33, -hR*0.70, hCy-hR*0.325);
+      g.quadraticCurveTo(-hR*0.60, hCy-hR*0.32, -hR*0.545, hCy-hR*0.285);
+      g.quadraticCurveTo(-hR*0.60, hCy-hR*0.265, -hR*0.72, hCy-hR*0.255);
+      g.quadraticCurveTo(-hR*0.84, hCy-hR*0.245, -hR*0.91, hCy-hR*0.23);
+      g.closePath(); g.fill();
       // Mouth — contented smile while eating; opens when talking
       const _tkFs = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.10 : 0;
       g.strokeStyle = ct.skinD; g.lineWidth = hR*0.13; g.lineCap = 'round';
@@ -5720,6 +5750,10 @@ try {
         g.fillStyle = 'rgba(40,10,5,0.50)';
         g.beginPath(); g.moveTo(-hR*0.92, hCy+hR*0.54); g.quadraticCurveTo(-hR*0.78, hCy+hR*0.59 + _tkFs, -hR*0.66, hCy+hR*0.54); g.closePath(); g.fill();
       }
+      // Philtrum — faint groove between nose and upper lip
+      g.strokeStyle = ct.skinD; g.globalAlpha = 0.35; g.lineWidth = hR*0.018; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-hR*0.80, hCy+hR*0.42); g.lineTo(-hR*0.80, hCy+hR*0.50); g.stroke();
+      g.globalAlpha = 1;
       // Lower lip shadow
       g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = hR*0.08;
       g.beginPath();
@@ -5859,6 +5893,11 @@ try {
         g.strokeStyle = ct.skinD; g.lineWidth = 0.9; g.lineCap = 'round';
         g.beginPath(); g.moveTo(_eL-hR*0.20, _eY); g.quadraticCurveTo(_eL, _eY-hR*0.14, _eL+hR*0.20, _eY); g.stroke();
         g.beginPath(); g.moveTo(_eR-hR*0.20, _eY); g.quadraticCurveTo(_eR, _eY-hR*0.14, _eR+hR*0.20, _eY); g.stroke();
+        // Lower eyelid lines
+        g.strokeStyle = ct.skinD; g.globalAlpha = 0.4; g.lineWidth = hR*0.02; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(_eL-hR*0.16, _eY+hR*0.02); g.quadraticCurveTo(_eL, _eY+hR*0.07, _eL+hR*0.16, _eY+hR*0.02); g.stroke();
+        g.beginPath(); g.moveTo(_eR-hR*0.16, _eY+hR*0.02); g.quadraticCurveTo(_eR, _eY+hR*0.07, _eR+hR*0.16, _eY+hR*0.02); g.stroke();
+        g.globalAlpha = 1;
         if (ct.female) {
           g.strokeStyle = ct.hair; g.lineWidth = hR*0.07; g.lineCap = 'round';
           [-hR*0.16, -hR*0.08, 0, hR*0.08, hR*0.16].forEach(lx => {
@@ -5895,10 +5934,23 @@ try {
             g.beginPath(); g.ellipse(_eR, _eY+hR*0.16, hR*0.04, hR*0.06, 0, 0, Math.PI*2); g.fill();
           }
         }
-        // Eyebrows
-        g.strokeStyle = ct.hair; g.lineWidth = hR*0.10; g.lineCap = 'round';
-        g.beginPath(); g.moveTo(_eL-hR*0.24, _eY-hR*0.28); g.quadraticCurveTo(_eL, _eY-hR*0.38, _eL+hR*0.22, _eY-hR*0.26); g.stroke();
-        g.beginPath(); g.moveTo(_eR-hR*0.22, _eY-hR*0.26); g.quadraticCurveTo(_eR, _eY-hR*0.38, _eR+hR*0.24, _eY-hR*0.28); g.stroke();
+        // Eyebrows — tapered filled wedges (thick at the inner/nose corner, thin at
+        // the outer/temple end) instead of a constant-width stroke
+        g.fillStyle = ct.hair;
+        g.beginPath();
+        g.moveTo(_eL+hR*0.22, _eY-hR*0.235);
+        g.quadraticCurveTo(_eL+hR*0.02, _eY-hR*0.34, _eL-hR*0.20, _eY-hR*0.315);
+        g.quadraticCurveTo(_eL-hR*0.24, _eY-hR*0.30, _eL-hR*0.25, _eY-hR*0.275);
+        g.quadraticCurveTo(_eL-hR*0.20, _eY-hR*0.255, _eL-hR*0.02, _eY-hR*0.27);
+        g.quadraticCurveTo(_eL+hR*0.12, _eY-hR*0.285, _eL+hR*0.22, _eY-hR*0.235);
+        g.closePath(); g.fill();
+        g.beginPath();
+        g.moveTo(_eR-hR*0.22, _eY-hR*0.235);
+        g.quadraticCurveTo(_eR-hR*0.02, _eY-hR*0.34, _eR+hR*0.20, _eY-hR*0.315);
+        g.quadraticCurveTo(_eR+hR*0.24, _eY-hR*0.30, _eR+hR*0.25, _eY-hR*0.275);
+        g.quadraticCurveTo(_eR+hR*0.20, _eY-hR*0.255, _eR+hR*0.02, _eY-hR*0.27);
+        g.quadraticCurveTo(_eR-hR*0.12, _eY-hR*0.285, _eR-hR*0.22, _eY-hR*0.235);
+        g.closePath(); g.fill();
         // Drunk flush / angry red
         if (_drunkAmt > 0 || cu.angry) {
           const _blushA = cu.angry
@@ -5914,6 +5966,9 @@ try {
             g.beginPath(); g.moveTo(_eR+hR*0.22, _eY-hR*0.30); g.lineTo(_eR-hR*0.10, _eY-hR*0.22); g.stroke();
           }
         }
+        // Nose bridge highlight
+        g.strokeStyle = 'rgba(255,255,255,0.15)'; g.lineWidth = hR*0.03; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(0, hCy-hR*0.05); g.lineTo(0, hCy+hR*0.16); g.stroke();
         // Nose
         g.strokeStyle = ct.skinD; g.lineWidth = hR*0.14; g.lineCap = 'round';
         g.beginPath();
@@ -5923,6 +5978,10 @@ try {
         g.fillStyle = ct.skinD;
         g.beginPath(); g.ellipse(-hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05, 0.2, 0, Math.PI*2); g.fill();
         g.beginPath(); g.ellipse( hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05,-0.2, 0, Math.PI*2); g.fill();
+        // Philtrum — faint centered groove above the mouth
+        g.strokeStyle = ct.skinD; g.globalAlpha = 0.32; g.lineWidth = hR*0.02; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(0, hCy+hR*0.52); g.lineTo(0, hCy+hR*0.61); g.stroke();
+        g.globalAlpha = 1;
         // Mouth
         const _tkF = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.14 : 0;
         g.strokeStyle = ct.skinD; g.lineWidth = hR*0.14; g.lineCap = 'round';
@@ -11863,15 +11922,20 @@ if (typeof serveCustomer === 'function') {
     const nostrilHex = _drunkAmt > 0 ? 0xc85050 : skinDHex;
     const nostrilAlpha = _drunkAmt > 0 ? Math.min(0.80, 0.45 + _drunkAmt * 0.15) : 1;
     fillEllipse(g, -hr * 1.12, headCy + hr * 0.28, hr * 0.04, hr * 0.03, -0.4, nostrilHex, nostrilAlpha);
+    // Nose bridge highlight
+    strokeSeg(g, hr * 0.025, 0xffffff, true, 0.16);
+    g.moveTo(-hr * 0.58, headCy - hr * 0.32).quadraticCurveTo(-hr * 0.88, headCy - hr * 0.12, -hr * 0.99, headCy + hr * 0.04);
     // Eye white / iris / pupil / catchlight
     fillEllipse(g, -hr * 0.73, headCy - hr * 0.09, hr * 0.13, hr * 0.09, 0, 0xf5ede8, 1);
     const irisHex = (ct.hair === '#949494' || ct.hair === '#a09898') ? 0x4a5868 : 0x28180e;
     g.lineStyle({ width: 0 }); g.beginFill(irisHex); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.07); g.endFill();
     g.lineStyle({ width: 0 }); g.beginFill(0x080408); g.drawCircle(-hr * 0.73, headCy - hr * 0.09, hr * 0.04); g.endFill();
     g.lineStyle({ width: 0 }); g.beginFill(0xffffff, 0.65); g.drawCircle(-hr * 0.71, headCy - hr * 0.12, hr * 0.016); g.endFill();
-    // Upper eyelid arch
+    // Upper eyelid arch + a lighter lower lid line (definition on both sides of the eye)
     strokeSeg(g, 0.9, skinDHex, true);
     g.moveTo(-hr * 0.87, headCy - hr * 0.09).quadraticCurveTo(-hr * 0.73, headCy - hr * 0.20, -hr * 0.59, headCy - hr * 0.09);
+    strokeSeg(g, hr * 0.02, skinDHex, true, 0.45);
+    g.moveTo(-hr * 0.85, headCy - hr * 0.01).quadraticCurveTo(-hr * 0.73, headCy + hr * 0.03, -hr * 0.61, headCy - hr * 0.01);
     const hairHex = hex(ct.hair, 0x0c0808);
     if (ct.female) {
       strokeSeg(g, hr * 0.07, hairHex, true);
@@ -11879,9 +11943,16 @@ if (typeof serveCustomer === 'function') {
         g.moveTo(lx, headCy - hr * 0.17 + oy).lineTo(lx - hr * 0.025, headCy - hr * 0.26 + oy);
       });
     }
-    // Eyebrow
-    strokeSeg(g, W * 0.0035, hairHex, true);
-    g.moveTo(-hr * 0.90, headCy - hr * 0.26).lineTo(-hr * 0.56, headCy - hr * 0.29);
+    // Eyebrow — a tapered filled wedge (thick at the nose-side corner, thin at the
+    // temple) instead of a constant-width stroke, for a more natural brow shape
+    g.lineStyle({ width: 0 }); g.beginFill(hairHex);
+    g.moveTo(-hr * 0.91, headCy - hr * 0.23)
+      .quadraticCurveTo(-hr * 0.86, headCy - hr * 0.33, -hr * 0.70, headCy - hr * 0.325)
+      .quadraticCurveTo(-hr * 0.60, headCy - hr * 0.32, -hr * 0.545, headCy - hr * 0.285)
+      .quadraticCurveTo(-hr * 0.60, headCy - hr * 0.265, -hr * 0.72, headCy - hr * 0.255)
+      .quadraticCurveTo(-hr * 0.84, headCy - hr * 0.245, -hr * 0.91, headCy - hr * 0.23)
+      .closePath();
+    g.endFill();
     // Mouth — smile when happy, frown when leaving unhappy, wobbles while talking
     const frown = cu.unhappy && state === 'walk_out';
     const _tkFw = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hr * 0.10 : 0;
@@ -11895,6 +11966,12 @@ if (typeof serveCustomer === 'function') {
       g.lineStyle({ width: 0 }); g.beginFill(0x280a05, 0.50);
       g.moveTo(-hr * 0.92, headCy + hr * 0.54).quadraticCurveTo(-hr * 0.78, headCy + hr * 0.58 + _tkFw, -hr * 0.66, headCy + hr * 0.54).closePath();
       g.endFill();
+    }
+    // Philtrum — a faint groove above the upper lip, adds a touch of natural
+    // structure between nose and mouth
+    if (!frown) {
+      strokeSeg(g, hr * 0.018, skinDHex, true, 0.35);
+      g.moveTo(-hr * 0.80, headCy + hr * 0.42).lineTo(-hr * 0.80, headCy + hr * 0.50);
     }
     // Lower lip shadow
     strokeSeg(g, hr * 0.08, 0x000000, false, 0.18);
@@ -12518,6 +12595,8 @@ if (typeof serveCustomer === 'function') {
       hg.lineStyle({ width: 0 }); hg.beginFill(0x000000, 0.10);
       hg.drawPolygon(ellipsePoints(-hR*0.15, hCy+hR*0.1, hR*0.85, hR*0.95, 0));
       hg.endFill();
+      strokeSeg(hg, hR*0.025, 0xffffff, true, 0.16);
+      hg.moveTo(-hR*0.58, hCy-hR*0.32).quadraticCurveTo(-hR*0.88, hCy-hR*0.12, -hR*0.99, hCy+hR*0.04);
       const nostrilHex = _drunkAmt > 0 ? 0xc85050 : skinDHex2;
       const nostrilAlpha = _drunkAmt > 0 ? Math.min(0.85, 0.5 + _drunkAmt * 0.15) : 1;
       fillEllipse(hg, -hR*1.12, hCy+hR*0.28, hR*0.07, hR*0.05, -0.4, nostrilHex, nostrilAlpha);
@@ -12527,14 +12606,23 @@ if (typeof serveCustomer === 'function') {
       hg.lineStyle({ width: 0 }); hg.beginFill(0xffffff, 0.65); hg.drawCircle(-hR*0.71, hCy-hR*0.12, hR*0.016); hg.endFill();
       strokeSeg(hg, hR*0.10, skinDHex2, true);
       hg.moveTo(-hR*0.87, hCy-hR*0.09).quadraticCurveTo(-hR*0.73, hCy-hR*0.20, -hR*0.59, hCy-hR*0.09);
+      strokeSeg(hg, hR*0.02, skinDHex2, true, 0.45);
+      hg.moveTo(-hR*0.85, hCy-hR*0.01).quadraticCurveTo(-hR*0.73, hCy+hR*0.03, -hR*0.61, hCy-hR*0.01);
       if (ct.female) {
         strokeSeg(hg, hR*0.07, hairHex, true);
         [[-hR*0.84, 0], [-hR*0.76, hR*0.05], [-hR*0.68, hR*0.08], [-hR*0.61, hR*0.04]].forEach(([lx, oy]) => {
           hg.moveTo(lx, hCy-hR*0.17+oy).lineTo(lx-hR*0.025, hCy-hR*0.26+oy);
         });
       }
-      strokeSeg(hg, hR*0.12, hairHex, true);
-      hg.moveTo(-hR*0.90, hCy-hR*0.26).lineTo(-hR*0.56, hCy-hR*0.29);
+      // Eyebrow — tapered filled wedge
+      hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+      hg.moveTo(-hR*0.91, hCy-hR*0.23)
+        .quadraticCurveTo(-hR*0.86, hCy-hR*0.33, -hR*0.70, hCy-hR*0.325)
+        .quadraticCurveTo(-hR*0.60, hCy-hR*0.32, -hR*0.545, hCy-hR*0.285)
+        .quadraticCurveTo(-hR*0.60, hCy-hR*0.265, -hR*0.72, hCy-hR*0.255)
+        .quadraticCurveTo(-hR*0.84, hCy-hR*0.245, -hR*0.91, hCy-hR*0.23)
+        .closePath();
+      hg.endFill();
       const _tkFs = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.10 : 0;
       strokeSeg(hg, hR*0.13, skinDHex2, true);
       hg.moveTo(-hR*0.96, hCy+hR*0.52).quadraticCurveTo(-hR*0.80, hCy+hR*0.60 + _tkFs, -hR*0.64, hCy+hR*0.52);
@@ -12543,6 +12631,8 @@ if (typeof serveCustomer === 'function') {
         hg.moveTo(-hR*0.92, hCy+hR*0.54).quadraticCurveTo(-hR*0.78, hCy+hR*0.59 + _tkFs, -hR*0.66, hCy+hR*0.54).closePath();
         hg.endFill();
       }
+      strokeSeg(hg, hR*0.018, skinDHex2, true, 0.32);
+      hg.moveTo(-hR*0.80, hCy+hR*0.42).lineTo(-hR*0.80, hCy+hR*0.50);
       strokeSeg(hg, hR*0.08, 0x000000, false, 0.18);
       hg.moveTo(-hR*0.90, hCy+hR*0.63).quadraticCurveTo(-hR*0.78, hCy+hR*0.68 + _tkFs*0.5, -hR*0.66, hCy+hR*0.64);
       if (ct.geisha) {
@@ -12654,6 +12744,11 @@ if (typeof serveCustomer === 'function') {
       hg.moveTo(_eL-hR*0.20, _eY).quadraticCurveTo(_eL, _eY-hR*0.14, _eL+hR*0.20, _eY);
       strokeSeg(hg, 0.9, skinDHex2, true);
       hg.moveTo(_eR-hR*0.20, _eY).quadraticCurveTo(_eR, _eY-hR*0.14, _eR+hR*0.20, _eY);
+      // Lower eyelid lines
+      strokeSeg(hg, hR*0.02, skinDHex2, true, 0.4);
+      hg.moveTo(_eL-hR*0.16, _eY+hR*0.02).quadraticCurveTo(_eL, _eY+hR*0.07, _eL+hR*0.16, _eY+hR*0.02);
+      strokeSeg(hg, hR*0.02, skinDHex2, true, 0.4);
+      hg.moveTo(_eR-hR*0.16, _eY+hR*0.02).quadraticCurveTo(_eR, _eY+hR*0.07, _eR+hR*0.16, _eY+hR*0.02);
       if (ct.female) {
         [-hR*0.16, -hR*0.08, 0, hR*0.08, hR*0.16].forEach(lx => {
           strokeSeg(hg, hR*0.07, hairHex, true);
@@ -12685,10 +12780,23 @@ if (typeof serveCustomer === 'function') {
           fillEllipse(hg, _eR, _eY+hR*0.16, hR*0.04, hR*0.06, 0, 0x64a0dc, 0.70);
         }
       }
-      strokeSeg(hg, hR*0.10, hairHex, true);
-      hg.moveTo(_eL-hR*0.24, _eY-hR*0.28).quadraticCurveTo(_eL, _eY-hR*0.38, _eL+hR*0.22, _eY-hR*0.26);
-      strokeSeg(hg, hR*0.10, hairHex, true);
-      hg.moveTo(_eR-hR*0.22, _eY-hR*0.26).quadraticCurveTo(_eR, _eY-hR*0.38, _eR+hR*0.24, _eY-hR*0.28);
+      // Eyebrows — tapered filled wedges
+      hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+      hg.moveTo(_eL+hR*0.22, _eY-hR*0.235)
+        .quadraticCurveTo(_eL+hR*0.02, _eY-hR*0.34, _eL-hR*0.20, _eY-hR*0.315)
+        .quadraticCurveTo(_eL-hR*0.24, _eY-hR*0.30, _eL-hR*0.25, _eY-hR*0.275)
+        .quadraticCurveTo(_eL-hR*0.20, _eY-hR*0.255, _eL-hR*0.02, _eY-hR*0.27)
+        .quadraticCurveTo(_eL+hR*0.12, _eY-hR*0.285, _eL+hR*0.22, _eY-hR*0.235)
+        .closePath();
+      hg.endFill();
+      hg.lineStyle({ width: 0 }); hg.beginFill(hairHex);
+      hg.moveTo(_eR-hR*0.22, _eY-hR*0.235)
+        .quadraticCurveTo(_eR-hR*0.02, _eY-hR*0.34, _eR+hR*0.20, _eY-hR*0.315)
+        .quadraticCurveTo(_eR+hR*0.24, _eY-hR*0.30, _eR+hR*0.25, _eY-hR*0.275)
+        .quadraticCurveTo(_eR+hR*0.20, _eY-hR*0.255, _eR+hR*0.02, _eY-hR*0.27)
+        .quadraticCurveTo(_eR-hR*0.12, _eY-hR*0.285, _eR-hR*0.22, _eY-hR*0.235)
+        .closePath();
+      hg.endFill();
       if (_drunkAmt > 0 || cu.angry) {
         const _blushA = cu.angry
           ? 0.42 + Math.abs(Math.sin(T * 6 + phase)) * 0.18
@@ -12703,12 +12811,18 @@ if (typeof serveCustomer === 'function') {
           hg.moveTo(_eR+hR*0.22, _eY-hR*0.30).lineTo(_eR-hR*0.10, _eY-hR*0.22);
         }
       }
+      // Nose bridge highlight
+      strokeSeg(hg, hR*0.03, 0xffffff, true, 0.15);
+      hg.moveTo(0, hCy-hR*0.05).lineTo(0, hCy+hR*0.16);
       // Nose
       strokeSeg(hg, hR*0.14, skinDHex2, true);
       hg.moveTo(-hR*0.06, hCy+hR*0.18).quadraticCurveTo(-hR*0.22, hCy+hR*0.40, -hR*0.14, hCy+hR*0.46)
         .quadraticCurveTo(0, hCy+hR*0.50, hR*0.14, hCy+hR*0.46).quadraticCurveTo(hR*0.22, hCy+hR*0.40, hR*0.06, hCy+hR*0.18);
       fillEllipse(hg, -hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05, 0.2, skinDHex2, 1);
       fillEllipse(hg, hR*0.13, hCy+hR*0.48, hR*0.07, hR*0.05, -0.2, skinDHex2, 1);
+      // Philtrum — faint centered groove above the mouth
+      strokeSeg(hg, hR*0.02, skinDHex2, true, 0.32);
+      hg.moveTo(0, hCy+hR*0.52).lineTo(0, hCy+hR*0.61);
       // Mouth
       const _tkF = (T < (cu.talkUntil || 0)) ? Math.abs(Math.sin(T * 19 + cu.phase * 5)) * hR * 0.14 : 0;
       strokeSeg(hg, hR*0.14, skinDHex2, true);
